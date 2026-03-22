@@ -1,0 +1,27 @@
+/**
+ * Constantes de settings del calendario.
+ * El plugin consumidor declara estas keys en su propio manifest
+ * para que aparezcan en la UI de settings.
+ */
+export const CALENDAR_SETTINGS = {
+  // Vista
+  DEFAULT_VIEW: { key: 'calendar.defaults.view', default: 'week' },
+  SLOT_DURATION: { key: 'calendar.defaults.slotDuration', default: 30 },
+  START_HOUR: { key: 'calendar.defaults.startHour', default: 8 },
+  END_HOUR: { key: 'calendar.defaults.endHour', default: 20 },
+  DEFAULT_DURATION: { key: 'calendar.defaults.duration', default: 30 },
+  DEFAULT_STATUS: { key: 'calendar.defaults.status', default: 'scheduled' },
+
+  // Comportamiento
+  SHOW_WEEKENDS: { key: 'calendar.behavior.showWeekends', default: true },
+  SHOW_CANCELLED: { key: 'calendar.behavior.showCancelled', default: false },
+  SHOW_DESCRIPTION: { key: 'calendar.behavior.showDescription', default: true },
+  SHOW_NOTES: { key: 'calendar.behavior.showNotes', default: true },
+  SHOW_TAGS: { key: 'calendar.behavior.showTags', default: true },
+  SHOW_COLOR_PICKER: { key: 'calendar.behavior.showColorPicker', default: true },
+  CONFIRM_ON_DRAG: { key: 'calendar.behavior.confirmOnDrag', default: false },
+
+  // Requeridos
+  REQUIRE_DESCRIPTION: { key: 'calendar.required.description', default: false },
+  REQUIRE_TYPE: { key: 'calendar.required.type', default: false },
+} as const;

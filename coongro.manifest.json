@@ -1,0 +1,31 @@
+{
+  "id": "calendar",
+  "version": "0.1.0",
+  "apiVersion": "2.0",
+  "assets": {
+    "styles": [
+      "./dist/assets/tailwind.css"
+    ]
+  },
+  "contributes": {
+    "menus": [],
+    "views": [],
+    "repositories": [
+      {
+        "module": "./dist/repositories/calendar.repository.js",
+        "export": "CalendarRepository",
+        "prefix": "calendar.calendars"
+      },
+      {
+        "module": "./dist/repositories/event-type.repository.js",
+        "export": "EventTypeRepository",
+        "prefix": "calendar.types"
+      },
+      {
+        "module": "./dist/repositories/event.repository.js",
+        "export": "EventRepository",
+        "prefix": "calendar.events"
+      }
+    ]
+  }
+}
