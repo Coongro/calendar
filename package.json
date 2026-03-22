@@ -28,7 +28,7 @@
     }
   },
   "publishConfig": {
-    "registry": "https://registry.coongro.com/"
+    "registry": "https://coongro-staging.up.railway.app/"
   },
   "files": [
     "dist",
