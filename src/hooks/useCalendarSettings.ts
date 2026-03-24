@@ -1,6 +1,7 @@
 import { useSettings } from '@coongro/plugin-sdk';
-import { CALENDAR_SETTINGS } from '../utils/settings.js';
+
 import type { CalendarViewMode } from '../types/components.js';
+import { CALENDAR_SETTINGS } from '../utils/settings.js';
 
 export interface CalendarSettings {
   defaultView: CalendarViewMode;

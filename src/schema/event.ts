@@ -1,5 +1,5 @@
-import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const eventTable = pgTable('module_calendar_events', {
   id: uuid('id').primaryKey().notNull(),
@@ -24,8 +24,12 @@ export const eventTable = pgTable('module_calendar_events', {
   notes: text('notes'),
   is_active: boolean('is_active').notNull(),
   deleted_at: timestamp('deleted_at', { mode: 'string' }),
-  created_at: timestamp('created_at', { mode: 'string' }).notNull().default(sql`now()`),
-  updated_at: timestamp('updated_at', { mode: 'string' }).notNull().default(sql`now()`),
+  created_at: timestamp('created_at', { mode: 'string' })
+    .notNull()
+    .default(sql`now()`),
+  updated_at: timestamp('updated_at', { mode: 'string' })
+    .notNull()
+    .default(sql`now()`),
 });
 
 export type EventRow = typeof eventTable.$inferSelect;

@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+
 import type { EventCardProps } from '../../types/components.js';
 import { formatEventTime } from '../../utils/date.js';
 import { formatStatus, STATUS_BADGE_CLASSES } from '../../utils/labels.js';
@@ -44,11 +45,7 @@ export function EventCard({
     React.createElement(
       'div',
       { className: 'flex-1 min-w-0' },
-      React.createElement(
-        'div',
-        { className: 'font-medium truncate' },
-        event.title
-      ),
+      React.createElement('div', { className: 'font-medium truncate' }, event.title),
       showTime &&
         !event.all_day &&
         React.createElement(
@@ -56,7 +53,8 @@ export function EventCard({
           { className: 'text-cg-text-muted' },
           `${formatEventTime(event.start_at)} - ${formatEventTime(event.end_at)}`
         ),
-      showLocation && event.location &&
+      showLocation &&
+        event.location &&
         React.createElement(
           'div',
           { className: 'flex items-center gap-1 text-cg-text-muted mt-0.5' },
@@ -68,7 +66,10 @@ export function EventCard({
     showStatus &&
       React.createElement(
         UI.Badge,
-        { variant: 'outline', className: `text-[10px] shrink-0 ${STATUS_BADGE_CLASSES[event.status] ?? ''}` },
+        {
+          variant: 'outline',
+          className: `text-[10px] shrink-0 ${STATUS_BADGE_CLASSES[event.status] ?? ''}`,
+        },
         formatStatus(event.status)
       ),
     badge

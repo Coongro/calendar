@@ -1,4 +1,5 @@
 import { getHostReact } from '@coongro/plugin-sdk';
+
 import type { CalendarViewMode } from '../types/components.js';
 import {
   getWeekStart,
@@ -25,9 +26,7 @@ export interface UseDateNavigationResult {
   title: string;
 }
 
-export function useDateNavigation(
-  initialView: CalendarViewMode = 'week'
-): UseDateNavigationResult {
+export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDateNavigationResult {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewMode>(initialView);
 

@@ -1,6 +1,7 @@
+import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import { eq, and, or, ilike, isNull, gte, lte, asc, desc, sql, inArray } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
-import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
+
 import { eventTable } from '../schema/event.js';
 import type { EventRow, NewEventRow } from '../schema/event.js';
 
@@ -100,7 +101,7 @@ export class EventRepository {
       entityType,
       from,
       to,
-      tags,
+      tags: _tags,
       includeDeleted,
       limit,
       offset,
@@ -122,7 +123,7 @@ export class EventRepository {
             ilike(eventTable.title, pattern),
             ilike(eventTable.description, pattern),
             ilike(eventTable.notes, pattern)
-          )!
+          )
         );
       }
 
@@ -293,7 +294,11 @@ export class EventRepository {
     return this.db.ormQuery((tx) =>
       tx
         .update(eventTable)
-        .set({ start_at: startAt, end_at: endAt, updated_at: new Date().toISOString() } as Partial<EventRow>)
+        .set({
+          start_at: startAt,
+          end_at: endAt,
+          updated_at: new Date().toISOString(),
+        } as Partial<EventRow>)
         .where(eq(eventTable.id, id))
         .returning()
     );
@@ -335,10 +340,7 @@ export class EventRepository {
     );
   }
 
-  async countByCalendar({
-    from,
-    to,
-  }: { from?: string; to?: string } = {}): Promise<CountResult[]> {
+  async countByCalendar({ from, to }: { from?: string; to?: string } = {}): Promise<CountResult[]> {
     return this.db.ormQuery((tx) => {
       const conditions: SQL[] = [isNull(eventTable.deleted_at)];
       if (from) conditions.push(gte(eventTable.start_at, from));

@@ -1,10 +1,6 @@
 export type { CalendarEvent, EventCreateData, EventUpdateData, EventStatus } from './event.js';
 export type { CalendarGroup, CalendarCreateData, CalendarUpdateData } from './calendar.js';
-export type {
-  EventType,
-  EventTypeCreateData,
-  EventTypeUpdateData,
-} from './event-type.js';
+export type { EventType, EventTypeCreateData, EventTypeUpdateData } from './event-type.js';
 export type { EventFilters, SortDirection } from './filters.js';
 export type {
   CalendarViewMode,

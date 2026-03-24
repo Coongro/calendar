@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+
 import type { MiniCalendarProps } from '../../types/components.js';
 import {
   getMonthGridDays,
@@ -19,19 +20,25 @@ export function MiniCalendar({
   className = '',
 }: MiniCalendarProps) {
   const selected = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null;
-  const [viewYear, setViewYear] = useState(() => selected?.getFullYear() ?? new Date().getFullYear());
+  const [viewYear, setViewYear] = useState(
+    () => selected?.getFullYear() ?? new Date().getFullYear()
+  );
   const [viewMonth, setViewMonth] = useState(() => selected?.getMonth() ?? new Date().getMonth());
 
   const days = useMemo(() => getMonthGridDays(viewYear, viewMonth), [viewYear, viewMonth]);
 
   const goNext = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-    else setViewMonth((m) => m + 1);
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear((y) => y + 1);
+    } else setViewMonth((m) => m + 1);
   };
 
   const goPrev = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-    else setViewMonth((m) => m - 1);
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear((y) => y - 1);
+    } else setViewMonth((m) => m - 1);
   };
 
   const weekDayHeaders = [1, 2, 3, 4, 5, 6, 0].map((d) => {
@@ -105,7 +112,8 @@ export function MiniCalendar({
           day.getDate(),
           dotCount > 0 &&
             React.createElement('span', {
-              className: 'absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cg-accent',
+              className:
+                'absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cg-accent',
             })
         );
       })
