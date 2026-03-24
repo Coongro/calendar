@@ -1,6 +1,6 @@
 {
   "name": "@coongro/calendar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Plugin de calendario reutilizable: eventos, calendarios, tipos de evento y componentes UI para consumo por otros plugins",
   "main": "dist/index.js",
