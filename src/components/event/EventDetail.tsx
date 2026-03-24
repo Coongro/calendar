@@ -1,6 +1,7 @@
 import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
-import type { EventDetailProps } from '../../types/components.js';
+
 import { useEvent } from '../../hooks/useEvent.js';
+import type { EventDetailProps } from '../../types/components.js';
 import { formatEventDateTime } from '../../utils/date.js';
 import { formatStatus } from '../../utils/labels.js';
 import { PinIcon, CalendarIcon } from '../internal/icons.js';
@@ -19,7 +20,9 @@ export function EventDetail({
 }: EventDetailProps) {
   const { event, loading, error } = useEvent(eventId);
 
-  const { sections: entityInfoSections } = useViewContributions('calendar.event-detail.entity-info');
+  const { sections: entityInfoSections } = useViewContributions(
+    'calendar.event-detail.entity-info'
+  );
   const { sections: extraSections } = useViewContributions('calendar.event-detail.sections');
   const { sections: actionSlots } = useViewContributions('calendar.event-detail.actions');
 

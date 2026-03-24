@@ -1,4 +1,5 @@
 import { getHostReact } from '@coongro/plugin-sdk';
+
 import type { MonthGridProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import { getMonthGridDays, getShortDayName, toDateString, isSameDay } from '../../utils/date.js';
@@ -107,11 +108,15 @@ export function MonthGrid({
               },
               day.getDate()
             ),
-            isCurrentMonth && React.createElement(
-              'span',
-              { className: 'inline-flex items-center gap-0.5 text-[10px] font-semibold text-cg-accent bg-cg-accent/10 border border-cg-accent/20 rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity select-none leading-none whitespace-nowrap' },
-              '+ Nuevo'
-            )
+            isCurrentMonth &&
+              React.createElement(
+                'span',
+                {
+                  className:
+                    'inline-flex items-center gap-0.5 text-[10px] font-semibold text-cg-accent bg-cg-accent/10 border border-cg-accent/20 rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity select-none leading-none whitespace-nowrap',
+                },
+                '+ Nuevo'
+              )
           ),
 
           // Eventos del día (máximo 3)

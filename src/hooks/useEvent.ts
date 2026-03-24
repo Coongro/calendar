@@ -1,4 +1,5 @@
 import { getHostReact, actions } from '@coongro/plugin-sdk';
+
 import type { CalendarEvent } from '../types/event.js';
 
 const React = getHostReact();
@@ -32,10 +33,9 @@ export function useEvent(eventId?: string | null): UseEventResult {
     setLoading(true);
     setError(null);
     try {
-      const result = await actions.execute<CalendarEvent | undefined>(
-        'calendar.events.getById',
-        { id: eventId }
-      );
+      const result = await actions.execute<CalendarEvent | undefined>('calendar.events.getById', {
+        id: eventId,
+      });
       if (!mountedRef.current) return;
       setEvent(result ?? null);
     } catch (err) {

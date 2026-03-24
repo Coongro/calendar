@@ -1,8 +1,9 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
-import type { EventListProps } from '../../types/components.js';
+
 import { useEvents } from '../../hooks/useEvents.js';
+import type { EventListProps } from '../../types/components.js';
 import { formatEventDateTime } from '../../utils/date.js';
-import { formatStatus, STATUS_LABELS, STATUS_BADGE_CLASSES } from '../../utils/labels.js';
+import { formatStatus, STATUS_BADGE_CLASSES } from '../../utils/labels.js';
 import { PinIcon, CalendarIcon } from '../internal/icons.js';
 
 const React = getHostReact();
@@ -19,17 +20,10 @@ export function EventList({
   emptyStateAction,
   className = '',
 }: EventListProps) {
-  const {
-    data,
-    loading,
-    error,
-    setFilters,
-    setSort,
-    pagination,
-    nextPage,
-    prevPage,
-    goToPage,
-  } = useEvents({ ...initialFilters, pageSize });
+  const { data, loading, error, setFilters, pagination, goToPage } = useEvents({
+    ...initialFilters,
+    pageSize,
+  });
 
   const [searchValue, setSearchValue] = useState('');
 
@@ -44,8 +38,7 @@ export function EventList({
     [setFilters, initialFilters]
   );
 
-  const getStatusLabel = (status: string) =>
-    statusConfig?.[status]?.label ?? formatStatus(status);
+  const getStatusLabel = (status: string) => statusConfig?.[status]?.label ?? formatStatus(status);
 
   return React.createElement(
     'div',
@@ -79,8 +72,7 @@ export function EventList({
           React.createElement(UI.TableHead, null, 'Título'),
           React.createElement(UI.TableHead, null, 'Fecha'),
           React.createElement(UI.TableHead, null, 'Estado'),
-          extraActions.length > 0 &&
-            React.createElement(UI.TableHead, { className: 'w-10' })
+          extraActions.length > 0 && React.createElement(UI.TableHead, { className: 'w-10' })
         )
       ),
       React.createElement(
@@ -91,9 +83,21 @@ export function EventList({
               React.createElement(
                 UI.TableRow,
                 { key: `skeleton-${i}` },
-                React.createElement(UI.TableCell, null, React.createElement(UI.Skeleton, { className: 'h-4 w-32' })),
-                React.createElement(UI.TableCell, null, React.createElement(UI.Skeleton, { className: 'h-4 w-24' })),
-                React.createElement(UI.TableCell, null, React.createElement(UI.Skeleton, { className: 'h-4 w-16' }))
+                React.createElement(
+                  UI.TableCell,
+                  null,
+                  React.createElement(UI.Skeleton, { className: 'h-4 w-32' })
+                ),
+                React.createElement(
+                  UI.TableCell,
+                  null,
+                  React.createElement(UI.Skeleton, { className: 'h-4 w-24' })
+                ),
+                React.createElement(
+                  UI.TableCell,
+                  null,
+                  React.createElement(UI.Skeleton, { className: 'h-4 w-16' })
+                )
               )
             )
           : data.length === 0
@@ -136,7 +140,10 @@ export function EventList({
                         evt.location &&
                           React.createElement(
                             'div',
-                            { className: 'flex items-center gap-1 text-xs text-cg-text-muted font-normal' },
+                            {
+                              className:
+                                'flex items-center gap-1 text-xs text-cg-text-muted font-normal',
+                            },
                             React.createElement(PinIcon, null),
                             React.createElement('span', { className: 'truncate' }, evt.location)
                           )

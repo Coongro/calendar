@@ -4,17 +4,28 @@ const React = getHostReact();
 const UI = getHostUI();
 
 const WEEK_DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const TIME_LABELS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+const TIME_LABELS = [
+  '08:00',
+  '09:00',
+  '10:00',
+  '11:00',
+  '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+];
 const SLOT_H = 48;
 
 // Eventos ficticios distribuidos en la semana para el skeleton de WeekGrid
 const WEEK_GHOST_EVENTS = [
   { col: 0, top: SLOT_H * 1.5, h: SLOT_H * 1 },
-  { col: 1, top: SLOT_H * 3,   h: SLOT_H * 2 },
+  { col: 1, top: SLOT_H * 3, h: SLOT_H * 2 },
   { col: 2, top: SLOT_H * 0.5, h: SLOT_H * 1.5 },
-  { col: 4, top: SLOT_H * 2,   h: SLOT_H * 1 },
-  { col: 5, top: SLOT_H * 4,   h: SLOT_H * 0.5 },
-  { col: 6, top: SLOT_H * 1,   h: SLOT_H * 2 },
+  { col: 4, top: SLOT_H * 2, h: SLOT_H * 1 },
+  { col: 5, top: SLOT_H * 4, h: SLOT_H * 0.5 },
+  { col: 6, top: SLOT_H * 1, h: SLOT_H * 2 },
 ];
 
 export function MonthGridSkeleton() {
@@ -49,9 +60,7 @@ export function MonthGridSkeleton() {
           i % 7 !== 5 && i % 7 !== 6 && i % 4 !== 0
             ? React.createElement(UI.Skeleton, { className: 'h-4 w-full rounded mb-1' })
             : null,
-          i % 5 === 0
-            ? React.createElement(UI.Skeleton, { className: 'h-4 w-3/4 rounded' })
-            : null
+          i % 5 === 0 ? React.createElement(UI.Skeleton, { className: 'h-4 w-3/4 rounded' }) : null
         )
       )
     )
@@ -59,8 +68,6 @@ export function MonthGridSkeleton() {
 }
 
 export function WeekGridSkeleton() {
-  const colCount = WEEK_DAYS.length;
-
   return React.createElement(
     'div',
     { className: 'flex animate-pulse' },
@@ -75,7 +82,8 @@ export function WeekGridSkeleton() {
           'div',
           {
             key: t,
-            className: 'text-[10px] text-cg-text-muted text-right pr-2 border-b border-cg-border/30',
+            className:
+              'text-[10px] text-cg-text-muted text-right pr-2 border-b border-cg-border/30',
             style: { height: `${SLOT_H}px` },
           },
           t
@@ -92,7 +100,10 @@ export function WeekGridSkeleton() {
         // Header del día
         React.createElement(
           'div',
-          { className: 'h-10 flex flex-col items-center justify-center border-b border-cg-border gap-0.5' },
+          {
+            className:
+              'h-10 flex flex-col items-center justify-center border-b border-cg-border gap-0.5',
+          },
           React.createElement(UI.Skeleton, { className: 'w-6 h-2.5 rounded' }),
           React.createElement(UI.Skeleton, { className: 'w-5 h-4 rounded' })
         ),
@@ -102,7 +113,7 @@ export function WeekGridSkeleton() {
           'div',
           { className: 'relative', style: { height: `${SLOT_H * TIME_LABELS.length}px` } },
           // Líneas de hora
-          TIME_LABELS.map((t, i) =>
+          TIME_LABELS.map((t) =>
             React.createElement('div', {
               key: t,
               className: 'border-b border-cg-border/20',
@@ -126,9 +137,9 @@ export function WeekGridSkeleton() {
 export function DayColumnSkeleton() {
   // Eventos fantasma para la columna única
   const ghostEvents = [
-    { top: SLOT_H * 1,   h: SLOT_H * 1.5 },
+    { top: SLOT_H * 1, h: SLOT_H * 1.5 },
     { top: SLOT_H * 3.5, h: SLOT_H * 1 },
-    { top: SLOT_H * 6,   h: SLOT_H * 2 },
+    { top: SLOT_H * 6, h: SLOT_H * 2 },
   ];
 
   return React.createElement(
@@ -181,11 +192,7 @@ export function DayColumnSkeleton() {
 
 export function AgendaListSkeleton() {
   // 3 grupos de fecha con 2–3 eventos cada uno
-  const groups = [
-    { events: 3 },
-    { events: 2 },
-    { events: 3 },
-  ];
+  const groups = [{ events: 3 }, { events: 2 }, { events: 3 }];
 
   return React.createElement(
     'div',
@@ -230,7 +237,9 @@ export function AgendaListSkeleton() {
               React.createElement(
                 'div',
                 { className: 'flex-1 flex flex-col gap-1.5' },
-                React.createElement(UI.Skeleton, { className: `h-3.5 rounded ${ei % 2 === 0 ? 'w-2/3' : 'w-1/2'}` }),
+                React.createElement(UI.Skeleton, {
+                  className: `h-3.5 rounded ${ei % 2 === 0 ? 'w-2/3' : 'w-1/2'}`,
+                }),
                 ei % 3 === 0
                   ? React.createElement(UI.Skeleton, { className: 'h-2.5 w-1/3 rounded' })
                   : null

@@ -1,5 +1,7 @@
-import { eq, and, or, ilike, isNull } from 'drizzle-orm';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
+import { eq, and, or, ilike, isNull } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+
 import { eventTypeTable } from '../schema/event-type.js';
 import type { EventTypeRow, NewEventTypeRow } from '../schema/event-type.js';
 
@@ -76,7 +78,7 @@ export class EventTypeRepository {
     includeDeleted?: boolean;
   }): Promise<EventTypeRow[]> {
     return this.db.ormQuery((tx) => {
-      const conditions = [];
+      const conditions: (SQL | undefined)[] = [];
 
       if (!includeDeleted) {
         conditions.push(isNull(eventTypeTable.deleted_at));
@@ -85,7 +87,7 @@ export class EventTypeRepository {
       if (query) {
         const pattern = `%${query}%`;
         conditions.push(
-          or(ilike(eventTypeTable.name, pattern), ilike(eventTypeTable.description, pattern))!
+          or(ilike(eventTypeTable.name, pattern), ilike(eventTypeTable.description, pattern))
         );
       }
 

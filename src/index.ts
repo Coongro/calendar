@@ -18,16 +18,8 @@ export type {
   EventUpdateData,
   EventStatus,
 } from './types/event.js';
-export type {
-  CalendarGroup,
-  CalendarCreateData,
-  CalendarUpdateData,
-} from './types/calendar.js';
-export type {
-  EventType,
-  EventTypeCreateData,
-  EventTypeUpdateData,
-} from './types/event-type.js';
+export type { CalendarGroup, CalendarCreateData, CalendarUpdateData } from './types/calendar.js';
+export type { EventType, EventTypeCreateData, EventTypeUpdateData } from './types/event-type.js';
 export type { EventFilters, SortDirection } from './types/filters.js';
 export type {
   CalendarViewMode,

@@ -1,6 +1,7 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
-import type { EventStatsProps } from '../../types/components.js';
+
 import { useEventStats } from '../../hooks/useEventStats.js';
+import type { EventStatsProps } from '../../types/components.js';
 import { formatStatus } from '../../utils/labels.js';
 
 const React = getHostReact();
@@ -12,18 +13,18 @@ const STATUS_COLORS_HEX: Record<string, string> = {
   confirmed: '#22c55e',
   completed: '#94a3b8',
   cancelled: '#ef4444',
-  no_show:   '#f59e0b',
+  no_show: '#f59e0b',
   tentative: '#10b981',
 };
 
 // Clases de texto y fondo por estado (para Tailwind estático)
 const STATUS_CARD_CLASSES: Record<string, { text: string; bg: string }> = {
-  scheduled: { text: 'text-cg-info',        bg: 'bg-cg-info-bg' },
-  confirmed: { text: 'text-cg-success',     bg: 'bg-cg-success-bg' },
-  completed: { text: 'text-cg-text-muted',  bg: 'bg-cg-bg-secondary' },
-  cancelled: { text: 'text-cg-danger',      bg: 'bg-cg-danger-bg' },
-  no_show:   { text: 'text-cg-warning-text',bg: 'bg-cg-warning-bg' },
-  tentative: { text: 'text-cg-accent',      bg: 'bg-cg-accent/10' },
+  scheduled: { text: 'text-cg-info', bg: 'bg-cg-info-bg' },
+  confirmed: { text: 'text-cg-success', bg: 'bg-cg-success-bg' },
+  completed: { text: 'text-cg-text-muted', bg: 'bg-cg-bg-secondary' },
+  cancelled: { text: 'text-cg-danger', bg: 'bg-cg-danger-bg' },
+  no_show: { text: 'text-cg-warning-text', bg: 'bg-cg-warning-bg' },
+  tentative: { text: 'text-cg-accent', bg: 'bg-cg-accent/10' },
 };
 
 export function EventStats({ from, to, className = '' }: EventStatsProps) {
@@ -84,7 +85,10 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
         ),
         React.createElement(
           'div',
-          { className: 'text-[11px] font-semibold text-cg-text-muted uppercase tracking-wide mt-1.5' },
+          {
+            className:
+              'text-[11px] font-semibold text-cg-text-muted uppercase tracking-wide mt-1.5',
+          },
           'Total'
         )
       ),

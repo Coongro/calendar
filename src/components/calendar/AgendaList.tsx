@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+
 import type { AgendaListProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import {
@@ -66,7 +67,9 @@ export function AgendaList({
           // Bloque día: abreviación + número (circle si es hoy)
           React.createElement(
             'div',
-            { className: `flex flex-col items-center w-10 shrink-0 ${isToday ? 'text-cg-accent' : 'text-cg-text-muted'}` },
+            {
+              className: `flex flex-col items-center w-10 shrink-0 ${isToday ? 'text-cg-accent' : 'text-cg-text-muted'}`,
+            },
             React.createElement(
               'span',
               { className: 'text-[9px] font-bold tracking-widest leading-none mb-0.5' },
@@ -95,7 +98,10 @@ export function AgendaList({
             isToday &&
               React.createElement(
                 'span',
-                { className: 'text-[9px] font-bold text-cg-accent uppercase tracking-widest leading-none' },
+                {
+                  className:
+                    'text-[9px] font-bold text-cg-accent uppercase tracking-widest leading-none',
+                },
                 'Hoy'
               )
           ),
@@ -152,7 +158,10 @@ export function AgendaList({
                 evt.location &&
                   React.createElement(
                     'div',
-                    { className: 'flex items-center gap-1 text-xs text-cg-text-muted truncate mt-0.5' },
+                    {
+                      className:
+                        'flex items-center gap-1 text-xs text-cg-text-muted truncate mt-0.5',
+                    },
                     React.createElement(PinIcon, null),
                     evt.location
                   )

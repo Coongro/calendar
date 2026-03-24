@@ -129,9 +129,11 @@ export function toDateString(date: Date): string {
 
 /** Compara dos fechas ignorando hora */
 export function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() &&
+  return (
+    a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
+    a.getDate() === b.getDate()
+  );
 }
 
 /** Diferencia en minutos entre dos ISO strings */
