@@ -1,5 +1,5 @@
-import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import { boolean, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const calendarTable = pgTable('module_calendar_calendars', {
   id: uuid('id').primaryKey().notNull(),
@@ -10,8 +10,12 @@ export const calendarTable = pgTable('module_calendar_calendars', {
   is_default: boolean('is_default').notNull(),
   metadata: jsonb('metadata'),
   deleted_at: timestamp('deleted_at', { mode: 'string' }),
-  created_at: timestamp('created_at', { mode: 'string' }).notNull().default(sql`now()`),
-  updated_at: timestamp('updated_at', { mode: 'string' }).notNull().default(sql`now()`),
+  created_at: timestamp('created_at', { mode: 'string' })
+    .notNull()
+    .default(sql`now()`),
+  updated_at: timestamp('updated_at', { mode: 'string' })
+    .notNull()
+    .default(sql`now()`),
 });
 
 export type CalendarRow = typeof calendarTable.$inferSelect;

@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+
 import type { CalendarBadgeProps } from '../../types/components.js';
 
 const React = getHostReact();

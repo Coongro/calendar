@@ -1,5 +1,7 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+
 import type { CreateEventButtonProps } from '../../types/components.js';
+
 import { EventForm } from './EventForm.js';
 
 const React = getHostReact();
@@ -17,11 +19,7 @@ export function CreateEventButton({
   return React.createElement(
     React.Fragment,
     null,
-    React.createElement(
-      UI.Button,
-      { onClick: () => setOpen(true), className },
-      label
-    ),
+    React.createElement(UI.Button, { onClick: () => setOpen(true), className }, label),
     React.createElement(
       UI.FormDialog,
       {

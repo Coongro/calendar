@@ -1,4 +1,5 @@
 import { getHostReact, actions, usePlugin } from '@coongro/plugin-sdk';
+
 import type { CalendarEvent, EventCreateData, EventUpdateData } from '../types/event.js';
 
 const React = getHostReact();

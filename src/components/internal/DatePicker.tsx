@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+
 import type { DatePickerProps } from '../../types/components.js';
 import {
   getMonthGridDays,
@@ -50,11 +51,8 @@ export function DatePicker({
     }
   };
 
-  const isDisabled = (date: Date): boolean => {
-    if (minDate && date < new Date(minDate)) return true;
-    if (maxDate && date > new Date(maxDate)) return true;
-    return false;
-  };
+  const isDisabled = (date: Date): boolean =>
+    (!!minDate && date < new Date(minDate)) || (!!maxDate && date > new Date(maxDate));
 
   const handleSelect = (date: Date) => {
     if (isDisabled(date)) return;
@@ -137,11 +135,7 @@ export function DatePicker({
               type: 'button',
               disabled,
               className: `w-8 h-8 text-sm rounded-full transition-colors ${
-                isSelected
-                  ? 'bg-cg-accent text-white'
-                  : isToday
-                    ? 'bg-cg-bg-hover font-bold'
-                    : ''
+                isSelected ? 'bg-cg-accent text-white' : isToday ? 'bg-cg-bg-hover font-bold' : ''
               } ${!isCurrentMonth ? 'text-cg-text-muted opacity-40' : ''} ${
                 disabled ? 'opacity-20 cursor-not-allowed' : 'hover:bg-cg-bg-hover cursor-pointer'
               }`,

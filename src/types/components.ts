@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import type { CalendarEvent, EventCreateData, EventStatus } from './event.js';
+
 import type { CalendarGroup } from './calendar.js';
 import type { EventType } from './event-type.js';
-import type { EventFilters, SortDirection } from './filters.js';
+import type { CalendarEvent, EventCreateData } from './event.js';
+import type { EventFilters } from './filters.js';
 
 // --- Calendario ---
 

@@ -1,5 +1,6 @@
-import { eq, and, isNull, not } from 'drizzle-orm';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
+import { eq, and, isNull } from 'drizzle-orm';
+
 import { calendarTable } from '../schema/calendar.js';
 import type { CalendarRow, NewCalendarRow } from '../schema/calendar.js';
 
@@ -29,7 +30,13 @@ export class CalendarRepository {
     return this.db.ormQuery((tx) => tx.insert(calendarTable).values(row).returning());
   }
 
-  async update({ id, data }: { id: string; data: Partial<NewCalendarRow> }): Promise<CalendarRow[]> {
+  async update({
+    id,
+    data,
+  }: {
+    id: string;
+    data: Partial<NewCalendarRow>;
+  }): Promise<CalendarRow[]> {
     return this.db.ormQuery((tx) =>
       tx
         .update(calendarTable)
@@ -70,7 +77,10 @@ export class CalendarRepository {
     return this.db.ormQuery((tx) =>
       tx
         .update(calendarTable)
-        .set({ is_visible: !existing.is_visible, updated_at: new Date().toISOString() } as Partial<CalendarRow>)
+        .set({
+          is_visible: !existing.is_visible,
+          updated_at: new Date().toISOString(),
+        } as Partial<CalendarRow>)
         .where(eq(calendarTable.id, id))
         .returning()
     );

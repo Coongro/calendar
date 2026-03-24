@@ -1,11 +1,11 @@
 import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
-import type { CalendarViewProps, CalendarViewMode } from '../../types/components.js';
-import { useEvents } from '../../hooks/useEvents.js';
+
 import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import { useDateNavigation } from '../../hooks/useDateNavigation.js';
-import { MonthGrid } from './MonthGrid.js';
-import { WeekGrid } from './WeekGrid.js';
-import { DayColumn } from './DayColumn.js';
+import { useEvents } from '../../hooks/useEvents.js';
+import type { CalendarViewProps, CalendarViewMode } from '../../types/components.js';
+import { toDateString } from '../../utils/date.js';
+
 import { AgendaList } from './AgendaList.js';
 import {
   MonthGridSkeleton,
@@ -13,8 +13,10 @@ import {
   DayColumnSkeleton,
   AgendaListSkeleton,
 } from './CalendarSkeleton.js';
+import { DayColumn } from './DayColumn.js';
 import { MiniCalendar } from './MiniCalendar.js';
-import { toDateString } from '../../utils/date.js';
+import { MonthGrid } from './MonthGrid.js';
+import { WeekGrid } from './WeekGrid.js';
 
 const React = getHostReact();
 const UI = getHostUI();
@@ -38,7 +40,7 @@ export function CalendarView({
   className = '',
 }: CalendarViewProps) {
   const { settings } = useCalendarSettings();
-  const nav = useDateNavigation((defaultView ?? settings.defaultView) as CalendarViewMode);
+  const nav = useDateNavigation(defaultView ?? settings.defaultView);
 
   const { data: events, loading } = useEvents({
     from: nav.rangeStart,
@@ -116,11 +118,16 @@ export function CalendarView({
   const renderActiveView = () => {
     if (loading) {
       switch (nav.view) {
-        case 'month':   return React.createElement(MonthGridSkeleton, null);
-        case 'week':    return React.createElement(WeekGridSkeleton, null);
-        case 'day':     return React.createElement(DayColumnSkeleton, null);
-        case 'agenda':  return React.createElement(AgendaListSkeleton, null);
-        default:        return React.createElement(MonthGridSkeleton, null);
+        case 'month':
+          return React.createElement(MonthGridSkeleton, null);
+        case 'week':
+          return React.createElement(WeekGridSkeleton, null);
+        case 'day':
+          return React.createElement(DayColumnSkeleton, null);
+        case 'agenda':
+          return React.createElement(AgendaListSkeleton, null);
+        default:
+          return React.createElement(MonthGridSkeleton, null);
       }
     }
 
@@ -148,7 +155,8 @@ export function CalendarView({
           renderEvent,
           onEventClick,
           onSlotClick: onSlotClick
-            ? (date, hour) => onSlotClick(`${date}T${String(Math.floor(hour)).padStart(2, '0')}:00:00.000Z`)
+            ? (date, hour) =>
+                onSlotClick(`${date}T${String(Math.floor(hour)).padStart(2, '0')}:00:00.000Z`)
             : undefined,
           showWeekends: settings.showWeekends,
         });
@@ -201,7 +209,11 @@ export function CalendarView({
         ),
 
       // Vista principal
-      React.createElement('div', { className: 'flex-1 min-w-0 overflow-y-auto' }, renderActiveView())
+      React.createElement(
+        'div',
+        { className: 'flex-1 min-w-0 overflow-y-auto' },
+        renderActiveView()
+      )
     )
   );
 }

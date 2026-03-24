@@ -1,6 +1,7 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
-import type { UpcomingEventsProps } from '../../types/components.js';
+
 import { useUpcomingEvents } from '../../hooks/useUpcomingEvents.js';
+import type { UpcomingEventsProps } from '../../types/components.js';
 import { formatEventDate, formatEventTime } from '../../utils/date.js';
 import { formatStatus } from '../../utils/labels.js';
 
@@ -14,7 +15,7 @@ export function UpcomingEvents({
   emptyMessage = 'No hay próximos eventos',
   className = '',
 }: UpcomingEventsProps) {
-  const { data, loading, error } = useUpcomingEvents({ limit, calendarIds });
+  const { data, loading } = useUpcomingEvents({ limit, calendarIds });
 
   if (loading) {
     return React.createElement(
