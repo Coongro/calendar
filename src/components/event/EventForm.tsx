@@ -1,16 +1,17 @@
 import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
-import type { EventFormProps } from '../../types/components.js';
-import type { EventCreateData } from '../../types/event.js';
+
+import { useCalendars } from '../../hooks/useCalendars.js';
+import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import { useEvent } from '../../hooks/useEvent.js';
 import { useEventMutations } from '../../hooks/useEventMutations.js';
-import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
-import { useCalendars } from '../../hooks/useCalendars.js';
 import { useEventTypes } from '../../hooks/useEventTypes.js';
-import { STATUS_LABELS, toSelectOptions } from '../../utils/labels.js';
+import type { EventFormProps } from '../../types/components.js';
+import type { EventCreateData } from '../../types/event.js';
 import { addMinutes, toDateString } from '../../utils/date.js';
+import { STATUS_LABELS, toSelectOptions } from '../../utils/labels.js';
+import { ColorPicker } from '../internal/ColorPicker.js';
 import { DatePicker } from '../internal/DatePicker.js';
 import { TimePicker } from '../internal/TimePicker.js';
-import { ColorPicker } from '../internal/ColorPicker.js';
 
 const React = getHostReact();
 const UI = getHostUI();
@@ -24,7 +25,7 @@ export function EventForm({
   eventId,
   defaults = {},
   hiddenFields = [],
-  hiddenSections = [],
+  hiddenSections: _hiddenSections = [],
   calendarOptions,
   eventTypeOptions,
   renderBeforeFields,
@@ -96,7 +97,7 @@ export function EventForm({
     async (e: { preventDefault: () => void }) => {
       e.preventDefault();
       const data = formData as unknown as EventCreateData;
-      const result = isEdit ? await update(eventId!, data) : await create(data);
+      const result = isEdit ? await update(eventId, data) : await create(data);
       if (result) onSuccess?.(result);
     },
     [formData, isEdit, eventId, create, update, onSuccess]
@@ -238,11 +239,7 @@ export function EventForm({
       React.createElement(
         'div',
         { className: 'flex flex-col gap-1.5' },
-        React.createElement(
-          UI.Label,
-          null,
-          `Tipo${settings.requireType ? ' *' : ''}`
-        ),
+        React.createElement(UI.Label, null, `Tipo${settings.requireType ? ' *' : ''}`),
         React.createElement(
           UI.Select,
           {

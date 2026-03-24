@@ -1,10 +1,5 @@
 export { CALENDAR_SETTINGS } from './settings.js';
-export {
-  STATUS_LABELS,
-  STATUS_COLORS,
-  formatStatus,
-  toSelectOptions,
-} from './labels.js';
+export { STATUS_LABELS, STATUS_COLORS, formatStatus, toSelectOptions } from './labels.js';
 export {
   formatEventDate,
   formatEventTime,
@@ -24,9 +19,5 @@ export {
   diffMinutes,
   addMinutes,
 } from './date.js';
-export {
-  parseRRule,
-  toRRule,
-  formatRecurrence,
-} from './recurrence.js';
+export { parseRRule, toRRule, formatRecurrence } from './recurrence.js';
 export type { RecurrenceRule } from './recurrence.js';

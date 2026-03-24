@@ -1,8 +1,9 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
-import type { EventPickerProps } from '../../types/components.js';
-import type { CalendarEvent } from '../../types/event.js';
+
 import { useEvent } from '../../hooks/useEvent.js';
 import { useEvents } from '../../hooks/useEvents.js';
+import type { EventPickerProps } from '../../types/components.js';
+import type { CalendarEvent } from '../../types/event.js';
 import { formatEventDateTime } from '../../utils/date.js';
 
 const React = getHostReact();
