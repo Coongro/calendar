@@ -89,6 +89,11 @@ export { CreateEventButton } from './components/event/CreateEventButton.js';
 export { CalendarBadge } from './components/event/CalendarBadge.js';
 export { UpcomingEvents } from './components/event/UpcomingEvents.js';
 
+// Pickers (reutilizables por otros plugins)
+export { DatePicker } from './components/internal/DatePicker.js';
+export { TimePicker } from './components/internal/TimePicker.js';
+export { ColorPicker } from './components/internal/ColorPicker.js';
+
 // Utils
 export { CALENDAR_SETTINGS } from './utils/settings.js';
 export { STATUS_LABELS, STATUS_COLORS, formatStatus, toSelectOptions } from './utils/labels.js';
