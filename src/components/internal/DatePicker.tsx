@@ -108,7 +108,7 @@ export function DatePicker({
       // Headers
       React.createElement(
         'div',
-        { className: 'grid grid-cols-7 mb-1' },
+        { style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '4px' } },
         weekDayHeaders.map((name) =>
           React.createElement(
             'div',
@@ -121,7 +121,7 @@ export function DatePicker({
       // Días
       React.createElement(
         'div',
-        { className: 'grid grid-cols-7' },
+        { style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' } },
         days.map((day, i) => {
           const isCurrentMonth = day.getMonth() === viewMonth;
           const isSelected = selectedDate && isSameDay(day, selectedDate);
