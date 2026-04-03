@@ -100,6 +100,7 @@ export interface FieldDef {
 
 export interface EventCardProps {
   event: CalendarEvent;
+  showDate?: boolean;
   showTime?: boolean;
   showStatus?: boolean;
   showLocation?: boolean;
@@ -205,6 +206,29 @@ export interface TimePickerProps {
   step?: number;
   minTime?: string;
   maxTime?: string;
+  minuteStep?: number;
+  use24Hour?: boolean;
+  className?: string;
+}
+
+export interface DateTimePickerProps {
+  /** Datetime string local (ej: 2026-04-03T09:30) */
+  value?: string;
+  /** Callback con datetime string local (YYYY-MM-DDTHH:MM) */
+  onChange?: (datetime: string) => void;
+  placeholder?: string;
+  minDate?: string;
+  maxDate?: string;
+  /** Intervalo de la grilla rápida en minutos (default: 30) */
+  step?: number;
+  /** Hora mínima visible (default: '00:00') */
+  minTime?: string;
+  /** Hora máxima visible (default: '23:59') */
+  maxTime?: string;
+  /** Intervalo de minutos en columna exacta (default: 5, configurable via settings) */
+  minuteStep?: number;
+  /** Formato 24h vs 12h (default: true, configurable via settings) */
+  use24Hour?: boolean;
   className?: string;
 }
 

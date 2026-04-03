@@ -231,8 +231,8 @@ export function AgendaListSkeleton() {
               {
                 key: ei,
                 className: 'flex items-center gap-3 py-2.5 px-3 rounded-lg border border-cg-border',
-                style: { borderLeftWidth: '3px', borderLeftColor: 'var(--cg-skeleton, #e5e7eb)' },
               },
+              React.createElement(UI.Skeleton, { className: 'w-2.5 h-2.5 rounded-full shrink-0' }),
               React.createElement(UI.Skeleton, { className: 'h-3 w-24 rounded shrink-0' }),
               React.createElement(
                 'div',
