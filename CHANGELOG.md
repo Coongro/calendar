@@ -1,5 +1,15 @@
 # @coongro/calendar
 
+## 0.3.0
+
+### Minor Changes
+
+- 669a665: Adapt all calendar components to mobile, add DateTimePicker component, and read settings for minuteStep/use24Hour
+
+### Patch Changes
+
+- ed03f0a: Migrate EventList from manual UI.Table to DataTable with mobileRender card view
+
 ## 0.2.0
 
 ### Minor Changes
