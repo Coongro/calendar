@@ -47,9 +47,7 @@ export function TimePicker({
       { className: 'w-auto p-0' },
       React.createElement(TimeSlotList, {
         value,
-        onChange: (time: string) => {
-          onChange?.(time);
-        },
+        onChange,
         step,
         minTime,
         maxTime,

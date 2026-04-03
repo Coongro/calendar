@@ -229,21 +229,21 @@ export function CalendarGrid({
             const disabled = isDateDisabled(day);
             const dotCount = eventDots[dateStr] ?? 0;
 
+            let stateClass = 'hover:bg-cg-bg-hover';
+            if (isSelected) stateClass = 'bg-cg-accent text-white font-bold';
+            else if (isToday)
+              stateClass = 'ring-1 ring-cg-accent text-cg-accent font-bold hover:bg-cg-accent/10';
+
+            const monthClass = !isCurrentMonth ? 'text-cg-text-muted opacity-40' : '';
+            const cursorClass = disabled ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer';
+
             return React.createElement(
               'button',
               {
                 key: i,
                 type: 'button',
                 disabled,
-                className: `relative ${daySizeClass} rounded-full transition-colors mx-auto ${
-                  isSelected
-                    ? 'bg-cg-accent text-white font-bold'
-                    : isToday
-                      ? 'ring-1 ring-cg-accent text-cg-accent font-bold hover:bg-cg-accent/10'
-                      : 'hover:bg-cg-bg-hover'
-                } ${!isCurrentMonth ? 'text-cg-text-muted opacity-40' : ''} ${
-                  disabled ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer'
-                }`,
+                className: `relative ${daySizeClass} rounded-full transition-colors mx-auto ${stateClass} ${monthClass} ${cursorClass}`,
                 onClick: () => handleDaySelect(day),
               },
               day.getDate(),

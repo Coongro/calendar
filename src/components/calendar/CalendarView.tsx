@@ -58,116 +58,113 @@ export function CalendarView({
   const effectiveView = isMobile && nav.view === 'week' ? 'day' : nav.view;
 
   // Toolbar
-  const toolbar = renderToolbar
-    ? renderToolbar()
-    : isMobile
-      ? // ── Toolbar mobile: stacked ──
+  function renderMobileToolbar() {
+    return React.createElement(
+      'div',
+      { className: 'flex flex-col gap-3 mb-4' },
+      // Nav row
+      React.createElement(
+        'div',
+        { className: 'flex items-center justify-between' },
+        React.createElement(UI.Button, { variant: 'ghost', size: 'sm', onClick: nav.goPrev }, '‹'),
+        React.createElement('h2', { className: 'text-base font-semibold' }, nav.title),
+        React.createElement(UI.Button, { variant: 'ghost', size: 'sm', onClick: nav.goNext }, '›')
+      ),
+      // View switcher row
+      React.createElement(
+        'div',
+        { className: 'flex bg-cg-bg-secondary rounded-md p-0.5' },
+        enabledViews
+          .filter((v) => v !== 'week')
+          .map((v) =>
+            React.createElement(
+              'button',
+              {
+                key: v,
+                type: 'button',
+                className: `flex-1 py-2 text-xs font-medium rounded transition-colors ${
+                  effectiveView === v
+                    ? 'bg-cg-bg text-cg-text border border-cg-border'
+                    : 'text-cg-text-muted'
+                }`,
+                onClick: () => nav.setView(v),
+              },
+              VIEW_LABELS[v]
+            )
+          )
+      )
+    );
+  }
+
+  function renderDesktopToolbar() {
+    return React.createElement(
+      'div',
+      { className: 'flex items-center justify-between gap-3 mb-4' },
+
+      // Navegación
+      React.createElement(
+        'div',
+        { className: 'flex items-center gap-2' },
+        React.createElement(
+          UI.Button,
+          { variant: 'outline', size: 'sm', onClick: nav.goPrev },
+          '‹'
+        ),
+        React.createElement(
+          UI.Button,
+          { variant: 'outline', size: 'sm', onClick: nav.goToToday },
+          'Hoy'
+        ),
+        React.createElement(
+          UI.Button,
+          { variant: 'outline', size: 'sm', onClick: nav.goNext },
+          '›'
+        ),
+        React.createElement('h2', { className: 'text-lg font-semibold ml-2' }, nav.title)
+      ),
+
+      // View switcher + extras
+      React.createElement(
+        'div',
+        { className: 'flex items-center gap-2' },
+
+        // Contributions en toolbar
+        ...toolbarSections.map((s, i) =>
+          React.createElement(React.Fragment, { key: `toolbar-${String(i)}` }, s.render() as any)
+        ),
+
+        extraToolbarActions,
+
+        // View switcher
         React.createElement(
           'div',
-          { className: 'flex flex-col gap-3 mb-4' },
-          // Nav row
-          React.createElement(
-            'div',
-            { className: 'flex items-center justify-between' },
+          { className: 'flex border border-cg-border rounded-md' },
+          enabledViews.map((v) =>
             React.createElement(
               UI.Button,
-              { variant: 'ghost', size: 'sm', onClick: nav.goPrev },
-              '‹'
-            ),
-            React.createElement('h2', { className: 'text-base font-semibold' }, nav.title),
-            React.createElement(
-              UI.Button,
-              { variant: 'ghost', size: 'sm', onClick: nav.goNext },
-              '›'
+              {
+                key: v,
+                variant: nav.view === v ? 'default' : 'ghost',
+                size: 'sm',
+                className: 'rounded-none first:rounded-l-md last:rounded-r-md',
+                onClick: () => nav.setView(v),
+              },
+              VIEW_LABELS[v]
             )
-          ),
-          // View switcher row
-          React.createElement(
-            'div',
-            { className: 'flex bg-cg-bg-secondary rounded-md p-0.5' },
-            enabledViews
-              .filter((v) => v !== 'week')
-              .map((v) =>
-                React.createElement(
-                  'button',
-                  {
-                    key: v,
-                    type: 'button',
-                    className: `flex-1 py-2 text-xs font-medium rounded transition-colors ${
-                      effectiveView === v
-                        ? 'bg-cg-bg text-cg-text border border-cg-border'
-                        : 'text-cg-text-muted'
-                    }`,
-                    onClick: () => nav.setView(v),
-                  },
-                  VIEW_LABELS[v]
-                )
-              )
           )
         )
-      : // ── Toolbar desktop ──
-        React.createElement(
-          'div',
-          { className: 'flex items-center justify-between gap-3 mb-4' },
+      )
+    );
+  }
 
-          // Navegación
-          React.createElement(
-            'div',
-            { className: 'flex items-center gap-2' },
-            React.createElement(
-              UI.Button,
-              { variant: 'outline', size: 'sm', onClick: nav.goPrev },
-              '‹'
-            ),
-            React.createElement(
-              UI.Button,
-              { variant: 'outline', size: 'sm', onClick: nav.goToToday },
-              'Hoy'
-            ),
-            React.createElement(
-              UI.Button,
-              { variant: 'outline', size: 'sm', onClick: nav.goNext },
-              '›'
-            ),
-            React.createElement('h2', { className: 'text-lg font-semibold ml-2' }, nav.title)
-          ),
-
-          // View switcher + extras
-          React.createElement(
-            'div',
-            { className: 'flex items-center gap-2' },
-
-            // Contributions en toolbar
-            ...toolbarSections.map((s, i) =>
-              React.createElement(
-                React.Fragment,
-                { key: `toolbar-${String(i)}` },
-                s.render() as any
-              )
-            ),
-
-            extraToolbarActions,
-
-            // View switcher
-            React.createElement(
-              'div',
-              { className: 'flex border border-cg-border rounded-md' },
-              enabledViews.map((v) =>
-                React.createElement(
-                  UI.Button,
-                  {
-                    key: v,
-                    variant: nav.view === v ? 'default' : 'ghost',
-                    size: 'sm',
-                    className: 'rounded-none first:rounded-l-md last:rounded-r-md',
-                    onClick: () => nav.setView(v),
-                  },
-                  VIEW_LABELS[v]
-                )
-              )
-            )
-          )
-        );
+  let toolbar;
+  if (renderToolbar) {
+    toolbar = renderToolbar();
+  } else if (isMobile) {
+    toolbar = renderMobileToolbar();
+  } else {
+    toolbar = renderDesktopToolbar();
+  }
 
   // Vista activa
   const renderActiveView = () => {

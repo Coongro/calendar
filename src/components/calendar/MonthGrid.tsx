@@ -10,6 +10,23 @@ const React = getHostReact();
 const { useMemo } = React;
 
 // Nombres de 1 letra para mobile
+function getDayNumberClass(isToday: boolean, isMobile: boolean, isCurrentMonth: boolean): string {
+  const sizeClass = isMobile ? 'w-8 h-8 text-sm' : 'w-6 h-6 text-xs';
+  if (isToday) {
+    return `${sizeClass} flex items-center justify-center rounded-full bg-cg-accent text-white font-bold`;
+  }
+  const textSize = isMobile ? 'text-sm' : 'text-xs';
+  const textColor = isCurrentMonth ? 'text-cg-text' : 'text-cg-text-muted';
+  return `${textSize} ${textColor}`;
+}
+
+function getDayCellClass(isCurrentMonth: boolean, isWeekend: boolean, isToday: boolean): string {
+  const todayClass = isToday ? 'bg-cg-accent/5' : '';
+  if (!isCurrentMonth) return `bg-cg-bg-muted/30 ${todayClass}`;
+  if (isWeekend) return `bg-cg-bg-secondary/30 hover:bg-cg-accent/5 ${todayClass}`;
+  return `hover:bg-cg-accent/5 ${todayClass}`;
+}
+
 const SHORT_DAY_LETTERS: Record<number, string> = {
   0: 'D',
   1: 'L',
@@ -46,7 +63,7 @@ export function MonthGrid({
 
   // Filtrar columnas según showWeekends
   const weekDayIndices = showWeekends ? [1, 2, 3, 4, 5, 6, 0] : [1, 2, 3, 4, 5];
-  const cols = showWeekends ? 7 : 5;
+  const gridColsClass = showWeekends ? 'grid-cols-7' : 'grid-cols-5';
 
   const weekDayHeaders = weekDayIndices.map((d) => {
     if (isMobile) return SHORT_DAY_LETTERS[d];
@@ -66,7 +83,7 @@ export function MonthGrid({
     // Header
     React.createElement(
       'div',
-      { className: `grid grid-cols-${cols} border-b border-cg-border` },
+      { className: `grid ${gridColsClass} border-b border-cg-border` },
       weekDayHeaders.map((name) =>
         React.createElement(
           'div',
@@ -82,7 +99,7 @@ export function MonthGrid({
     // Grid
     React.createElement(
       'div',
-      { className: `grid grid-cols-${cols} flex-1` },
+      { className: `grid ${gridColsClass} flex-1` },
       filteredDays.map((day, i) => {
         const dateStr = toDateString(day);
         const isCurrentMonth = day.getMonth() === month;
@@ -95,13 +112,11 @@ export function MonthGrid({
           'div',
           {
             key: i,
-            className: `min-h-16 border-b border-r border-cg-border p-1 cursor-pointer group transition-colors ${
-              !isCurrentMonth
-                ? 'bg-cg-bg-muted/30'
-                : isWeekend
-                  ? 'bg-cg-bg-secondary/30 hover:bg-cg-accent/5'
-                  : 'hover:bg-cg-accent/5'
-            } ${isToday ? 'bg-cg-accent/5' : ''}`,
+            className: `min-h-16 border-b border-r border-cg-border p-1 cursor-pointer group transition-colors ${getDayCellClass(
+              isCurrentMonth,
+              isWeekend,
+              isToday
+            )}`,
             onClick: onDayClick ? () => onDayClick(dateStr) : undefined,
           },
 
@@ -113,11 +128,7 @@ export function MonthGrid({
             },
             React.createElement(
               'div',
-              {
-                className: isToday
-                  ? `${isMobile ? 'w-8 h-8 text-sm' : 'w-6 h-6 text-xs'} flex items-center justify-center rounded-full bg-cg-accent text-white font-bold`
-                  : `${isMobile ? 'text-sm' : 'text-xs'} ${isCurrentMonth ? 'text-cg-text' : 'text-cg-text-muted'}`,
-              },
+              { className: getDayNumberClass(isToday, isMobile, isCurrentMonth) },
               day.getDate()
             ),
             !isMobile &&
