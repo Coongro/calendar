@@ -1,5 +1,6 @@
 import { getHostReact } from '@coongro/plugin-sdk';
 
+import { useIsMobile } from '../../hooks/useIsMobile.js';
 import type { DayColumnProps } from '../../types/components.js';
 import { generateTimeSlots, diffMinutes } from '../../utils/date.js';
 import { EventCard } from '../event/EventCard.js';
@@ -20,6 +21,7 @@ export function DayColumn({
   onSlotClick,
   className = '',
 }: DayColumnProps) {
+  const isMobile = useIsMobile();
   const timeSlots = useMemo(
     () => generateTimeSlots(startHour, endHour, slotDuration),
     [startHour, endHour, slotDuration]
@@ -34,13 +36,13 @@ export function DayColumn({
     // Columna de horas
     React.createElement(
       'div',
-      { className: 'w-16 shrink-0' },
+      { className: `${isMobile ? 'w-11' : 'w-16'} shrink-0` },
       timeSlots.map((slot, i) =>
         React.createElement(
           'div',
           {
             key: slot,
-            className: 'text-xs text-cg-text-muted text-right pr-3 border-b border-cg-border/30',
+            className: `${isMobile ? 'text-[11px] pr-1.5' : 'text-xs pr-3'} text-cg-text-muted text-right border-b border-cg-border/30`,
             style: { height: `${SLOT_HEIGHT}px`, lineHeight: `${SLOT_HEIGHT}px` },
           },
           i % slotsPerHour === 0 ? slot : ''

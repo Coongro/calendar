@@ -42,6 +42,7 @@ export type {
   CalendarBadgeProps,
   UpcomingEventsProps,
   DatePickerProps,
+  DateTimePickerProps,
   TimePickerProps,
   ColorPickerProps,
 } from './types/components.js';
@@ -91,6 +92,7 @@ export { UpcomingEvents } from './components/event/UpcomingEvents.js';
 
 // Pickers (reutilizables por otros plugins)
 export { DatePicker } from './components/internal/DatePicker.js';
+export { DateTimePicker } from './components/internal/DateTimePicker.js';
 export { TimePicker } from './components/internal/TimePicker.js';
 export { ColorPicker } from './components/internal/ColorPicker.js';
 

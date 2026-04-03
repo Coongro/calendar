@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DateTimePicker — Time Flow v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #F5A800;
+    --gold-lt: #FFFBF0;
+    --gold-hover: #E09800;
+    --ink: #1A1916;
+    --ink-2: #3A3731;
+    --ink-3: #6B6760;
+    --ink-4: #9B9893;
+    --bg: #F6F5F1;
+    --surface: #FFFFFF;
+    --border: #E8E7E2;
+    --border-md: #D4D3CC;
+    --r-md: 10px;
+    --r-sm: 7px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Roboto', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+  h1 { font-family: 'Noto Serif JP', serif; font-weight: 900; font-size: 20px; }
+  h2 {
+    font-family: 'Noto Serif JP', serif; font-weight: 700; font-size: 17px;
+    margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .subtitle { font-size: 12px; color: var(--ink-3); }
+  .note {
+    font-size: 11px; color: var(--ink-3); background: var(--gold-lt);
+    border: 1px solid #F5E6C0; border-radius: var(--r-sm);
+    padding: 8px 12px; line-height: 1.5; margin-bottom: 12px;
+  }
+  .section { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Popover */
+  .pop {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    width: 280px;
+    overflow: hidden;
+  }
+  .pop.mobile { width: 343px; }
+
+  /* Header */
+  .pop-header {
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .pop-back {
+    background: none; border: none; cursor: pointer;
+    font-size: 14px; color: var(--ink-3); padding: 4px 8px;
+    border-radius: var(--r-sm);
+  }
+  .pop-back:hover { background: var(--bg); }
+  .pop-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px; font-weight: 700;
+  }
+  .pop-date {
+    font-size: 11px; color: var(--ink-4); font-weight: 500;
+    margin-left: auto;
+  }
+
+  /* Footer */
+  .pop-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .btn-now {
+    font-size: 12px; font-weight: 700; color: var(--gold);
+    background: none; border: none; cursor: pointer;
+    padding: 6px 10px; border-radius: var(--r-sm);
+  }
+  .btn-now:hover { background: var(--gold-lt); }
+  .btn-confirm {
+    font-size: 12px; font-weight: 700; color: white;
+    background: var(--gold); border: none; cursor: pointer;
+    padding: 8px 20px; border-radius: var(--r-sm); min-height: 34px;
+  }
+  .btn-confirm:hover { background: var(--gold-hover); }
+
+  /* ── NIVEL 1: Grilla de slots ── */
+  .slots-body { padding: 12px 16px; }
+  .slots-label {
+    font-size: 10px; font-weight: 700; color: var(--ink-4);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+  .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .slot {
+    padding: 10px 4px;
+    font-size: 13px; font-weight: 500;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--ink-2);
+  }
+  .slot:hover {
+    background: var(--bg);
+    border-color: var(--border-md);
+  }
+  .slot.active {
+    background: var(--gold-lt);
+    border-color: var(--gold);
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* Botón "Hora exacta" */
+  .custom-time-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-3);
+    background: var(--bg);
+    border: 1px dashed var(--border-md);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .custom-time-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-lt);
+  }
+
+  /* ── NIVEL 2: Columnas hora + minuto ── */
+  .picker-body {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .picker-display {
+    text-align: center;
+    padding: 4px;
+  }
+  .picker-display-value {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 2px;
+  }
+  .picker-display-sep { color: var(--gold); }
+
+  .picker-columns {
+    display: flex;
+    gap: 12px;
+  }
+  .picker-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .picker-col-label {
+    font-size: 10px; font-weight: 700;
+    color: var(--ink-4);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .picker-col-scroll {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--bg);
+  }
+  .picker-col-scroll::-webkit-scrollbar { width: 4px; }
+  .picker-col-scroll::-webkit-scrollbar-track { background: transparent; }
+  .picker-col-scroll::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 2px; }
+
+  .picker-cell {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-2);
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    width: 100%;
+    font-family: inherit;
+    transition: all 0.1s;
+  }
+  .picker-cell:last-child { border-bottom: none; }
+  .picker-cell:hover { background: var(--surface); }
+  .picker-cell.active {
+    background: var(--gold-lt);
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* Layout */
+  .side-by-side {
+    display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .step-label {
+    font-size: 10px; font-weight: 700; color: var(--ink-4);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px; text-align: center;
+  }
+  .flow-arrow {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: var(--ink-4); padding: 8px; margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+
+<div>
+  <h1>DateTimePicker — Flujo de hora v2</h1>
+  <p class="subtitle">Nivel 1: grilla de slots. Nivel 2: columnas hora+minuto para hora exacta.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FLUJO DESKTOP                               -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>Desktop — Flujo completo</h2>
+  <div class="note">
+    <strong>Nivel 1:</strong> Grilla 3-col con slots cada 30 min + botón "Hora exacta..." abajo.<br>
+    <strong>Nivel 2:</strong> Click en "Hora exacta..." abre las dos columnas (0-23 horas, 0-55 minutos). Click en slot vuelve directo.
+  </div>
+
+  <div class="side-by-side">
+
+    <!-- NIVEL 1: Grilla de slots -->
+    <div>
+      <div class="step-label">Nivel 1 — Slots rápidos</div>
+      <div class="pop">
+        <div class="pop-header">
+          <button class="pop-back">‹</button>
+          <span class="pop-title">Hora</span>
+          <span class="pop-date">3 Abr 2026</span>
+        </div>
+
+        <div class="slots-body">
+          <div class="slots-label">Seleccionar hora</div>
+          <div class="slots-grid">
+            <button class="slot">07:00</button>
+            <button class="slot">07:30</button>
+            <button class="slot">08:00</button>
+            <button class="slot">08:30</button>
+            <button class="slot">09:00</button>
+            <button class="slot active">09:30</button>
+            <button class="slot">10:00</button>
+            <button class="slot">10:30</button>
+            <button class="slot">11:00</button>
+            <button class="slot">11:30</button>
+            <button class="slot">12:00</button>
+            <button class="slot">12:30</button>
+            <button class="slot">13:00</button>
+            <button class="slot">13:30</button>
+            <button class="slot">14:00</button>
+            <button class="slot">14:30</button>
+            <button class="slot">15:00</button>
+            <button class="slot">15:30</button>
+            <button class="slot">16:00</button>
+            <button class="slot">16:30</button>
+            <button class="slot">17:00</button>
+            <button class="slot">17:30</button>
+            <button class="slot">18:00</button>
+            <button class="slot">18:30</button>
+            <button class="slot">19:00</button>
+            <button class="slot">19:30</button>
+            <button class="slot">20:00</button>
+          </div>
+
+          <button class="custom-time-btn">
+            Hora exacta...
+          </button>
+        </div>
+
+        <div class="pop-footer">
+          <button class="btn-now">Ahora</button>
+          <button class="btn-confirm">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">→</div>
+
+    <!-- NIVEL 2: Columnas hora + minuto -->
+    <div>
+      <div class="step-label">Nivel 2 — Hora exacta</div>
+      <div class="pop">
+        <div class="pop-header">
+          <button class="pop-back">‹</button>
+          <span class="pop-title">Hora exacta</span>
+          <span class="pop-date">3 Abr 2026</span>
+        </div>
+
+        <div class="picker-body">
+          <!-- Display -->
+          <div class="picker-display">
+            <span class="picker-display-value">09<span class="picker-display-sep">:</span>45</span>
+          </div>
+
+          <!-- Columnas -->
+          <div class="picker-columns">
+            <div class="picker-col">
+              <div class="picker-col-label">Hora</div>
+              <div class="picker-col-scroll">
+                <button class="picker-cell">00</button>
+                <button class="picker-cell">01</button>
+                <button class="picker-cell">02</button>
+                <button class="picker-cell">03</button>
+                <button class="picker-cell">04</button>
+                <button class="picker-cell">05</button>
+                <button class="picker-cell">06</button>
+                <button class="picker-cell">07</button>
+                <button class="picker-cell">08</button>
+                <button class="picker-cell active">09</button>
+                <button class="picker-cell">10</button>
+                <button class="picker-cell">11</button>
+                <button class="picker-cell">12</button>
+                <button class="picker-cell">13</button>
+                <button class="picker-cell">14</button>
+                <button class="picker-cell">15</button>
+                <button class="picker-cell">16</button>
+                <button class="picker-cell">17</button>
+                <button class="picker-cell">18</button>
+                <button class="picker-cell">19</button>
+                <button class="picker-cell">20</button>
+                <button class="picker-cell">21</button>
+                <button class="picker-cell">22</button>
+                <button class="picker-cell">23</button>
+              </div>
+            </div>
+            <div class="picker-col">
+              <div class="picker-col-label">Minuto</div>
+              <div class="picker-col-scroll">
+                <button class="picker-cell">00</button>
+                <button class="picker-cell">05</button>
+                <button class="picker-cell">10</button>
+                <button class="picker-cell">15</button>
+                <button class="picker-cell">20</button>
+                <button class="picker-cell">25</button>
+                <button class="picker-cell">30</button>
+                <button class="picker-cell">35</button>
+                <button class="picker-cell">40</button>
+                <button class="picker-cell active">45</button>
+                <button class="picker-cell">50</button>
+                <button class="picker-cell">55</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pop-footer">
+          <button class="btn-now">Ahora</button>
+          <button class="btn-confirm">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MOBILE                                      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>Mobile — 375px</h2>
+
+  <div class="side-by-side">
+
+    <!-- Nivel 1 mobile -->
+    <div>
+      <div class="step-label">Nivel 1 — Slots</div>
+      <div class="pop mobile">
+        <div class="pop-header">
+          <button class="pop-back">‹</button>
+          <span class="pop-title">Hora</span>
+          <span class="pop-date">3 Abr 2026</span>
+        </div>
+
+        <div class="slots-body">
+          <div class="slots-label">Seleccionar hora</div>
+          <div class="slots-grid" style="gap: 8px; max-height: 260px;">
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">07:00</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">07:30</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">08:00</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">08:30</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">09:00</button>
+            <button class="slot active" style="padding: 12px 4px; min-height: 44px;">09:30</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">10:00</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">10:30</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">11:00</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">11:30</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">12:00</button>
+            <button class="slot" style="padding: 12px 4px; min-height: 44px;">12:30</button>
+          </div>
+
+          <button class="custom-time-btn" style="min-height: 44px; font-size: 13px;">
+            Hora exacta...
+          </button>
+        </div>
+
+        <div class="pop-footer">
+          <button class="btn-now">Ahora</button>
+          <button class="btn-confirm" style="min-height: 40px; padding: 8px 24px;">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nivel 2 mobile -->
+    <div>
+      <div class="step-label">Nivel 2 — Hora exacta</div>
+      <div class="pop mobile">
+        <div class="pop-header">
+          <button class="pop-back">‹</button>
+          <span class="pop-title">Hora exacta</span>
+          <span class="pop-date">3 Abr 2026</span>
+        </div>
+
+        <div class="picker-body">
+          <div class="picker-display">
+            <span class="picker-display-value" style="font-size: 36px;">09<span class="picker-display-sep">:</span>45</span>
+          </div>
+
+          <div class="picker-columns">
+            <div class="picker-col">
+              <div class="picker-col-label">Hora</div>
+              <div class="picker-col-scroll" style="height: 220px;">
+                <button class="picker-cell" style="min-height: 44px;">00</button>
+                <button class="picker-cell" style="min-height: 44px;">01</button>
+                <button class="picker-cell" style="min-height: 44px;">02</button>
+                <button class="picker-cell" style="min-height: 44px;">03</button>
+                <button class="picker-cell" style="min-height: 44px;">04</button>
+                <button class="picker-cell" style="min-height: 44px;">05</button>
+                <button class="picker-cell" style="min-height: 44px;">06</button>
+                <button class="picker-cell" style="min-height: 44px;">07</button>
+                <button class="picker-cell" style="min-height: 44px;">08</button>
+                <button class="picker-cell active" style="min-height: 44px;">09</button>
+                <button class="picker-cell" style="min-height: 44px;">10</button>
+                <button class="picker-cell" style="min-height: 44px;">11</button>
+                <button class="picker-cell" style="min-height: 44px;">12</button>
+                <button class="picker-cell" style="min-height: 44px;">13</button>
+                <button class="picker-cell" style="min-height: 44px;">14</button>
+                <button class="picker-cell" style="min-height: 44px;">15</button>
+                <button class="picker-cell" style="min-height: 44px;">16</button>
+                <button class="picker-cell" style="min-height: 44px;">17</button>
+                <button class="picker-cell" style="min-height: 44px;">18</button>
+                <button class="picker-cell" style="min-height: 44px;">19</button>
+                <button class="picker-cell" style="min-height: 44px;">20</button>
+                <button class="picker-cell" style="min-height: 44px;">21</button>
+                <button class="picker-cell" style="min-height: 44px;">22</button>
+                <button class="picker-cell" style="min-height: 44px;">23</button>
+              </div>
+            </div>
+            <div class="picker-col">
+              <div class="picker-col-label">Minuto</div>
+              <div class="picker-col-scroll" style="height: 220px;">
+                <button class="picker-cell" style="min-height: 44px;">00</button>
+                <button class="picker-cell" style="min-height: 44px;">05</button>
+                <button class="picker-cell" style="min-height: 44px;">10</button>
+                <button class="picker-cell" style="min-height: 44px;">15</button>
+                <button class="picker-cell" style="min-height: 44px;">20</button>
+                <button class="picker-cell" style="min-height: 44px;">25</button>
+                <button class="picker-cell" style="min-height: 44px;">30</button>
+                <button class="picker-cell" style="min-height: 44px;">35</button>
+                <button class="picker-cell" style="min-height: 44px;">40</button>
+                <button class="picker-cell active" style="min-height: 44px;">45</button>
+                <button class="picker-cell" style="min-height: 44px;">50</button>
+                <button class="picker-cell" style="min-height: 44px;">55</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pop-footer">
+          <button class="btn-now">Ahora</button>
+          <button class="btn-confirm" style="min-height: 40px; padding: 8px 24px;">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- FLUJO RESUMEN                               -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>Flujo dentro del popover del DateTimePicker</h2>
+  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; font-size: 13px; line-height: 2;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <span style="background: var(--bg); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--border);">Calendario</span>
+      <span style="color: var(--ink-4);">— tap hora →</span>
+      <span style="background: var(--bg); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--border); font-weight: 700;">Grilla slots</span>
+      <span style="color: var(--ink-4);">— tap slot = listo</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+      <span style="width: 86px;"></span>
+      <span style="color: var(--ink-4);"></span>
+      <span style="background: var(--bg); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--border); font-weight: 700;">Grilla slots</span>
+      <span style="color: var(--ink-4);">— tap "hora exacta..." →</span>
+      <span style="background: var(--bg); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--border);">Columnas H:M</span>
+      <span style="color: var(--ink-4);">— ‹ vuelve</span>
+    </div>
+    <div style="margin-top: 12px; font-size: 12px; color: var(--ink-3);">
+      <strong>Click en slot</strong> → selecciona y vuelve al calendario automáticamente.<br>
+      <strong>"Hora exacta..."</strong> → abre columnas 0-23 + 0-55 para hora libre. "‹" vuelve a grilla.<br>
+      <strong>"Ahora"</strong> → setea hora actual y vuelve al calendario.<br>
+      <strong>"Confirmar"</strong> → cierra el popover completo.
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

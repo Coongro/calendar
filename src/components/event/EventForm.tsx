@@ -159,7 +159,7 @@ export function EventForm({
     // Fecha y hora
     React.createElement(
       'div',
-      { className: 'grid grid-cols-3 gap-3' },
+      { className: 'grid grid-cols-1 sm:grid-cols-3 gap-3' },
       React.createElement(
         'div',
         { className: 'flex flex-col gap-1.5' },
@@ -181,8 +181,8 @@ export function EventForm({
           React.createElement(TimePicker, {
             value: startTime,
             step: settings.slotDuration,
-            minTime: `${String(settings.startHour).padStart(2, '0')}:00`,
-            maxTime: `${String(settings.endHour).padStart(2, '0')}:00`,
+            minuteStep: settings.minuteStep,
+            use24Hour: settings.use24Hour,
             onChange: (time: string) => {
               const st = new Date(`${startDate}T${time}:00`).toISOString();
               handleChange('start_at', st);
@@ -198,6 +198,8 @@ export function EventForm({
           React.createElement(TimePicker, {
             value: endTime,
             step: settings.slotDuration,
+            minuteStep: settings.minuteStep,
+            use24Hour: settings.use24Hour,
             onChange: (time: string) => {
               handleChange('end_at', new Date(`${startDate}T${time}:00`).toISOString());
             },
@@ -219,7 +221,7 @@ export function EventForm({
     // Calendario + Tipo
     React.createElement(
       'div',
-      { className: 'grid grid-cols-2 gap-3' },
+      { className: 'grid grid-cols-1 sm:grid-cols-2 gap-3' },
       React.createElement(
         'div',
         { className: 'flex flex-col gap-1.5' },
@@ -354,7 +356,7 @@ export function EventForm({
       ? renderFooter()
       : React.createElement(
           'div',
-          { className: 'flex gap-3 pt-2' },
+          { className: 'flex flex-col sm:flex-row gap-3 pt-2' },
           React.createElement(
             UI.Button,
             { type: 'submit', disabled: isSaving, className: 'flex-1' },

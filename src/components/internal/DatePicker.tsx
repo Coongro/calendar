@@ -1,17 +1,16 @@
+/**
+ * DatePicker — Input con popover de calendario.
+ * Delega la grilla y navegación al CalendarGrid interno.
+ */
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import type { DatePickerProps } from '../../types/components.js';
-import {
-  getMonthGridDays,
-  getShortDayName,
-  getMonthName,
-  toDateString,
-  isSameDay,
-} from '../../utils/date.js';
+
+import { CalendarGrid } from './CalendarGrid.js';
 
 const React = getHostReact();
 const UI = getHostUI();
-const { useState, useMemo } = React;
+const { useState } = React;
 
 export function DatePicker({
   value,
@@ -22,49 +21,6 @@ export function DatePicker({
   className = '',
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
-  const [viewYear, setViewYear] = useState(() =>
-    value ? new Date(`${value}T00:00:00`).getFullYear() : new Date().getFullYear()
-  );
-  const [viewMonth, setViewMonth] = useState(() =>
-    value ? new Date(`${value}T00:00:00`).getMonth() : new Date().getMonth()
-  );
-
-  const selectedDate = value ? new Date(`${value}T00:00:00`) : null;
-
-  const days = useMemo(() => getMonthGridDays(viewYear, viewMonth), [viewYear, viewMonth]);
-
-  const goNextMonth = () => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear((y) => y + 1);
-    } else {
-      setViewMonth((m) => m + 1);
-    }
-  };
-
-  const goPrevMonth = () => {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear((y) => y - 1);
-    } else {
-      setViewMonth((m) => m - 1);
-    }
-  };
-
-  const isDisabled = (date: Date): boolean =>
-    (!!minDate && date < new Date(minDate)) || (!!maxDate && date > new Date(maxDate));
-
-  const handleSelect = (date: Date) => {
-    if (isDisabled(date)) return;
-    onChange?.(toDateString(date));
-    setOpen(false);
-  };
-
-  // Días de la semana (Lun-Dom)
-  const weekDayHeaders = [1, 2, 3, 4, 5, 6, 0].map((d) => {
-    const ref = new Date(2024, 0, d === 0 ? 7 : d);
-    return getShortDayName(ref);
-  });
 
   return React.createElement(
     UI.Popover,
@@ -83,68 +39,17 @@ export function DatePicker({
     React.createElement(
       UI.PopoverContent,
       { className: 'w-auto p-3' },
-
-      // Navegación mes
-      React.createElement(
-        'div',
-        { className: 'flex items-center justify-between mb-2' },
-        React.createElement(
-          UI.Button,
-          { type: 'button', variant: 'ghost', size: 'sm', onClick: goPrevMonth },
-          '‹'
-        ),
-        React.createElement(
-          'span',
-          { className: 'text-sm font-medium' },
-          `${getMonthName(viewMonth)} ${viewYear}`
-        ),
-        React.createElement(
-          UI.Button,
-          { type: 'button', variant: 'ghost', size: 'sm', onClick: goNextMonth },
-          '›'
-        )
-      ),
-
-      // Headers
-      React.createElement(
-        'div',
-        { style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '4px' } },
-        weekDayHeaders.map((name) =>
-          React.createElement(
-            'div',
-            { key: name, className: 'text-center text-xs text-cg-text-muted py-1' },
-            name
-          )
-        )
-      ),
-
-      // Días
-      React.createElement(
-        'div',
-        { style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' } },
-        days.map((day, i) => {
-          const isCurrentMonth = day.getMonth() === viewMonth;
-          const isSelected = selectedDate && isSameDay(day, selectedDate);
-          const isToday = isSameDay(day, new Date());
-          const disabled = isDisabled(day);
-
-          return React.createElement(
-            'button',
-            {
-              key: i,
-              type: 'button',
-              disabled,
-              className: `w-8 h-8 text-sm rounded-full transition-colors ${
-                isSelected ? 'bg-cg-accent text-white' : isToday ? 'bg-cg-bg-hover font-bold' : ''
-              } ${!isCurrentMonth ? 'text-cg-text-muted opacity-40' : ''} ${
-                disabled ? 'opacity-20 cursor-not-allowed' : 'hover:bg-cg-bg-hover cursor-pointer'
-              }`,
-              onClick: () => handleSelect(day),
-            },
-            day.getDate()
-          );
-        })
-      )
+      React.createElement(CalendarGrid, {
+        selectedDate: value,
+        onDateSelect: onChange,
+        onDayClick: () => setOpen(false),
+        showMonthPicker: true,
+        showYearPicker: true,
+        showTodayButton: false,
+        minDate,
+        maxDate,
+        daySize: 'md',
+      })
     )
   );
 }
