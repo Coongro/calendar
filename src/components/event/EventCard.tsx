@@ -1,21 +1,16 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import type { EventCardProps } from '../../types/components.js';
-import { formatEventTime } from '../../utils/date.js';
+import { formatEventDate, formatEventTime } from '../../utils/date.js';
 import { formatStatus, STATUS_BADGE_CLASSES } from '../../utils/labels.js';
 import { PinIcon } from '../internal/icons.js';
 
 const React = getHostReact();
 const UI = getHostUI();
 
-function hexTint(color: string): string | undefined {
-  // Agrega transparencia (12%) a colores hex para fondo del chip
-  if (color.startsWith('#') && color.length === 7) return `${color}20`;
-  return undefined;
-}
-
 export function EventCard({
   event,
+  showDate = false,
   showTime = true,
   showStatus = false,
   showLocation = false,
@@ -30,22 +25,29 @@ export function EventCard({
     return render(event) as ReturnType<typeof React.createElement>;
   }
 
-  const colorStyle =
-    showCalendarColor && event.color
-      ? { borderLeft: `3px solid ${event.color}`, backgroundColor: hexTint(event.color) }
-      : {};
-
   return React.createElement(
     'div',
     {
       className: `flex items-start gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${className}`,
-      style: colorStyle,
       onClick: onClick ? () => onClick(event) : undefined,
     },
+    // Dot de color del calendario
+    showCalendarColor &&
+      event.color &&
+      React.createElement('span', {
+        className: 'w-2 h-2 rounded-full shrink-0 mt-0.5',
+        style: { backgroundColor: event.color },
+      }),
     React.createElement(
       'div',
       { className: 'flex-1 min-w-0' },
       React.createElement('div', { className: 'font-medium truncate' }, event.title),
+      showDate &&
+        React.createElement(
+          'div',
+          { className: 'text-cg-text-muted' },
+          formatEventDate(event.start_at)
+        ),
       showTime &&
         !event.all_day &&
         React.createElement(

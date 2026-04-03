@@ -1,5 +1,6 @@
 import { getHostReact } from '@coongro/plugin-sdk';
 
+import { useIsMobile } from '../../hooks/useIsMobile.js';
 import type { MonthGridProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import { getMonthGridDays, getShortDayName, toDateString, isSameDay } from '../../utils/date.js';
@@ -7,6 +8,17 @@ import { EventCard } from '../event/EventCard.js';
 
 const React = getHostReact();
 const { useMemo } = React;
+
+// Nombres de 1 letra para mobile
+const SHORT_DAY_LETTERS: Record<number, string> = {
+  0: 'D',
+  1: 'L',
+  2: 'M',
+  3: 'X',
+  4: 'J',
+  5: 'V',
+  6: 'S',
+};
 
 export function MonthGrid({
   year,
@@ -18,6 +30,7 @@ export function MonthGrid({
   showWeekends = true,
   className = '',
 }: MonthGridProps) {
+  const isMobile = useIsMobile();
   const days = useMemo(() => getMonthGridDays(year, month), [year, month]);
 
   // Agrupar eventos por fecha
@@ -36,6 +49,7 @@ export function MonthGrid({
   const cols = showWeekends ? 7 : 5;
 
   const weekDayHeaders = weekDayIndices.map((d) => {
+    if (isMobile) return SHORT_DAY_LETTERS[d];
     const ref = new Date(2024, 0, d === 0 ? 7 : d);
     return getShortDayName(ref);
   });
@@ -94,21 +108,20 @@ export function MonthGrid({
           // Número del día + hint hover
           React.createElement(
             'div',
-            { className: 'flex items-center justify-between mb-1' },
+            {
+              className: `flex items-center justify-between ${isMobile ? 'justify-center' : 'mb-1'}`,
+            },
             React.createElement(
               'div',
               {
-                className: `text-xs ${
-                  isToday
-                    ? 'w-6 h-6 flex items-center justify-center rounded-full bg-cg-accent text-white font-bold'
-                    : isCurrentMonth
-                      ? 'text-cg-text'
-                      : 'text-cg-text-muted'
-                }`,
+                className: isToday
+                  ? `${isMobile ? 'w-8 h-8 text-sm' : 'w-6 h-6 text-xs'} flex items-center justify-center rounded-full bg-cg-accent text-white font-bold`
+                  : `${isMobile ? 'text-sm' : 'text-xs'} ${isCurrentMonth ? 'text-cg-text' : 'text-cg-text-muted'}`,
               },
               day.getDate()
             ),
-            isCurrentMonth &&
+            !isMobile &&
+              isCurrentMonth &&
               React.createElement(
                 'span',
                 {
@@ -119,27 +132,40 @@ export function MonthGrid({
               )
           ),
 
-          // Eventos del día (máximo 3)
-          React.createElement(
-            'div',
-            { className: 'flex flex-col gap-0.5' },
-            dayEvents.slice(0, 3).map((evt) =>
-              renderEvent
-                ? React.createElement(React.Fragment, { key: evt.id }, renderEvent(evt))
-                : React.createElement(EventCard, {
-                    key: evt.id,
-                    event: evt,
-                    showTime: false,
-                    onClick: onEventClick,
-                  })
-            ),
-            dayEvents.length > 3 &&
-              React.createElement(
+          // Eventos: dots en mobile, cards en desktop
+          isMobile
+            ? dayEvents.length > 0 &&
+                React.createElement(
+                  'div',
+                  { className: 'flex justify-center gap-0.5 mt-1' },
+                  dayEvents.slice(0, 3).map((evt) =>
+                    React.createElement('span', {
+                      key: evt.id,
+                      className: 'w-1.5 h-1.5 rounded-full',
+                      style: { background: evt.color ?? '#3B82F6' },
+                    })
+                  )
+                )
+            : React.createElement(
                 'div',
-                { className: 'text-[10px] text-cg-text-muted pl-1' },
-                `+${dayEvents.length - 3} más`
+                { className: 'flex flex-col gap-0.5' },
+                dayEvents.slice(0, 3).map((evt) =>
+                  renderEvent
+                    ? React.createElement(React.Fragment, { key: evt.id }, renderEvent(evt))
+                    : React.createElement(EventCard, {
+                        key: evt.id,
+                        event: evt,
+                        showTime: false,
+                        onClick: onEventClick,
+                      })
+                ),
+                dayEvents.length > 3 &&
+                  React.createElement(
+                    'div',
+                    { className: 'text-[10px] text-cg-text-muted pl-1' },
+                    `+${dayEvents.length - 3} más`
+                  )
               )
-          )
         );
       })
     )

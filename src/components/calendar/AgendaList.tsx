@@ -1,5 +1,6 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { useIsMobile } from '../../hooks/useIsMobile.js';
 import type { AgendaListProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import {
@@ -22,6 +23,7 @@ export function AgendaList({
   emptyMessage = 'Sin eventos en este período',
   className = '',
 }: AgendaListProps) {
+  const isMobile = useIsMobile();
   const grouped = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
     const sortedEvents = [...events].sort(
@@ -122,7 +124,7 @@ export function AgendaList({
         // — Filas de eventos —
         React.createElement(
           'div',
-          { className: 'flex flex-col gap-1.5 pl-12' },
+          { className: `flex flex-col gap-1.5 ${isMobile ? 'pl-0 mt-2' : 'pl-12'}` },
           dayEvents.map((evt) =>
             React.createElement(
               'div',
@@ -130,23 +132,28 @@ export function AgendaList({
                 key: evt.id,
                 className:
                   'flex items-center gap-3 py-2.5 px-3 rounded-lg border border-cg-border bg-cg-bg hover:bg-cg-bg-hover transition-colors cursor-pointer',
-                style: {
-                  borderLeftColor: evt.color ?? '#3B82F6',
-                  borderLeftWidth: '3px',
-                },
                 onClick: onEventClick ? () => onEventClick(evt) : undefined,
               },
 
-              // Horario
-              React.createElement(
-                'div',
-                { className: 'w-24 shrink-0 text-xs text-cg-text-muted font-medium tabular-nums' },
-                evt.all_day
-                  ? 'Todo el día'
-                  : `${formatEventTime(evt.start_at)} - ${formatEventTime(evt.end_at)}`
-              ),
+              // Dot de color del evento
+              React.createElement('span', {
+                className: 'w-2.5 h-2.5 rounded-full shrink-0',
+                style: { backgroundColor: evt.color ?? '#3B82F6' },
+              }),
 
-              // Título + ubicación
+              // Horario (columna lateral en desktop, oculto en mobile)
+              !isMobile &&
+                React.createElement(
+                  'div',
+                  {
+                    className: 'w-24 shrink-0 text-xs text-cg-text-muted font-medium tabular-nums',
+                  },
+                  evt.all_day
+                    ? 'Todo el día'
+                    : `${formatEventTime(evt.start_at)} - ${formatEventTime(evt.end_at)}`
+                ),
+
+              // Título + hora (mobile) / ubicación
               React.createElement(
                 'div',
                 { className: 'flex-1 min-w-0' },
@@ -155,7 +162,21 @@ export function AgendaList({
                   { className: 'text-sm font-medium truncate' },
                   evt.title
                 ),
-                evt.location &&
+                isMobile &&
+                  React.createElement(
+                    'div',
+                    { className: 'text-xs text-cg-text-muted mt-0.5' },
+                    evt.all_day
+                      ? 'Todo el día'
+                      : [
+                          formatEventTime(evt.start_at),
+                          ' — ',
+                          formatEventTime(evt.end_at),
+                          evt.location ? ' · ' + evt.location : '',
+                        ].join('')
+                  ),
+                !isMobile &&
+                  evt.location &&
                   React.createElement(
                     'div',
                     {

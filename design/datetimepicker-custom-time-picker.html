@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DateTimePicker — Custom Time Picker</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #F5A800;
+    --gold-lt: #FFFBF0;
+    --gold-hover: #E09800;
+    --ink: #1A1916;
+    --ink-2: #3A3731;
+    --ink-3: #6B6760;
+    --ink-4: #9B9893;
+    --bg: #F6F5F1;
+    --surface: #FFFFFF;
+    --border: #E8E7E2;
+    --border-md: #D4D3CC;
+    --r-xl: 18px;
+    --r-md: 10px;
+    --r-sm: 7px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Roboto', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+  h1 { font-family: 'Noto Serif JP', serif; font-weight: 900; font-size: 20px; }
+  h2 {
+    font-family: 'Noto Serif JP', serif; font-weight: 700; font-size: 17px;
+    margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .subtitle { font-size: 12px; color: var(--ink-3); }
+  .note {
+    font-size: 11px; color: var(--ink-3); background: var(--gold-lt);
+    border: 1px solid #F5E6C0; border-radius: var(--r-sm);
+    padding: 8px 12px; line-height: 1.5; margin-bottom: 12px;
+  }
+  .section { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Popover */
+  .dtp-popover {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    width: 280px;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .dtp-header {
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dtp-back {
+    background: none; border: none; cursor: pointer;
+    font-size: 14px; color: var(--ink-3); padding: 4px 8px;
+    border-radius: var(--r-sm);
+  }
+  .dtp-back:hover { background: var(--bg); }
+  .dtp-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px; font-weight: 700;
+  }
+  .dtp-date {
+    font-size: 11px; color: var(--ink-4); font-weight: 500;
+    margin-left: auto;
+  }
+
+  /* Custom time picker: dos columnas */
+  .time-picker-body {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Display de hora seleccionada */
+  .time-display {
+    text-align: center;
+    padding: 8px;
+  }
+  .time-display-value {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: 2px;
+  }
+  .time-display-sep {
+    color: var(--gold);
+  }
+
+  /* Columnas hora + minuto */
+  .time-columns {
+    display: flex;
+    gap: 12px;
+  }
+  .time-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .time-column-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink-4);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .time-column-scroll {
+    height: 180px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--bg);
+  }
+  .time-column-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .time-column-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .time-column-scroll::-webkit-scrollbar-thumb {
+    background: var(--border-md);
+    border-radius: 2px;
+  }
+  .time-cell {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.1s;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-2);
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .time-cell:last-child { border-bottom: none; }
+  .time-cell:hover {
+    background: var(--surface);
+  }
+  .time-cell.active {
+    background: var(--gold-lt);
+    color: var(--gold);
+    font-weight: 700;
+    position: relative;
+  }
+
+  /* Grilla rápida debajo */
+  .quick-label {
+    font-size: 10px; font-weight: 700; color: var(--ink-4);
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .quick-slot {
+    padding: 8px 4px;
+    font-size: 12px; font-weight: 500;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--ink-3);
+  }
+  .quick-slot:hover {
+    background: var(--bg);
+    border-color: var(--border-md);
+    color: var(--ink-2);
+  }
+  .quick-slot.active {
+    background: var(--gold-lt);
+    border-color: var(--gold);
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* Footer */
+  .dtp-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .dtp-now-btn {
+    font-size: 12px; font-weight: 700; color: var(--gold);
+    background: none; border: none; cursor: pointer;
+    padding: 6px 10px; border-radius: var(--r-sm);
+  }
+  .dtp-now-btn:hover { background: var(--gold-lt); }
+  .dtp-confirm-btn {
+    font-size: 12px; font-weight: 700; color: white;
+    background: var(--gold); border: none; cursor: pointer;
+    padding: 8px 20px; border-radius: var(--r-sm); min-height: 34px;
+  }
+  .dtp-confirm-btn:hover { background: var(--gold-hover); }
+
+  .side-by-side {
+    display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .step-label {
+    font-size: 10px; font-weight: 700; color: var(--ink-4);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 8px; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div>
+  <h1>DateTimePicker — Selector de hora custom</h1>
+  <p class="subtitle">Dos columnas scrolleables (hora + minuto) + grilla rápida — sin input nativo</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- DESKTOP                                     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>Desktop</h2>
+  <div class="note">
+    Arriba: display grande de la hora seleccionada.<br>
+    Centro: dos columnas scrolleables — horas (0-23) y minutos (0, 5, 10... 55).<br>
+    Abajo: grilla rápida de slots comunes (cada 30 min) para selección rápida.
+  </div>
+
+  <div class="side-by-side">
+
+    <div>
+      <div class="step-label">Selección libre</div>
+      <div class="dtp-popover">
+        <div class="dtp-header">
+          <button class="dtp-back">‹</button>
+          <span class="dtp-title">Hora</span>
+          <span class="dtp-date">3 Abr 2026</span>
+        </div>
+
+        <div class="time-picker-body">
+          <!-- Display -->
+          <div class="time-display">
+            <span class="time-display-value">09<span class="time-display-sep">:</span>45</span>
+          </div>
+
+          <!-- Columns -->
+          <div class="time-columns">
+            <div class="time-column">
+              <div class="time-column-label">Hora</div>
+              <div class="time-column-scroll">
+                <div class="time-cell">07</div>
+                <div class="time-cell">08</div>
+                <div class="time-cell active">09</div>
+                <div class="time-cell">10</div>
+                <div class="time-cell">11</div>
+                <div class="time-cell">12</div>
+                <div class="time-cell">13</div>
+              </div>
+            </div>
+            <div class="time-column">
+              <div class="time-column-label">Minuto</div>
+              <div class="time-column-scroll">
+                <div class="time-cell">35</div>
+                <div class="time-cell">40</div>
+                <div class="time-cell active">45</div>
+                <div class="time-cell">50</div>
+                <div class="time-cell">55</div>
+                <div class="time-cell">00</div>
+                <div class="time-cell">05</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick slots -->
+          <div class="quick-label">Rápido</div>
+          <div class="quick-grid">
+            <button class="quick-slot">08:00</button>
+            <button class="quick-slot">08:30</button>
+            <button class="quick-slot">09:00</button>
+            <button class="quick-slot">09:30</button>
+            <button class="quick-slot">10:00</button>
+            <button class="quick-slot">10:30</button>
+          </div>
+        </div>
+
+        <div class="dtp-footer">
+          <button class="dtp-now-btn">Ahora</button>
+          <button class="dtp-confirm-btn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="step-label">Selección rápida (slot)</div>
+      <div class="dtp-popover">
+        <div class="dtp-header">
+          <button class="dtp-back">‹</button>
+          <span class="dtp-title">Hora</span>
+          <span class="dtp-date">3 Abr 2026</span>
+        </div>
+
+        <div class="time-picker-body">
+          <!-- Display -->
+          <div class="time-display">
+            <span class="time-display-value">09<span class="time-display-sep">:</span>30</span>
+          </div>
+
+          <!-- Columns -->
+          <div class="time-columns">
+            <div class="time-column">
+              <div class="time-column-label">Hora</div>
+              <div class="time-column-scroll">
+                <div class="time-cell">07</div>
+                <div class="time-cell">08</div>
+                <div class="time-cell active">09</div>
+                <div class="time-cell">10</div>
+                <div class="time-cell">11</div>
+                <div class="time-cell">12</div>
+                <div class="time-cell">13</div>
+              </div>
+            </div>
+            <div class="time-column">
+              <div class="time-column-label">Minuto</div>
+              <div class="time-column-scroll">
+                <div class="time-cell">20</div>
+                <div class="time-cell">25</div>
+                <div class="time-cell active">30</div>
+                <div class="time-cell">35</div>
+                <div class="time-cell">40</div>
+                <div class="time-cell">45</div>
+                <div class="time-cell">50</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick slots -->
+          <div class="quick-label">Rápido</div>
+          <div class="quick-grid">
+            <button class="quick-slot">08:00</button>
+            <button class="quick-slot">08:30</button>
+            <button class="quick-slot">09:00</button>
+            <button class="quick-slot active">09:30</button>
+            <button class="quick-slot">10:00</button>
+            <button class="quick-slot">10:30</button>
+          </div>
+        </div>
+
+        <div class="dtp-footer">
+          <button class="dtp-now-btn">Ahora</button>
+          <button class="dtp-confirm-btn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MOBILE                                      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>Mobile — 375px</h2>
+
+  <div>
+    <div class="step-label">Mobile</div>
+    <div class="dtp-popover" style="width: 343px;">
+      <div class="dtp-header">
+        <button class="dtp-back">‹</button>
+        <span class="dtp-title">Hora</span>
+        <span class="dtp-date">3 Abr 2026</span>
+      </div>
+
+      <div class="time-picker-body">
+        <div class="time-display">
+          <span class="time-display-value" style="font-size: 36px;">09<span class="time-display-sep">:</span>30</span>
+        </div>
+
+        <div class="time-columns">
+          <div class="time-column">
+            <div class="time-column-label">Hora</div>
+            <div class="time-column-scroll" style="height: 200px;">
+              <div class="time-cell" style="min-height: 44px;">07</div>
+              <div class="time-cell" style="min-height: 44px;">08</div>
+              <div class="time-cell active" style="min-height: 44px;">09</div>
+              <div class="time-cell" style="min-height: 44px;">10</div>
+              <div class="time-cell" style="min-height: 44px;">11</div>
+              <div class="time-cell" style="min-height: 44px;">12</div>
+              <div class="time-cell" style="min-height: 44px;">13</div>
+            </div>
+          </div>
+          <div class="time-column">
+            <div class="time-column-label">Minuto</div>
+            <div class="time-column-scroll" style="height: 200px;">
+              <div class="time-cell" style="min-height: 44px;">20</div>
+              <div class="time-cell" style="min-height: 44px;">25</div>
+              <div class="time-cell active" style="min-height: 44px;">30</div>
+              <div class="time-cell" style="min-height: 44px;">35</div>
+              <div class="time-cell" style="min-height: 44px;">40</div>
+              <div class="time-cell" style="min-height: 44px;">45</div>
+              <div class="time-cell" style="min-height: 44px;">50</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-label">Rápido</div>
+        <div class="quick-grid" style="gap: 8px;">
+          <button class="quick-slot" style="padding: 10px 4px; min-height: 44px;">08:00</button>
+          <button class="quick-slot" style="padding: 10px 4px; min-height: 44px;">08:30</button>
+          <button class="quick-slot" style="padding: 10px 4px; min-height: 44px;">09:00</button>
+          <button class="quick-slot active" style="padding: 10px 4px; min-height: 44px;">09:30</button>
+          <button class="quick-slot" style="padding: 10px 4px; min-height: 44px;">10:00</button>
+          <button class="quick-slot" style="padding: 10px 4px; min-height: 44px;">10:30</button>
+        </div>
+      </div>
+
+      <div class="dtp-footer">
+        <button class="dtp-now-btn">Ahora</button>
+        <button class="dtp-confirm-btn" style="min-height: 40px; padding: 8px 24px;">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,27 +1,32 @@
+/**
+ * TimePicker — Input con popover de selector de hora.
+ * Delega la UI al TimeSlotList interno.
+ */
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import type { TimePickerProps } from '../../types/components.js';
-import { generateTimeSlots } from '../../utils/date.js';
+
+import { TimeSlotList } from './TimeSlotList.js';
 
 const React = getHostReact();
 const UI = getHostUI();
-const { useState, useMemo } = React;
+const { useState } = React;
 
 export function TimePicker({
   value = '',
   onChange,
   step = 30,
-  minTime,
-  maxTime,
+  minTime = '00:00',
+  maxTime = '23:59',
+  minuteStep: minuteStepProp,
+  use24Hour: use24HourProp,
   className = '',
 }: TimePickerProps) {
+  const { settings } = useCalendarSettings();
+  const minuteStep = minuteStepProp ?? settings.minuteStep;
+  const use24Hour = use24HourProp ?? settings.use24Hour;
   const [open, setOpen] = useState(false);
-
-  const slots = useMemo(() => {
-    const startHour = minTime ? parseInt(minTime.split(':')[0], 10) : 0;
-    const endHour = maxTime ? parseInt(maxTime.split(':')[0], 10) + 1 : 24;
-    return generateTimeSlots(startHour, endHour, step);
-  }, [step, minTime, maxTime]);
 
   return React.createElement(
     UI.Popover,
@@ -39,32 +44,18 @@ export function TimePicker({
     ),
     React.createElement(
       UI.PopoverContent,
-      { className: 'w-40 p-0' },
-      React.createElement(
-        UI.ScrollArea,
-        { className: 'h-48' },
-        React.createElement(
-          'div',
-          { className: 'flex flex-col' },
-          slots.map((slot) =>
-            React.createElement(
-              'button',
-              {
-                key: slot,
-                type: 'button',
-                className: `px-3 py-1.5 text-sm text-left hover:bg-cg-bg-hover transition-colors ${
-                  value === slot ? 'bg-cg-bg-active font-medium' : ''
-                }`,
-                onClick: () => {
-                  onChange?.(slot);
-                  setOpen(false);
-                },
-              },
-              slot
-            )
-          )
-        )
-      )
+      { className: 'w-auto p-0' },
+      React.createElement(TimeSlotList, {
+        value,
+        onChange: (time: string) => {
+          onChange?.(time);
+        },
+        step,
+        minTime,
+        maxTime,
+        minuteStep,
+        use24Hour,
+      })
     )
   );
 }

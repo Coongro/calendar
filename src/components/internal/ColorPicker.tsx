@@ -54,12 +54,12 @@ export function ColorPicker({
       { className: 'w-auto p-3' },
       React.createElement(
         'div',
-        { className: 'grid grid-cols-4 gap-2' },
+        { className: 'grid grid-cols-4 gap-3' },
         colors.map((color) =>
           React.createElement('button', {
             key: color,
             type: 'button',
-            className: `w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${
+            className: `w-9 h-9 rounded-full border-2 transition-transform hover:scale-110 ${
               value === color
                 ? 'border-cg-border-strong ring-2 ring-cg-accent'
                 : 'border-transparent'

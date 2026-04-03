@@ -7,8 +7,8 @@ export const CALENDAR_SETTINGS = {
   // Vista
   DEFAULT_VIEW: { key: 'calendar.defaults.view', default: 'week' },
   SLOT_DURATION: { key: 'calendar.defaults.slotDuration', default: 30 },
-  START_HOUR: { key: 'calendar.defaults.startHour', default: 8 },
-  END_HOUR: { key: 'calendar.defaults.endHour', default: 20 },
+  START_HOUR: { key: 'calendar.defaults.startHour', default: 0 },
+  END_HOUR: { key: 'calendar.defaults.endHour', default: 24 },
   DEFAULT_DURATION: { key: 'calendar.defaults.duration', default: 30 },
   DEFAULT_STATUS: { key: 'calendar.defaults.status', default: 'scheduled' },
 
@@ -20,6 +20,10 @@ export const CALENDAR_SETTINGS = {
   SHOW_TAGS: { key: 'calendar.behavior.showTags', default: true },
   SHOW_COLOR_PICKER: { key: 'calendar.behavior.showColorPicker', default: true },
   CONFIRM_ON_DRAG: { key: 'calendar.behavior.confirmOnDrag', default: false },
+
+  // Selector de hora
+  MINUTE_STEP: { key: 'calendar.timePicker.minuteStep', default: 5 },
+  USE_24_HOUR: { key: 'calendar.timePicker.use24Hour', default: true },
 
   // Requeridos
   REQUIRE_DESCRIPTION: { key: 'calendar.required.description', default: false },

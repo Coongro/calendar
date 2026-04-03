@@ -74,10 +74,7 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
       // Card Total (primaria)
       React.createElement(
         'div',
-        { className: 'relative rounded-lg border border-cg-border bg-cg-bg p-4 overflow-hidden' },
-        React.createElement('div', {
-          className: 'absolute left-0 top-0 bottom-0 w-[3px] bg-cg-accent',
-        }),
+        { className: 'rounded-lg border border-cg-border bg-cg-bg p-4' },
         React.createElement(
           'div',
           { className: 'text-3xl font-bold text-cg-accent leading-none' },
@@ -103,14 +100,9 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
           'div',
           {
             key: stat.key,
-            className: `relative rounded-lg border border-cg-border ${styles.bg} p-4 overflow-hidden`,
+            className: `rounded-lg border border-cg-border ${styles.bg} p-4`,
           },
-          // Franja de color izquierda
-          React.createElement('div', {
-            className: 'absolute left-0 top-0 bottom-0 w-[3px]',
-            style: { backgroundColor: color },
-          }),
-          // Número + porcentaje
+          // Dot de color + label (header)
           React.createElement(
             'div',
             { className: 'flex items-baseline gap-1.5' },
@@ -125,11 +117,19 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
               `${pct}%`
             )
           ),
-          // Label
+          // Label con dot
           React.createElement(
             'div',
-            { className: `text-[11px] font-medium ${styles.text} mt-1.5` },
-            formatStatus(stat.key)
+            { className: `flex items-center gap-1.5 mt-1.5` },
+            React.createElement('span', {
+              className: 'w-2 h-2 rounded-full shrink-0',
+              style: { backgroundColor: color },
+            }),
+            React.createElement(
+              'span',
+              { className: `text-[11px] font-medium ${styles.text}` },
+              formatStatus(stat.key)
+            )
           )
         );
       })

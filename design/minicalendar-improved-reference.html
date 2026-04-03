@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniCalendar — Improved Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #F5A800;
+    --gold-lt: #FFFBF0;
+    --gold-hover: #E09800;
+    --teal-dk: #4E8C78;
+    --teal-lt: #EDF5F2;
+    --ink: #1A1916;
+    --ink-2: #3A3731;
+    --ink-3: #6B6760;
+    --ink-4: #9B9893;
+    --bg: #F6F5F1;
+    --surface: #FFFFFF;
+    --border: #E8E7E2;
+    --border-md: #D4D3CC;
+    --r-xl: 18px;
+    --r-md: 10px;
+    --r-sm: 7px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Roboto', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+  h1 { font-family: 'Noto Serif JP', serif; font-weight: 900; font-size: 20px; }
+  h2 {
+    font-family: 'Noto Serif JP', serif; font-weight: 700; font-size: 17px;
+    margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .subtitle { font-size: 12px; color: var(--ink-3); margin-bottom: 4px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+  }
+  .card-body { padding: 16px; }
+  .note {
+    font-size: 11px; color: var(--ink-3); background: var(--gold-lt);
+    border: 1px solid #F5E6C0; border-radius: var(--r-sm);
+    padding: 8px 12px; line-height: 1.5; margin-bottom: 12px;
+  }
+  .section { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Mini calendar styles */
+  .mini-cal { width: 260px; }
+  .mini-cal-full { width: 100%; max-width: 375px; }
+
+  .mc-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .mc-nav-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--ink-3); font-size: 16px; padding: 6px 10px;
+    border-radius: var(--r-sm); transition: background 0.15s;
+  }
+  .mc-nav-btn:hover { background: var(--bg); }
+
+  .mc-title { font-size: 13px; font-weight: 500; cursor: pointer; }
+  .mc-title:hover { color: var(--gold); }
+
+  .mc-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+  }
+  .mc-day-header {
+    font-size: 10px; font-weight: 500; color: var(--ink-4);
+    padding: 4px 0;
+  }
+  .mc-day {
+    width: 32px; height: 32px; margin: 1px auto;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; border-radius: 50%; cursor: pointer;
+    border: none; background: none; position: relative;
+    transition: background 0.15s;
+  }
+  .mc-day:hover { background: var(--bg); }
+  .mc-day.other { color: var(--ink-4); opacity: 0.4; }
+  .mc-day.today {
+    outline: 1.5px solid var(--gold);
+    outline-offset: -1.5px;
+    color: var(--gold); font-weight: 700;
+  }
+  .mc-day.selected {
+    background: var(--gold); color: white; font-weight: 700;
+  }
+  .mc-day .dot {
+    position: absolute; bottom: 2px; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+  }
+
+  /* ── Month picker overlay ── */
+  .mc-month-picker {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    padding: 4px 0;
+  }
+  .mc-month-btn {
+    padding: 10px 4px; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border); border-radius: var(--r-sm);
+    background: none; cursor: pointer; transition: all 0.15s;
+    text-align: center;
+  }
+  .mc-month-btn:hover { background: var(--bg); border-color: var(--border-md); }
+  .mc-month-btn.active {
+    background: var(--gold-lt); border-color: var(--gold);
+    color: var(--gold); font-weight: 700;
+  }
+
+  /* ── Year picker overlay ── */
+  .mc-year-picker {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    padding: 4px 0;
+  }
+  .mc-year-btn {
+    padding: 10px 4px; font-size: 13px; font-weight: 500;
+    border: 1px solid var(--border); border-radius: var(--r-sm);
+    background: none; cursor: pointer; transition: all 0.15s;
+    text-align: center;
+  }
+  .mc-year-btn:hover { background: var(--bg); border-color: var(--border-md); }
+  .mc-year-btn.active {
+    background: var(--gold-lt); border-color: var(--gold);
+    color: var(--gold); font-weight: 700;
+  }
+
+  /* ── "Hoy" button ── */
+  .mc-today-btn {
+    display: block; width: 100%; padding: 8px;
+    font-size: 12px; font-weight: 700; color: var(--gold);
+    background: none; border: none; border-top: 1px solid var(--border);
+    cursor: pointer; text-align: center; margin-top: 8px;
+    transition: background 0.15s;
+  }
+  .mc-today-btn:hover { background: var(--gold-lt); }
+
+  /* Props table */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td code { background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+  .new-badge { display: inline-block; font-size: 9px; font-weight: 700; color: var(--gold); background: var(--gold-lt); border: 1px solid var(--gold); padding: 0 4px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<div>
+  <h1>MiniCalendar — Improved</h1>
+  <p class="subtitle">Navegación rápida por mes y año + botón "Hoy" + modo compacto</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- ESTADO ACTUAL vs PROPUESTA                  -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>Problema actual</h2>
+  <div class="note">
+    Solo hay 2 flechas ‹ › para navegar mes a mes. Para ir de Abril 2026 a Enero 2024
+    necesitas 27 clicks. No hay forma de saltar a un año o mes directamente.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 1. VISTA NORMAL (calendario)                -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>1. Vista normal — Calendario</h2>
+  <div class="note">
+    Tap en "Abril 2026" abre el selector de mes. El título es clickeable.
+    Botón "Hoy" al fondo para volver rápido.
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="mini-cal">
+        <div class="mc-header">
+          <button class="mc-nav-btn">‹</button>
+          <span class="mc-title" style="text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; text-decoration-color: var(--ink-4);">Abril 2026</span>
+          <button class="mc-nav-btn">›</button>
+        </div>
+
+        <div class="mc-grid">
+          <div class="mc-day-header">L</div>
+          <div class="mc-day-header">M</div>
+          <div class="mc-day-header">X</div>
+          <div class="mc-day-header">J</div>
+          <div class="mc-day-header">V</div>
+          <div class="mc-day-header">S</div>
+          <div class="mc-day-header">D</div>
+
+          <button class="mc-day other">30</button>
+          <button class="mc-day other">31</button>
+          <button class="mc-day">1</button>
+          <button class="mc-day today">2</button>
+          <button class="mc-day">3</button>
+          <button class="mc-day">4</button>
+          <button class="mc-day">5</button>
+
+          <button class="mc-day">6<span class="dot"></span></button>
+          <button class="mc-day">7<span class="dot"></span></button>
+          <button class="mc-day">8</button>
+          <button class="mc-day selected">9</button>
+          <button class="mc-day">10<span class="dot"></span></button>
+          <button class="mc-day">11</button>
+          <button class="mc-day">12</button>
+
+          <button class="mc-day">13</button>
+          <button class="mc-day">14</button>
+          <button class="mc-day">15</button>
+          <button class="mc-day">16</button>
+          <button class="mc-day">17</button>
+          <button class="mc-day">18</button>
+          <button class="mc-day">19</button>
+
+          <button class="mc-day">20</button>
+          <button class="mc-day">21</button>
+          <button class="mc-day">22</button>
+          <button class="mc-day">23</button>
+          <button class="mc-day">24</button>
+          <button class="mc-day">25</button>
+          <button class="mc-day">26</button>
+
+          <button class="mc-day">27</button>
+          <button class="mc-day">28</button>
+          <button class="mc-day">29</button>
+          <button class="mc-day">30</button>
+          <button class="mc-day other">1</button>
+          <button class="mc-day other">2</button>
+          <button class="mc-day other">3</button>
+        </div>
+
+        <button class="mc-today-btn">Hoy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 2. SELECTOR DE MES (tap en título)          -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>2. Selector de mes — Tap en "Abril 2026"</h2>
+  <div class="note">
+    Al tocar el título se muestra la grilla de 12 meses. Las flechas ‹ › ahora navegan años.
+    Tap en un mes vuelve a la vista de calendario en ese mes.
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="mini-cal">
+        <div class="mc-header">
+          <button class="mc-nav-btn">‹</button>
+          <span class="mc-title" style="font-weight: 700; color: var(--gold);">2026</span>
+          <button class="mc-nav-btn">›</button>
+        </div>
+
+        <div class="mc-month-picker">
+          <button class="mc-month-btn">Ene</button>
+          <button class="mc-month-btn">Feb</button>
+          <button class="mc-month-btn">Mar</button>
+          <button class="mc-month-btn active">Abr</button>
+          <button class="mc-month-btn">May</button>
+          <button class="mc-month-btn">Jun</button>
+          <button class="mc-month-btn">Jul</button>
+          <button class="mc-month-btn">Ago</button>
+          <button class="mc-month-btn">Sep</button>
+          <button class="mc-month-btn">Oct</button>
+          <button class="mc-month-btn">Nov</button>
+          <button class="mc-month-btn">Dic</button>
+        </div>
+
+        <button class="mc-today-btn">Hoy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 3. SELECTOR DE AÑO (tap en "2026")          -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>3. Selector de año — Tap en "2026"</h2>
+  <div class="note">
+    Al tocar el año en la vista de meses, se muestra una grilla de 12 años.
+    Las flechas navegan en bloques de 12 años. Tap en un año vuelve al selector de mes.
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="mini-cal">
+        <div class="mc-header">
+          <button class="mc-nav-btn">‹</button>
+          <span class="mc-title" style="font-weight: 700; color: var(--gold);">2020 — 2031</span>
+          <button class="mc-nav-btn">›</button>
+        </div>
+
+        <div class="mc-year-picker">
+          <button class="mc-year-btn">2020</button>
+          <button class="mc-year-btn">2021</button>
+          <button class="mc-year-btn">2022</button>
+          <button class="mc-year-btn">2023</button>
+          <button class="mc-year-btn">2024</button>
+          <button class="mc-year-btn">2025</button>
+          <button class="mc-year-btn active">2026</button>
+          <button class="mc-year-btn">2027</button>
+          <button class="mc-year-btn">2028</button>
+          <button class="mc-year-btn">2029</button>
+          <button class="mc-year-btn">2030</button>
+          <button class="mc-year-btn">2031</button>
+        </div>
+
+        <button class="mc-today-btn">Hoy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 4. FLUJO DE NAVEGACIÓN                      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>4. Flujo de navegación</h2>
+  <div class="card">
+    <div class="card-body" style="font-size: 13px; line-height: 2;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="background: var(--bg); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--border);">Calendario</span>
+        <span style="color: var(--ink-4);">— tap título —</span>
+        <span style="background: var(--bg); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--border);">Meses</span>
+        <span style="color: var(--ink-4);">— tap año —</span>
+        <span style="background: var(--bg); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--border);">Años</span>
+      </div>
+      <div style="margin-top: 8px; font-size: 12px; color: var(--ink-3);">
+        Cada nivel "zoom out" muestra más. Seleccionar un item "zoom in" de vuelta.<br>
+        "Hoy" siempre visible — vuelve directo al calendario en la fecha actual.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 5. PROPS NUEVAS                             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>5. Props — Existentes + Nuevas</h2>
+  <div class="card">
+    <div class="card-body" style="padding: 0;">
+      <table>
+        <thead>
+          <tr>
+            <th>Prop</th>
+            <th>Tipo</th>
+            <th>Default</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>selectedDate</code></td>
+            <td><code>string?</code></td>
+            <td>—</td>
+            <td>Fecha seleccionada (YYYY-MM-DD)</td>
+          </tr>
+          <tr>
+            <td><code>onDateSelect</code></td>
+            <td><code>(date) => void</code></td>
+            <td>—</td>
+            <td>Callback al seleccionar un día</td>
+          </tr>
+          <tr>
+            <td><code>eventDots</code></td>
+            <td><code>Record&lt;string, number&gt;</code></td>
+            <td><code>{}</code></td>
+            <td>Dots de eventos por fecha</td>
+          </tr>
+          <tr>
+            <td><code>showMonthPicker</code> <span class="new-badge">NEW</span></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Permitir seleccionar mes desde grilla</td>
+          </tr>
+          <tr>
+            <td><code>showYearPicker</code> <span class="new-badge">NEW</span></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Permitir seleccionar año desde grilla</td>
+          </tr>
+          <tr>
+            <td><code>showTodayButton</code> <span class="new-badge">NEW</span></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Mostrar botón "Hoy" al fondo</td>
+          </tr>
+          <tr>
+            <td><code>minDate</code> <span class="new-badge">NEW</span></td>
+            <td><code>string?</code></td>
+            <td>—</td>
+            <td>Fecha mínima navegable (YYYY-MM-DD)</td>
+          </tr>
+          <tr>
+            <td><code>maxDate</code> <span class="new-badge">NEW</span></td>
+            <td><code>string?</code></td>
+            <td>—</td>
+            <td>Fecha máxima navegable (YYYY-MM-DD)</td>
+          </tr>
+          <tr>
+            <td><code>onMonthChange</code> <span class="new-badge">NEW</span></td>
+            <td><code>(year, month) => void</code></td>
+            <td>—</td>
+            <td>Callback al cambiar de mes (para cargar dots dinámicamente)</td>
+          </tr>
+          <tr>
+            <td><code>className</code></td>
+            <td><code>string</code></td>
+            <td><code>''</code></td>
+            <td>Clases CSS adicionales</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- 6. MOBILE — Full-width                      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <h2>6. Mobile — Full-width</h2>
+  <div class="note">
+    En mobile el MiniCalendar no se usa en sidebar (está oculto).
+    Se muestra full-width cuando se usa como popover o standalone.
+    Los botones de día se agrandan a 36px para touch targets adecuados.
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="mini-cal-full">
+        <div class="mc-header">
+          <button class="mc-nav-btn">‹</button>
+          <span class="mc-title" style="font-size: 15px; font-weight: 700; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; text-decoration-color: var(--ink-4);">Abril 2026</span>
+          <button class="mc-nav-btn">›</button>
+        </div>
+
+        <div class="mc-grid">
+          <div class="mc-day-header">L</div>
+          <div class="mc-day-header">M</div>
+          <div class="mc-day-header">X</div>
+          <div class="mc-day-header">J</div>
+          <div class="mc-day-header">V</div>
+          <div class="mc-day-header">S</div>
+          <div class="mc-day-header">D</div>
+
+          <button class="mc-day other" style="width:36px;height:36px;">30</button>
+          <button class="mc-day other" style="width:36px;height:36px;">31</button>
+          <button class="mc-day" style="width:36px;height:36px;">1</button>
+          <button class="mc-day today" style="width:36px;height:36px;">2</button>
+          <button class="mc-day" style="width:36px;height:36px;">3</button>
+          <button class="mc-day" style="width:36px;height:36px;">4</button>
+          <button class="mc-day" style="width:36px;height:36px;">5</button>
+
+          <button class="mc-day" style="width:36px;height:36px;">6<span class="dot"></span></button>
+          <button class="mc-day" style="width:36px;height:36px;">7<span class="dot"></span></button>
+          <button class="mc-day" style="width:36px;height:36px;">8</button>
+          <button class="mc-day" style="width:36px;height:36px;">9</button>
+          <button class="mc-day" style="width:36px;height:36px;">10<span class="dot"></span></button>
+          <button class="mc-day" style="width:36px;height:36px;">11</button>
+          <button class="mc-day" style="width:36px;height:36px;">12</button>
+
+          <button class="mc-day" style="width:36px;height:36px;">13</button>
+          <button class="mc-day" style="width:36px;height:36px;">14</button>
+          <button class="mc-day" style="width:36px;height:36px;">15</button>
+          <button class="mc-day" style="width:36px;height:36px;">16</button>
+          <button class="mc-day" style="width:36px;height:36px;">17</button>
+          <button class="mc-day" style="width:36px;height:36px;">18</button>
+          <button class="mc-day" style="width:36px;height:36px;">19</button>
+
+          <button class="mc-day" style="width:36px;height:36px;">20</button>
+          <button class="mc-day" style="width:36px;height:36px;">21</button>
+          <button class="mc-day" style="width:36px;height:36px;">22</button>
+          <button class="mc-day" style="width:36px;height:36px;">23</button>
+          <button class="mc-day" style="width:36px;height:36px;">24</button>
+          <button class="mc-day" style="width:36px;height:36px;">25</button>
+          <button class="mc-day" style="width:36px;height:36px;">26</button>
+
+          <button class="mc-day" style="width:36px;height:36px;">27</button>
+          <button class="mc-day" style="width:36px;height:36px;">28</button>
+          <button class="mc-day" style="width:36px;height:36px;">29</button>
+          <button class="mc-day" style="width:36px;height:36px;">30</button>
+          <button class="mc-day other" style="width:36px;height:36px;">1</button>
+          <button class="mc-day other" style="width:36px;height:36px;">2</button>
+          <button class="mc-day other" style="width:36px;height:36px;">3</button>
+        </div>
+
+        <button class="mc-today-btn">Hoy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
