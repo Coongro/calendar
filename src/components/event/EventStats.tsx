@@ -1,30 +1,31 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import { useEventStats } from '../../hooks/useEventStats.js';
+import { TOKENS } from '../../styles/tokens.js';
 import type { EventStatsProps } from '../../types/components.js';
 import { formatStatus } from '../../utils/labels.js';
 
 const React = getHostReact();
 const UI = getHostUI();
 
-// Colores hex para usar en inline styles (barra proporcional + acento de card)
+// Colores para barras proporcionales y acento de card — usan CSS vars para dark mode
 const STATUS_COLORS_HEX: Record<string, string> = {
-  scheduled: '#0ea5e9',
-  confirmed: '#22c55e',
-  completed: '#94a3b8',
-  cancelled: '#ef4444',
-  no_show: '#f59e0b',
-  tentative: '#10b981',
+  scheduled: 'var(--cg-accent)',
+  confirmed: 'var(--cg-green)',
+  completed: 'var(--cg-text-muted)',
+  cancelled: 'var(--cg-danger)',
+  no_show: 'var(--cg-warning-text)',
+  tentative: 'var(--cg-teal-dk)',
 };
 
-// Clases de texto y fondo por estado (para Tailwind estático)
-const STATUS_CARD_CLASSES: Record<string, { text: string; bg: string }> = {
-  scheduled: { text: 'text-cg-info', bg: 'bg-cg-info-bg' },
-  confirmed: { text: 'text-cg-success', bg: 'bg-cg-success-bg' },
-  completed: { text: 'text-cg-text-muted', bg: 'bg-cg-bg-secondary' },
-  cancelled: { text: 'text-cg-danger', bg: 'bg-cg-danger-bg' },
-  no_show: { text: 'text-cg-warning-text', bg: 'bg-cg-warning-bg' },
-  tentative: { text: 'text-cg-accent', bg: 'bg-cg-accent/10' },
+// Colores inline por estado — adaptan a dark mode
+const STATUS_CARD_STYLES: Record<string, { text: string; bg: string }> = {
+  scheduled: { text: 'var(--cg-accent)', bg: 'var(--cg-accent-bg)' },
+  confirmed: { text: 'var(--cg-green)', bg: 'var(--cg-green-bg)' },
+  completed: { text: TOKENS.ink4, bg: TOKENS.bg },
+  cancelled: { text: 'var(--cg-danger)', bg: 'var(--cg-danger-bg)' },
+  no_show: { text: 'var(--cg-warning-text)', bg: 'var(--cg-warning-bg)' },
+  tentative: { text: TOKENS.tealDk, bg: TOKENS.tealLt },
 };
 
 export function EventStats({ from, to, className = '' }: EventStatsProps) {
@@ -33,10 +34,23 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
   if (loading) {
     return React.createElement(
       'div',
-      { className: `flex flex-col gap-4 ${className}` },
+      {
+        className,
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+        },
+      },
       React.createElement(
         'div',
-        { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' },
+        {
+          style: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '0.75rem',
+          },
+        },
         Array.from({ length: 4 }).map((_, i) =>
           React.createElement(UI.Skeleton, { key: i, className: 'h-[72px] rounded-lg' })
         )
@@ -44,7 +58,7 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
       React.createElement(UI.Skeleton, { className: 'h-2.5 w-full rounded-full' }),
       React.createElement(
         'div',
-        { className: 'flex gap-4' },
+        { style: { display: 'flex', gap: '1rem' } },
         Array.from({ length: 3 }).map((_, i) =>
           React.createElement(UI.Skeleton, { key: i, className: 'h-3 w-20 rounded' })
         )
@@ -64,27 +78,60 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
 
   return React.createElement(
     'div',
-    { className: `flex flex-col gap-4 ${className}` },
+    {
+      className,
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+      },
+    },
 
     // — Grid de cards —
     React.createElement(
       'div',
-      { className: 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3' },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '0.75rem',
+        },
+      },
 
       // Card Total (primaria)
       React.createElement(
         'div',
-        { className: 'rounded-lg border border-cg-border bg-cg-bg p-4' },
+        {
+          style: {
+            borderRadius: '0.5rem',
+            border: `1px solid ${TOKENS.border}`,
+            backgroundColor: TOKENS.bg,
+            padding: '1rem',
+          },
+        },
         React.createElement(
           'div',
-          { className: 'text-3xl font-bold text-cg-accent leading-none' },
+          {
+            style: {
+              fontSize: '1.875rem',
+              fontWeight: 700,
+              color: TOKENS.tealDk,
+              lineHeight: 1,
+            },
+          },
           total
         ),
         React.createElement(
           'div',
           {
-            className:
-              'text-[11px] font-semibold text-cg-text-muted uppercase tracking-wide mt-1.5',
+            style: {
+              fontSize: '11px',
+              fontWeight: 600,
+              color: TOKENS.ink4,
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.05em',
+              marginTop: '0.375rem',
+            },
           },
           'Total'
         )
@@ -92,42 +139,84 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
 
       // Cards por estado
       ...activeStats.map((stat) => {
-        const styles = STATUS_CARD_CLASSES[stat.key] ?? { text: 'text-cg-text', bg: '' };
-        const color = STATUS_COLORS_HEX[stat.key] ?? '#94a3b8';
+        const styles = STATUS_CARD_STYLES[stat.key] ?? { text: TOKENS.ink, bg: '' };
+        const color = STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)';
         const pct = Math.round((stat.count / total) * 100);
 
         return React.createElement(
           'div',
           {
             key: stat.key,
-            className: `rounded-lg border border-cg-border ${styles.bg} p-4`,
+            style: {
+              borderRadius: '0.5rem',
+              border: `1px solid ${TOKENS.border}`,
+              backgroundColor: styles.bg || undefined,
+              padding: '1rem',
+            },
           },
           // Dot de color + label (header)
           React.createElement(
             'div',
-            { className: 'flex items-baseline gap-1.5' },
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '0.375rem',
+              },
+            },
             React.createElement(
               'div',
-              { className: 'text-2xl font-bold text-cg-text leading-none' },
+              {
+                style: {
+                  fontSize: '1.5rem',
+                  fontWeight: 700,
+                  color: TOKENS.ink,
+                  lineHeight: 1,
+                },
+              },
               stat.count
             ),
             React.createElement(
               'div',
-              { className: `text-xs font-semibold ${styles.text}` },
+              {
+                style: {
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: styles.text,
+                },
+              },
               `${pct}%`
             )
           ),
           // Label con dot
           React.createElement(
             'div',
-            { className: `flex items-center gap-1.5 mt-1.5` },
+            {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+                marginTop: '0.375rem',
+              },
+            },
             React.createElement('span', {
-              className: 'w-2 h-2 rounded-full shrink-0',
-              style: { backgroundColor: color },
+              style: {
+                width: '0.5rem',
+                height: '0.5rem',
+                borderRadius: '9999px',
+                flexShrink: 0,
+                backgroundColor: color,
+              },
             }),
             React.createElement(
               'span',
-              { className: `text-[11px] font-medium ${styles.text}` },
+              {
+                style: {
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  color: styles.text,
+                },
+              },
               formatStatus(stat.key)
             )
           )
@@ -135,21 +224,31 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
       })
     ),
 
-    // — Barra de proporción apilada —
+    // — Barra de proporcion apilada —
     React.createElement(
       'div',
-      { className: 'flex flex-col gap-2' },
+      { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' } },
 
       React.createElement(
         'div',
-        { className: 'flex h-2 rounded-full overflow-hidden gap-px bg-cg-border/30' },
+        {
+          style: {
+            display: 'flex',
+            height: '0.5rem',
+            borderRadius: '9999px',
+            overflow: 'hidden',
+            gap: '1px',
+            backgroundColor: `${TOKENS.border}30`,
+          },
+        },
         ...activeStats.map((stat) =>
           React.createElement('div', {
             key: stat.key,
-            className: 'h-full transition-all duration-500',
             style: {
+              height: '100%',
+              transition: 'all 500ms',
               width: `${(stat.count / total) * 100}%`,
-              backgroundColor: STATUS_COLORS_HEX[stat.key] ?? '#94a3b8',
+              backgroundColor: STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)',
             },
           })
         )
@@ -158,18 +257,37 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
       // Leyenda
       React.createElement(
         'div',
-        { className: 'flex flex-wrap gap-x-4 gap-y-1' },
+        {
+          style: {
+            display: 'flex',
+            flexWrap: 'wrap',
+            columnGap: '1rem',
+            rowGap: '0.25rem',
+          },
+        },
         ...activeStats.map((stat) =>
           React.createElement(
             'div',
-            { key: stat.key, className: 'flex items-center gap-1.5' },
+            {
+              key: stat.key,
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.375rem',
+              },
+            },
             React.createElement('div', {
-              className: 'w-2 h-2 rounded-full shrink-0',
-              style: { backgroundColor: STATUS_COLORS_HEX[stat.key] ?? '#94a3b8' },
+              style: {
+                width: '0.5rem',
+                height: '0.5rem',
+                borderRadius: '9999px',
+                flexShrink: 0,
+                backgroundColor: STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)',
+              },
             }),
             React.createElement(
               'span',
-              { className: 'text-xs text-cg-text-muted' },
+              { style: { fontSize: '0.75rem', color: TOKENS.ink4 } },
               `${formatStatus(stat.key)} · ${stat.count}`
             )
           )

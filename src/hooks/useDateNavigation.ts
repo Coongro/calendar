@@ -40,6 +40,9 @@ export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDa
         case 'day':
           d.setDate(d.getDate() + 1);
           break;
+        case 'three-day':
+          d.setDate(d.getDate() + 3);
+          break;
         case 'week':
           d.setDate(d.getDate() + 7);
           break;
@@ -58,6 +61,9 @@ export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDa
       switch (view) {
         case 'day':
           d.setDate(d.getDate() - 1);
+          break;
+        case 'three-day':
+          d.setDate(d.getDate() - 3);
           break;
         case 'week':
           d.setDate(d.getDate() - 7);
@@ -78,6 +84,17 @@ export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDa
         return {
           rangeStart: new Date(`${dateStr}T00:00:00`).toISOString(),
           rangeEnd: new Date(`${dateStr}T23:59:59.999`).toISOString(),
+        };
+      }
+      case 'three-day': {
+        const tdStart = new Date(currentDate);
+        tdStart.setHours(0, 0, 0, 0);
+        const tdEnd = new Date(tdStart);
+        tdEnd.setDate(tdEnd.getDate() + 2);
+        tdEnd.setHours(23, 59, 59, 999);
+        return {
+          rangeStart: tdStart.toISOString(),
+          rangeEnd: tdEnd.toISOString(),
         };
       }
       case 'week': {
@@ -107,6 +124,14 @@ export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDa
     switch (view) {
       case 'day':
         return `${currentDate.getDate()} ${m} ${y}`;
+      case 'three-day': {
+        const tdEnd = new Date(currentDate);
+        tdEnd.setDate(tdEnd.getDate() + 2);
+        if (currentDate.getMonth() === tdEnd.getMonth()) {
+          return `${currentDate.getDate()} – ${tdEnd.getDate()} ${m} ${y}`;
+        }
+        return `${currentDate.getDate()} ${getMonthName(currentDate.getMonth())} – ${tdEnd.getDate()} ${getMonthName(tdEnd.getMonth())} ${y}`;
+      }
       case 'week': {
         const ws = getWeekStart(currentDate);
         const we = getWeekEnd(currentDate);

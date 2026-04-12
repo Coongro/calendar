@@ -15,7 +15,7 @@ export function PinIcon({ size = 10 }: { size?: number }) {
       strokeWidth: 2,
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
-      className: 'shrink-0',
+      style: { flexShrink: 0 },
     },
     React.createElement('path', { d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z' }),
     React.createElement('circle', { cx: '12', cy: '10', r: '3' })
@@ -35,7 +35,7 @@ export function CalendarIcon({ size = 32 }: { size?: number }) {
       strokeWidth: 1.5,
       strokeLinecap: 'round',
       strokeLinejoin: 'round',
-      className: 'text-cg-text-muted',
+      style: { color: 'var(--cg-text-muted)' },
     },
     React.createElement('rect', { x: '3', y: '4', width: '18', height: '18', rx: '2' }),
     React.createElement('line', { x1: '16', y1: '2', x2: '16', y2: '6' }),

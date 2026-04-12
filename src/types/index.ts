@@ -12,6 +12,7 @@ export type {
   MiniCalendarProps,
   EventFormProps,
   FieldDef,
+  EventRenderContext,
   EventCardProps,
   EventDetailProps,
   EventPickerProps,

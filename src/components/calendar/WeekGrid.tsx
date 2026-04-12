@@ -1,34 +1,42 @@
 import { getHostReact } from '@coongro/plugin-sdk';
 
+import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { TOKENS } from '../../styles/tokens.js';
 import type { WeekGridProps } from '../../types/components.js';
-import type { CalendarEvent } from '../../types/event.js';
 import {
   getWeekDays,
   getShortDayName,
   generateTimeSlots,
   toDateString,
   isSameDay,
-  diffMinutes,
 } from '../../utils/date.js';
+import { SLOT_HEIGHT_DESKTOP, SLOT_HEIGHT_MOBILE, EVENT_Z } from '../../utils/grid-constants.js';
+import {
+  computeNowPosition,
+  computeEventPosition,
+  groupEventsByDay,
+  renderNowLine,
+} from '../../utils/grid-helpers.js';
 import { EventCard } from '../event/EventCard.js';
 
 const React = getHostReact();
 const { useMemo } = React;
-
-const SLOT_HEIGHT = 48; // px por slot
 
 export function WeekGrid({
   startDate,
   events,
   startHour = 8,
   endHour = 20,
-  slotDuration = 30,
+  slotDuration = 60,
   renderEvent,
   onEventClick,
   onSlotClick,
   showWeekends = true,
-  className = '',
 }: WeekGridProps) {
+  const isMobile = useIsMobile();
+  const slotHeight = isMobile ? SLOT_HEIGHT_MOBILE : SLOT_HEIGHT_DESKTOP;
+  const gutterWidth = isMobile ? 36 : 56;
+
   const weekDays = useMemo(() => {
     const d = new Date(startDate);
     const all = getWeekDays(d);
@@ -40,154 +48,273 @@ export function WeekGrid({
     [startHour, endHour, slotDuration]
   );
 
-  // Agrupar eventos por día
-  const eventsByDay = useMemo(() => {
-    const map: Record<string, CalendarEvent[]> = {};
-    for (const evt of events) {
-      const key = toDateString(new Date(evt.start_at));
-      if (!map[key]) map[key] = [];
-      map[key].push(evt);
-    }
-    return map;
-  }, [events]);
+  const eventsByDay = useMemo(() => groupEventsByDay(events), [events]);
 
-  const slotsPerHour = 60 / slotDuration;
+  const slotsPerHour = Math.round(60 / slotDuration);
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const { gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
+    startHour,
+    endHour,
+    slotDuration,
+    slotHeight
+  );
+
+  // Formato de hora para el gutter
+  const formatGutterTime = (slot: string, idx: number) => {
+    if (idx % slotsPerHour !== 0) return '';
+    if (isMobile) return slot.split(':')[0]; // "08"
+    return slot; // "08:00"
+  };
+
+  // Hora actual formateada para el gutter
+  const nowTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
   return React.createElement(
     'div',
-    { className: `flex ${className}` },
+    {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden',
+      } as any,
+    },
 
-    // Columna de horas
+    // ── Day headers ──
     React.createElement(
       'div',
-      { className: 'w-14 shrink-0 border-r border-cg-border' },
-      // Header vacío (sticky)
+      { style: { display: 'flex', flexShrink: 0, borderBottom: `1px solid ${TOKENS.border}` } },
+
+      // Gutter header vacío
       React.createElement('div', {
-        className: 'h-10 border-b border-cg-border sticky top-0 z-20 bg-cg-bg',
+        style: {
+          width: `${gutterWidth}px`,
+          flexShrink: 0,
+          borderRight: `1px solid ${TOKENS.border}`,
+        },
       }),
-      // Horas
-      timeSlots.map((slot, i) =>
-        React.createElement(
+
+      // Headers de días
+      ...weekDays.map((day) => {
+        const isToday = isSameDay(day, now);
+        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+        const dayName = isMobile ? getShortDayName(day).charAt(0) : getShortDayName(day);
+
+        const headerStyle: Record<string, string> = {
+          flex: '1',
+          padding: isMobile ? '8px 0 6px' : '12px 0 10px',
+          textAlign: 'center',
+          borderRight: `1px solid ${TOKENS.border}`,
+          minWidth: '0',
+          ...(isToday
+            ? { background: TOKENS.goldLt }
+            : isWeekend
+              ? { background: TOKENS.bg }
+              : { background: TOKENS.surface }),
+        };
+
+        const nameStyle: Record<string, string> = {
+          fontSize: isMobile ? '9px' : '10px',
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          color: isToday ? TOKENS.goldHover : isWeekend ? TOKENS.ink4 : TOKENS.ink3,
+          marginBottom: isMobile ? '2px' : '4px',
+        };
+
+        const numStyle: Record<string, string> = {
+          fontFamily: "'Noto Serif JP', serif",
+          fontSize: isToday ? (isMobile ? '17px' : '22px') : isMobile ? '15px' : '20px',
+          fontWeight: isToday ? '900' : isWeekend ? '400' : '700',
+          color: isToday ? TOKENS.ink : isWeekend ? TOKENS.ink4 : TOKENS.ink3,
+          lineHeight: '1',
+        };
+
+        return React.createElement(
           'div',
-          {
-            key: slot,
-            className:
-              'text-[10px] text-cg-text-muted text-right pr-2 border-b border-cg-border/30',
-            style: { height: `${SLOT_HEIGHT}px` },
-          },
-          i % slotsPerHour === 0 ? slot : ''
-        )
-      )
+          { key: toDateString(day), style: headerStyle },
+          React.createElement('div', { style: nameStyle }, dayName),
+          React.createElement('div', { style: numStyle }, day.getDate())
+        );
+      })
     ),
 
-    // Columnas de días
-    ...weekDays.map((day) => {
-      const dateStr = toDateString(day);
-      const isToday = isSameDay(day, new Date());
-      const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-      const dayEvents = eventsByDay[dateStr] ?? [];
+    // ── Grid body (scrollable) ──
+    React.createElement(
+      'div',
+      { style: { flex: '1', overflowY: 'auto', overflowX: 'hidden' } as any },
 
-      return React.createElement(
+      // Wrapper interno con altura fija = total de slots (el scroll es del padre)
+      React.createElement(
         'div',
-        {
-          key: dateStr,
-          className: `flex-1 min-w-0 border-r border-cg-border last:border-r-0 ${isWeekend ? 'bg-cg-bg-secondary/30' : ''}`,
-        },
+        { style: { display: 'flex', height: `${timeSlots.length * slotHeight}px` } },
 
-        // Header del día (sticky)
+        // Time gutter
         React.createElement(
           'div',
           {
-            className: `h-10 flex flex-col items-center justify-center border-b border-cg-border text-xs sticky top-0 z-10 ${
-              isToday ? 'bg-cg-accent/10' : isWeekend ? 'bg-cg-bg-secondary/50' : 'bg-cg-bg'
-            }`,
-          },
-          React.createElement('span', { className: 'text-cg-text-muted' }, getShortDayName(day)),
-          React.createElement(
-            'span',
-            {
-              className: isToday
-                ? 'w-6 h-6 flex items-center justify-center rounded-full bg-cg-accent text-white font-bold text-[11px]'
-                : 'font-medium',
+            style: {
+              width: `${gutterWidth}px`,
+              flexShrink: 0,
+              borderRight: `1px solid ${TOKENS.border}`,
             },
-            day.getDate()
-          )
-        ),
+          },
+          timeSlots.map((slot, i) => {
+            const [h] = slot.split(':').map(Number);
+            const isNowHour = h === currentHour && i % slotsPerHour === 0 && nowInRange;
 
-        // Grilla de slots
-        React.createElement(
-          'div',
-          { className: 'relative' },
-
-          // Slots de fondo
-          ...timeSlots.map((slot, slotIdx) =>
-            React.createElement(
+            return React.createElement(
               'div',
               {
-                key: `slot-${slot}`,
-                className: `relative border-b ${slotIdx % slotsPerHour === 0 ? 'border-cg-border/30' : 'border-cg-border/10'} hover:bg-cg-accent/5 cursor-pointer group transition-colors`,
-                style: { height: `${SLOT_HEIGHT}px` },
-                onClick: onSlotClick
-                  ? () => {
-                      const [h, m] = slot.split(':').map(Number);
-                      onSlotClick(dateStr, h + m / 60);
-                    }
-                  : undefined,
+                key: slot,
+                style: {
+                  height: `${slotHeight}px`,
+                  display: 'flex',
+                  alignItems: i === 0 ? 'center' : 'flex-start',
+                  justifyContent: 'flex-end',
+                  padding: isMobile ? '0 4px' : '0 10px',
+                  fontSize: isMobile ? '10px' : '11px',
+                  fontWeight: isNowHour ? '700' : '500',
+                  color: isNowHour ? TOKENS.red : TOKENS.ink3,
+                  transform: i === 0 ? 'none' : 'translateY(-7px)',
+                },
               },
-              // Línea de acento en el top del slot
-              React.createElement('div', {
-                className:
-                  'absolute top-0 inset-x-0 h-0.5 bg-cg-accent opacity-0 group-hover:opacity-50 transition-opacity pointer-events-none rounded-full',
-              }),
-              // Chip de horario
-              React.createElement(
-                'span',
-                {
-                  className:
-                    'absolute top-1 left-1 text-[10px] font-semibold text-cg-accent bg-cg-accent/10 border border-cg-accent/20 rounded px-1 py-0.5 leading-none opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none select-none',
-                },
-                slot
-              )
-            )
-          ),
+              isNowHour ? nowTimeStr : formatGutterTime(slot, i)
+            );
+          })
+        ),
 
-          // Eventos posicionados
-          ...dayEvents
-            .map((evt) => {
-              const evtStart = new Date(evt.start_at);
-              const evtStartMin = evtStart.getHours() * 60 + evtStart.getMinutes();
-              const gridStartMin = startHour * 60;
-              const gridEndMin = endHour * 60;
+        // Day columns
+        React.createElement(
+          'div',
+          { style: { display: 'flex', flex: '1' } },
+          ...weekDays.map((day) => {
+            const dateStr = toDateString(day);
+            const isToday = isSameDay(day, now);
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+            const dayEvents = eventsByDay[dateStr] ?? [];
 
-              if (evtStartMin < gridStartMin || evtStartMin >= gridEndMin) return null;
+            const colStyle: Record<string, string> = {
+              flex: '1',
+              position: 'relative',
+              borderRight: `1px solid ${TOKENS.border}`,
+              minWidth: '0',
+              ...(isToday
+                ? { background: 'color-mix(in srgb, var(--cg-accent) 3%, transparent)' }
+                : isWeekend
+                  ? { background: TOKENS.bg }
+                  : {}),
+            };
 
-              const topOffset = ((evtStartMin - gridStartMin) / slotDuration) * SLOT_HEIGHT;
-              const duration = diffMinutes(evt.start_at, evt.end_at);
-              const height = (duration / slotDuration) * SLOT_HEIGHT;
+            return React.createElement(
+              'div',
+              { key: dateStr, style: colStyle },
 
-              return React.createElement(
-                'div',
-                {
-                  key: evt.id,
-                  className: 'absolute left-0.5 right-0.5 z-10',
+              // Slots de fondo
+              ...timeSlots.map((slot, _slotIdx) =>
+                React.createElement('div', {
+                  key: `slot-${slot}`,
                   style: {
-                    top: `${Math.max(0, topOffset)}px`,
-                    height: `${Math.max(SLOT_HEIGHT / 2, height)}px`,
+                    height: `${slotHeight}px`,
+                    borderBottom: `1px solid color-mix(in srgb, var(--cg-border) 40%, transparent)`,
+                    cursor: onSlotClick ? 'pointer' : 'default',
                   },
-                },
-                renderEvent
-                  ? renderEvent(evt)
-                  : React.createElement(EventCard, {
-                      event: evt,
-                      showTime: true,
-                      onClick: onEventClick,
-                      className: 'h-full rounded-sm overflow-hidden',
-                    })
-              );
-            })
-            .filter(Boolean)
+                  onClick: onSlotClick
+                    ? () => {
+                        const [h, m] = slot.split(':').map(Number);
+                        onSlotClick(dateStr, h + m / 60);
+                      }
+                    : undefined,
+                })
+              ),
+
+              // Now line (gold triangle marker)
+              isToday && nowInRange && renderNowLine(nowTop),
+
+              // Eventos posicionados
+              ...dayEvents
+                .map((evt) => {
+                  const pos = computeEventPosition(
+                    evt,
+                    gridStartMin,
+                    gridEndMin,
+                    slotDuration,
+                    slotHeight
+                  );
+                  if (!pos) return null;
+
+                  const { topOffset, height } = pos;
+
+                  return React.createElement(
+                    'div',
+                    {
+                      key: evt.id,
+                      style: {
+                        position: 'absolute',
+                        left: '3px',
+                        right: '3px',
+                        top: `${Math.max(0, topOffset)}px`,
+                        height: `${Math.max(slotHeight / 2, height)}px`,
+                        zIndex: String(EVENT_Z),
+                      },
+                    },
+                    renderEvent && !isMobile
+                      ? renderEvent(evt, {
+                          variant: 'week',
+                          height: Math.max(slotHeight / 2, height),
+                        })
+                      : isMobile
+                        ? // Mobile: bloque coloreado con texto 7px truncado (variante F)
+                          React.createElement(
+                            'div',
+                            {
+                              style: {
+                                width: '100%',
+                                height: '100%',
+                                borderRadius: '3px',
+                                background: `color-mix(in srgb, ${evt.color ?? TOKENS.gold} 20%, transparent)`,
+                                padding: '2px 3px',
+                                overflow: 'hidden',
+                                cursor: onEventClick ? 'pointer' : 'default',
+                                opacity: evt.status === 'cancelled' ? '0.4' : '1',
+                              },
+                              onClick: onEventClick ? () => onEventClick(evt) : undefined,
+                            },
+                            React.createElement(
+                              'span',
+                              {
+                                style: {
+                                  fontSize: '7px',
+                                  fontWeight: '600',
+                                  color: TOKENS.ink2,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  display: 'block',
+                                  lineHeight: '1.2',
+                                  textDecoration:
+                                    evt.status === 'cancelled' ? 'line-through' : 'none',
+                                },
+                              },
+                              evt.title
+                            )
+                          )
+                        : React.createElement(EventCard, {
+                            event: evt,
+                            variant: 'week',
+                            showTime: true,
+                            onClick: onEventClick,
+                          })
+                  );
+                })
+                .filter(Boolean)
+            );
+          })
         )
-      );
-    })
+      ) // cierra wrapper interno con altura fija
+    )
   );
 }

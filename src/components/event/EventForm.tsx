@@ -5,6 +5,7 @@ import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import { useEvent } from '../../hooks/useEvent.js';
 import { useEventMutations } from '../../hooks/useEventMutations.js';
 import { useEventTypes } from '../../hooks/useEventTypes.js';
+import { useIsMobile } from '../../hooks/useIsMobile.js';
 import type { EventFormProps } from '../../types/components.js';
 import type { EventCreateData } from '../../types/event.js';
 import { addMinutes, toDateString } from '../../utils/date.js';
@@ -21,6 +22,13 @@ function isFieldHidden(field: string, hiddenFields?: string[]): boolean {
   return hiddenFields?.includes(field) ?? false;
 }
 
+// Estilos reutilizables para campos de formulario
+const FIELD_STYLE = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.375rem',
+} as const;
+
 export function EventForm({
   eventId,
   defaults = {},
@@ -36,6 +44,7 @@ export function EventForm({
   onCancel,
   className = '',
 }: EventFormProps) {
+  const isMobile = useIsMobile();
   const isEdit = !!eventId;
   const { event, loading: loadingEvent } = useEvent(eventId);
   const { settings } = useCalendarSettings();
@@ -106,7 +115,14 @@ export function EventForm({
   if (isEdit && loadingEvent) {
     return React.createElement(
       'div',
-      { className: 'flex flex-col gap-4 p-4' },
+      {
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          padding: '1rem',
+        },
+      },
       Array.from({ length: 6 }).map((_, i) =>
         React.createElement(UI.Skeleton, { key: i, className: 'h-10 rounded-lg' })
       )
@@ -132,7 +148,15 @@ export function EventForm({
 
   return React.createElement(
     'form',
-    { onSubmit: handleSubmit, className: `flex flex-col gap-5 ${className}` },
+    {
+      onSubmit: handleSubmit,
+      className,
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.25rem',
+      },
+    },
 
     // Contribuciones before
     ...(beforeSections.length > 0
@@ -143,10 +167,10 @@ export function EventForm({
         ? [renderBeforeFields()]
         : []),
 
-    // Título
+    // Titulo
     React.createElement(
       'div',
-      { className: 'flex flex-col gap-1.5' },
+      { style: FIELD_STYLE },
       React.createElement(UI.Label, null, 'Título *'),
       React.createElement(UI.Input, {
         value: (formData.title as string) ?? '',
@@ -159,10 +183,16 @@ export function EventForm({
     // Fecha y hora
     React.createElement(
       'div',
-      { className: 'grid grid-cols-1 sm:grid-cols-3 gap-3' },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: '0.75rem',
+        },
+      },
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Fecha *'),
         React.createElement(DatePicker, {
           value: startDate,
@@ -176,7 +206,7 @@ export function EventForm({
       !(formData.all_day as boolean) &&
         React.createElement(
           'div',
-          { className: 'flex flex-col gap-1.5' },
+          { style: FIELD_STYLE },
           React.createElement(UI.Label, null, 'Inicio'),
           React.createElement(TimePicker, {
             value: startTime,
@@ -193,7 +223,7 @@ export function EventForm({
       !(formData.all_day as boolean) &&
         React.createElement(
           'div',
-          { className: 'flex flex-col gap-1.5' },
+          { style: FIELD_STYLE },
           React.createElement(UI.Label, null, 'Fin'),
           React.createElement(TimePicker, {
             value: endTime,
@@ -207,10 +237,16 @@ export function EventForm({
         )
     ),
 
-    // Todo el día
+    // Todo el dia
     React.createElement(
       'div',
-      { className: 'flex items-center gap-2' },
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        },
+      },
       React.createElement(UI.Switch, {
         checked: (formData.all_day as boolean) ?? false,
         onCheckedChange: (checked: boolean) => handleChange('all_day', checked),
@@ -221,10 +257,16 @@ export function EventForm({
     // Calendario + Tipo
     React.createElement(
       'div',
-      { className: 'grid grid-cols-1 sm:grid-cols-2 gap-3' },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: '0.75rem',
+        },
+      },
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Calendario'),
         React.createElement(
           UI.Select,
@@ -240,7 +282,7 @@ export function EventForm({
       ),
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, `Tipo${settings.requireType ? ' *' : ''}`),
         React.createElement(
           UI.Select,
@@ -259,7 +301,7 @@ export function EventForm({
     // Status
     React.createElement(
       'div',
-      { className: 'flex flex-col gap-1.5' },
+      { style: FIELD_STYLE },
       React.createElement(UI.Label, null, 'Estado'),
       React.createElement(
         UI.Select,
@@ -282,11 +324,11 @@ export function EventForm({
         ? [renderEntitySection()]
         : []),
 
-    // Descripción
+    // Descripcion
     !isFieldHidden('description', hiddenFields) &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(
           UI.Label,
           null,
@@ -301,11 +343,11 @@ export function EventForm({
         })
       ),
 
-    // Ubicación
+    // Ubicacion
     !isFieldHidden('location', hiddenFields) &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Ubicación'),
         React.createElement(UI.Input, {
           value: (formData.location as string) ?? '',
@@ -319,7 +361,7 @@ export function EventForm({
       settings.showNotes &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Notas'),
         React.createElement(UI.Textarea, {
           value: (formData.notes as string) ?? '',
@@ -334,7 +376,7 @@ export function EventForm({
       settings.showColorPicker &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Color'),
         React.createElement(ColorPicker, {
           value: (formData.color as string) ?? '',
@@ -356,7 +398,14 @@ export function EventForm({
       ? renderFooter()
       : React.createElement(
           'div',
-          { className: 'flex flex-col sm:flex-row gap-3 pt-2' },
+          {
+            style: {
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: '0.75rem',
+              paddingTop: '0.5rem',
+            },
+          },
           React.createElement(
             UI.Button,
             { type: 'submit', disabled: isSaving, className: 'flex-1' },

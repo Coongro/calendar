@@ -4,6 +4,7 @@
  */
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { TOKENS } from '../../styles/tokens.js';
 import { getMonthGridDays, getMonthName, toDateString, isSameDay } from '../../utils/date.js';
 
 const React = getHostReact();
@@ -67,7 +68,6 @@ export function CalendarGrid({
   onMonthChange,
   onDayClick,
   daySize = 'sm',
-  className = '',
 }: CalendarGridProps) {
   const selected = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null;
   const [viewYear, setViewYear] = useState(
@@ -131,7 +131,8 @@ export function CalendarGrid({
     onDayClick?.(dateStr);
   };
 
-  const daySizeClass = daySize === 'md' ? 'w-9 h-9 text-sm' : 'w-7 h-7 text-[11px]';
+  const daySizePx = daySize === 'md' ? '36px' : '28px';
+  const dayFontSize = daySize === 'md' ? '14px' : '11px';
 
   // ── Header title ──
   const renderTitle = () => {
@@ -157,7 +158,7 @@ export function CalendarGrid({
 
   return React.createElement(
     'div',
-    { className, style: { display: 'flex', flexDirection: 'column' } as any },
+    { style: { display: 'flex', flexDirection: 'column' } as any },
 
     // ── Header ──
     React.createElement(
@@ -178,16 +179,21 @@ export function CalendarGrid({
       React.createElement(
         'span',
         {
-          className: `text-xs font-medium ${canClickTitle ? 'cursor-pointer hover:text-cg-accent' : ''} ${viewLevel !== 'days' ? 'font-bold text-cg-accent' : ''}`,
           onClick: canClickTitle ? handleTitleClick : undefined,
-          style: canClickTitle
-            ? ({
-                textDecoration: 'underline',
-                textDecorationStyle: 'dotted',
-                textUnderlineOffset: '3px',
-                textDecorationColor: 'var(--cg-text-muted, #9B9893)',
-              } as any)
-            : undefined,
+          style: {
+            fontSize: '12px',
+            fontWeight: viewLevel !== 'days' ? '700' : '500',
+            color: viewLevel !== 'days' ? TOKENS.gold : undefined,
+            cursor: canClickTitle ? 'pointer' : undefined,
+            ...(canClickTitle
+              ? {
+                  textDecoration: 'underline',
+                  textDecorationStyle: 'dotted',
+                  textUnderlineOffset: '3px',
+                  textDecorationColor: TOKENS.ink4,
+                }
+              : {}),
+          } as any,
         },
         renderTitle()
       ),
@@ -212,7 +218,15 @@ export function CalendarGrid({
           DAY_LETTERS.map((name) =>
             React.createElement(
               'div',
-              { key: name, className: 'text-center text-[10px] text-cg-text-muted py-0.5' },
+              {
+                key: name,
+                style: {
+                  textAlign: 'center',
+                  fontSize: '10px',
+                  color: TOKENS.ink4,
+                  padding: '2px 0',
+                },
+              },
               name
             )
           )
@@ -229,13 +243,22 @@ export function CalendarGrid({
             const disabled = isDateDisabled(day);
             const dotCount = eventDots[dateStr] ?? 0;
 
-            let stateClass = 'hover:bg-cg-bg-hover';
-            if (isSelected) stateClass = 'bg-cg-accent text-white font-bold';
-            else if (isToday)
-              stateClass = 'ring-1 ring-cg-accent text-cg-accent font-bold hover:bg-cg-accent/10';
+            // Estilos condicionales segun estado del dia
+            const stateStyle: Record<string, string> = {};
+            if (isSelected) {
+              stateStyle.background = TOKENS.gold;
+              stateStyle.color = 'var(--cg-brand-text)';
+              stateStyle.fontWeight = '700';
+            } else if (isToday) {
+              stateStyle.boxShadow = `inset 0 0 0 1px ${TOKENS.gold}`;
+              stateStyle.color = TOKENS.gold;
+              stateStyle.fontWeight = '700';
+            }
 
-            const monthClass = !isCurrentMonth ? 'text-cg-text-muted opacity-40' : '';
-            const cursorClass = disabled ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer';
+            if (!isCurrentMonth) {
+              stateStyle.color = TOKENS.ink4;
+              stateStyle.opacity = '0.4';
+            }
 
             return React.createElement(
               'button',
@@ -243,14 +266,35 @@ export function CalendarGrid({
                 key: i,
                 type: 'button',
                 disabled,
-                className: `relative ${daySizeClass} rounded-full transition-colors mx-auto ${stateClass} ${monthClass} ${cursorClass}`,
+                style: {
+                  position: 'relative',
+                  width: daySizePx,
+                  height: daySizePx,
+                  fontSize: dayFontSize,
+                  borderRadius: '9999px',
+                  transition: 'background 0.15s, color 0.15s',
+                  margin: '0 auto',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? '0.2' : stateStyle.opacity || '1',
+                  ...stateStyle,
+                },
                 onClick: () => handleDaySelect(day),
               },
               day.getDate(),
               dotCount > 0 &&
                 React.createElement('span', {
-                  className:
-                    'absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cg-accent',
+                  style: {
+                    position: 'absolute',
+                    bottom: '2px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '4px',
+                    height: '4px',
+                    borderRadius: '9999px',
+                    background: TOKENS.gold,
+                  },
                 })
             );
           })
@@ -269,22 +313,29 @@ export function CalendarGrid({
             padding: '4px 0',
           },
         },
-        SHORT_MONTHS.map((name, idx) =>
-          React.createElement(
+        SHORT_MONTHS.map((name, idx) => {
+          const isActive = idx === viewMonth;
+          return React.createElement(
             'button',
             {
               key: idx,
               type: 'button',
-              className: `py-2.5 text-xs font-medium rounded-md border transition-colors ${
-                idx === viewMonth
-                  ? 'bg-cg-accent/10 border-cg-accent text-cg-accent font-bold'
-                  : 'border-cg-border hover:bg-cg-bg-hover'
-              }`,
+              style: {
+                padding: '10px 0',
+                fontSize: '12px',
+                fontWeight: isActive ? '700' : '500',
+                borderRadius: TOKENS.rSm,
+                border: `1px solid ${isActive ? TOKENS.gold : TOKENS.border}`,
+                background: isActive ? TOKENS.goldLt : 'transparent',
+                color: isActive ? TOKENS.gold : undefined,
+                cursor: 'pointer',
+                transition: 'background 0.15s, border-color 0.15s',
+              },
               onClick: () => handleMonthSelect(idx),
             },
             name
-          )
-        )
+          );
+        })
       ),
 
     // ── Year picker ──
@@ -299,22 +350,29 @@ export function CalendarGrid({
             padding: '4px 0',
           },
         },
-        Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((year) =>
-          React.createElement(
+        Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((year) => {
+          const isActive = year === viewYear;
+          return React.createElement(
             'button',
             {
               key: year,
               type: 'button',
-              className: `py-2.5 text-xs font-medium rounded-md border transition-colors ${
-                year === viewYear
-                  ? 'bg-cg-accent/10 border-cg-accent text-cg-accent font-bold'
-                  : 'border-cg-border hover:bg-cg-bg-hover'
-              }`,
+              style: {
+                padding: '10px 0',
+                fontSize: '12px',
+                fontWeight: isActive ? '700' : '500',
+                borderRadius: TOKENS.rSm,
+                border: `1px solid ${isActive ? TOKENS.gold : TOKENS.border}`,
+                background: isActive ? TOKENS.goldLt : 'transparent',
+                color: isActive ? TOKENS.gold : undefined,
+                cursor: 'pointer',
+                transition: 'background 0.15s, border-color 0.15s',
+              },
               onClick: () => handleYearSelect(year),
             },
             year
-          )
-        )
+          );
+        })
       ),
 
     // ── Botón Hoy ──
@@ -323,8 +381,24 @@ export function CalendarGrid({
         'button',
         {
           type: 'button',
-          className:
-            'w-full text-xs font-bold text-cg-accent mt-2 pt-2 border-t border-cg-border hover:bg-cg-accent/5 transition-colors py-2 rounded-b',
+          style: {
+            width: '100%',
+            fontSize: '12px',
+            fontWeight: '700',
+            color: TOKENS.gold,
+            marginTop: '8px',
+            paddingTop: '8px',
+            borderTop: `1px solid ${TOKENS.border}`,
+            padding: '8px 0',
+            borderRadius: '0 0 7px 7px',
+            background: 'transparent',
+            border: 'none',
+            borderTopWidth: '1px',
+            borderTopStyle: 'solid',
+            borderTopColor: TOKENS.border,
+            cursor: 'pointer',
+            transition: 'background 0.15s',
+          },
           onClick: goToToday,
         },
         'Hoy'

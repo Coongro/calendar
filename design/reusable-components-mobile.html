@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=375, initial-scale=1.0">
+  <title>Calendar — Componentes reutilizables (Mobile 375px)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2; --teal-icon: #D4EDE7;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A; --red-lt: #FEF2F2;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); width: 375px; margin: 0 auto; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    /* -- Page layout -- */
+    .page { padding: 20px 16px 64px; }
+    .page-title { font-family: var(--font-serif); font-weight: 900; font-size: 20px; margin-bottom: 4px; }
+    .page-subtitle { font-size: 12px; color: var(--ink-3); margin-bottom: 24px; }
+
+    /* -- Reference card -- */
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .ref-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 16px; }
+    .ref-subtitle { font-size: 11px; color: var(--ink-3); display: block; margin-top: 2px; }
+    .ref-import {
+      font-size: 9px; font-family: monospace; color: var(--teal-dk);
+      background: var(--teal-lt); padding: 2px 6px; border-radius: 4px;
+      display: inline-block; margin-top: 6px;
+    }
+    .ref-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 12px;
+    }
+    .ref-note {
+      font-size: 10px; color: var(--ink-4); margin-top: 10px;
+      padding-left: 10px; border-left: 2px solid var(--border);
+      line-height: 1.6;
+    }
+    .state-label {
+      font-size: 8px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.4px; color: var(--ink-4);
+    }
+
+    /* ================================================================
+       SHARED: EventCard
+       ================================================================ */
+    .ev-card {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 10px 12px;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+    }
+    .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+    .ev-dot-gold { background: var(--gold); }
+    .ev-dot-teal { background: var(--teal-dk); }
+    .ev-dot-green { background: var(--green); }
+    .ev-dot-red { background: var(--red); }
+    .ev-dot-neutral { background: var(--ink-4); }
+
+    .ev-info { flex: 1; min-width: 0; }
+    .ev-title { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ev-meta { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+    .ev-badge {
+      display: inline-flex; align-items: center;
+      font-size: 10px; font-weight: 500;
+      padding: 1px 7px; border-radius: 10px;
+      border: 1px solid; flex-shrink: 0; margin-top: 2px;
+    }
+    .badge-scheduled { border-color: var(--gold); color: #8A6800; }
+    .badge-confirmed { border-color: var(--green); color: var(--green); }
+    .badge-cancelled { border-color: var(--red); color: var(--red); }
+    .badge-completed { border-color: var(--teal-dk); color: var(--teal-dk); }
+    .badge-no-show { border-color: var(--ink-4); color: var(--ink-4); }
+
+    /* ================================================================
+       Toolbar mobile (3 filas)
+       ================================================================ */
+    .toolbar { background: var(--surface); border-bottom: 1px solid var(--border); }
+    .tb-row1 { padding: 12px 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+    .tb-title { font-family: var(--font-serif); font-weight: 900; font-size: 20px; }
+    .tb-action-circle {
+      width: 34px; height: 34px; border-radius: 50%; border: none;
+      background: var(--gold); color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tb-action-circle svg { width: 18px; height: 18px; }
+    .tb-row2 { padding: 0 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+    .tb-nav-btn {
+      width: 30px; height: 30px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink-3);
+    }
+    .tb-nav-btn svg { width: 14px; height: 14px; }
+    .tb-date { font-size: 14px; font-weight: 500; }
+    .tb-row3 { padding: 0 16px 10px; }
+    .tb-views { display: flex; background: var(--bg); border-radius: var(--r-sm); padding: 2px; }
+    .tb-view-btn {
+      flex: 1; padding: 7px 0; font-size: 12px; font-weight: 500; border: none;
+      background: transparent; cursor: pointer; color: var(--ink-3);
+      font-family: var(--font-body); border-radius: 5px; text-align: center;
+    }
+    .tb-view-btn.active { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+
+    /* ================================================================
+       FAB
+       ================================================================ */
+    .fab {
+      width: 52px; height: 52px; border-radius: 50%; border: none;
+      background: var(--gold); color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: fixed; bottom: 24px; right: 24px;
+    }
+    .fab svg { width: 22px; height: 22px; }
+    .fab-inline {
+      width: 52px; height: 52px; border-radius: 50%; border: none;
+      background: var(--gold); color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .fab-inline svg { width: 22px; height: 22px; }
+
+    /* ================================================================
+       AgendaList mobile
+       ================================================================ */
+    .agenda-group { margin-bottom: 16px; }
+    .agenda-date-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .agenda-day-block {
+      display: flex; flex-direction: column; align-items: center; width: 36px; flex-shrink: 0;
+    }
+    .agenda-day-abbr {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--ink-4); line-height: 1;
+    }
+    .agenda-day-num { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .agenda-day-num.today {
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--gold); color: white;
+    }
+    .agenda-month { font-size: 10px; color: var(--ink-3); }
+    .agenda-today-pill {
+      font-size: 9px; font-weight: 700; color: var(--gold-hover);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .agenda-separator { flex: 1; height: 1px; background: var(--border); }
+    .agenda-separator.today { background: rgba(245,168,0,0.4); }
+    .agenda-count { font-size: 10px; color: var(--ink-4); flex-shrink: 0; }
+    .agenda-events { display: flex; flex-direction: column; gap: 6px; padding-left: 44px; }
+    .agenda-event {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 10px 12px; border-radius: var(--r-sm);
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer;
+    }
+    .agenda-event-info { flex: 1; min-width: 0; }
+    .agenda-event-title { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .agenda-event-time { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+    .agenda-event-badge { margin-top: 4px; }
+
+    /* ================================================================
+       MonthGrid mobile (compact)
+       ================================================================ */
+    .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .month-dow {
+      text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-3);
+      text-transform: uppercase; padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .month-cell {
+      min-height: 52px; padding: 4px 2px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      text-align: center; cursor: pointer;
+    }
+    .month-cell:nth-child(7n) { border-right: none; }
+    .month-cell.today { background: rgba(245,168,0,0.03); }
+    .month-cell.other-month { background: var(--bg); }
+    .month-cell.weekend { background: rgba(246,245,241,0.5); }
+    .month-day-num { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+    .month-day-num.today {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--gold); color: white; font-weight: 700;
+    }
+    .month-day-num.other { color: var(--ink-4); }
+    .month-dots {
+      display: flex; justify-content: center; gap: 2px; margin-top: 2px;
+    }
+    .month-dot { width: 4px; height: 4px; border-radius: 50%; }
+
+    /* ================================================================
+       EventList mobile (cards)
+       ================================================================ */
+    .cards-list { display: flex; flex-direction: column; gap: 8px; }
+    .el-card {
+      border: 1px solid var(--border); background: var(--surface);
+      border-radius: var(--r-md); padding: 12px 14px;
+      cursor: pointer;
+    }
+    .el-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .el-card-title { font-size: 14px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .el-card-meta { font-size: 12px; color: var(--ink-3); margin-bottom: 2px; }
+
+    /* Search */
+    .search-wrap { position: relative; }
+    .search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--ink-4);
+    }
+    .search-input {
+      width: 100%; padding: 10px 12px 10px 34px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 14px; font-family: var(--font-body);
+      color: var(--ink); background: var(--surface);
+    }
+    .search-input:focus { border-color: var(--gold); outline: none; }
+
+    /* Pagination */
+    .pagination-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 10px; font-size: 11px; color: var(--ink-3);
+    }
+    .page-btns { display: flex; gap: 2px; }
+    .page-btn {
+      background: none; border: none;
+      color: var(--ink-3); padding: 6px 10px;
+      border-radius: var(--r-sm); font-size: 12px; font-family: var(--font-body);
+      cursor: pointer;
+    }
+    .page-btn.active { background: var(--gold-lt); color: var(--gold-hover); font-weight: 600; }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+    /* ================================================================
+       EventStats mobile (2 cols)
+       ================================================================ */
+    .stat-card {
+      border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px;
+    }
+    .stat-number { font-size: 24px; font-weight: 700; line-height: 1; }
+    .stat-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.4px; color: var(--ink-3); margin-top: 4px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .stat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .stat-pct { font-size: 11px; font-weight: 600; margin-left: 4px; }
+    .stat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; gap: 1px; }
+    .stat-bar-seg { height: 100%; }
+    .stat-legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 10px; color: var(--ink-3); }
+    .stat-legend-item { display: flex; align-items: center; gap: 4px; }
+
+    /* ================================================================
+       EventForm mobile (full-width, stacked)
+       ================================================================ */
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .form-label { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+    .form-input {
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 14px; font-family: var(--font-body); color: var(--ink);
+      background: var(--surface);
+    }
+    .form-input:focus { border-color: var(--gold); outline: none; }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-select {
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 14px; font-family: var(--font-body); color: var(--ink);
+      background: var(--surface); appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236B6760' stroke-width='1.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .form-switch {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    .form-switch-track {
+      width: 40px; height: 22px; border-radius: 11px;
+      background: var(--border-md); position: relative; cursor: pointer;
+    }
+    .form-switch-track.on { background: var(--gold); }
+    .form-switch-thumb {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: white; position: absolute; top: 2px; left: 2px;
+    }
+    .form-switch-track.on .form-switch-thumb { transform: translateX(18px); }
+    .form-actions {
+      display: flex; flex-direction: column; gap: 8px; padding-top: 6px;
+    }
+    .cta-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 16px;
+      border-radius: var(--r-sm); border: none;
+      font-family: var(--font-body); font-size: 14px; font-weight: 500;
+      cursor: pointer;
+    }
+    .cta-btn-primary { background: var(--gold); color: var(--ink); }
+    .cta-btn-outline {
+      background: transparent; color: var(--ink-2);
+      border: 1px solid var(--border);
+    }
+
+    /* ================================================================
+       EventDetail mobile (single column)
+       ================================================================ */
+    .detail-header { margin-bottom: 16px; }
+    .detail-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .detail-field { margin-bottom: 12px; }
+    .detail-field-label { font-size: 11px; color: var(--ink-3); margin-bottom: 2px; }
+    .detail-field-value { font-size: 14px; }
+    .detail-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* ================================================================
+       EventPicker mobile (full-width)
+       ================================================================ */
+    .picker-input {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 14px; color: var(--ink-3); cursor: pointer;
+      background: var(--surface); width: 100%;
+    }
+    .picker-input svg { width: 14px; height: 14px; color: var(--ink-4); flex-shrink: 0; }
+    .picker-dropdown {
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      background: var(--surface); width: 100%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08); overflow: hidden;
+    }
+    .picker-search { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .picker-search input {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-size: 14px; font-family: var(--font-body);
+    }
+    .picker-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; cursor: pointer;
+    }
+    .picker-item-title { font-size: 14px; font-weight: 500; }
+    .picker-item-sub { font-size: 11px; color: var(--ink-3); }
+    .picker-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px 6px 10px;
+      border: 1px solid var(--border); border-radius: 14px;
+      font-size: 13px; font-weight: 500; background: var(--surface);
+    }
+    .picker-chip-x {
+      width: 18px; height: 18px; border-radius: 50%; border: none;
+      background: var(--bg); color: var(--ink-3); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+    }
+
+    /* ================================================================
+       MiniCalendar
+       ================================================================ */
+    .mini-cal { width: 100%; }
+    .mini-cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 4px 8px;
+    }
+    .mini-cal-month { font-size: 14px; font-weight: 700; }
+    .mini-cal-nav { display: flex; gap: 4px; }
+    .mini-cal-btn {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-3);
+    }
+    .mini-cal-btn svg { width: 14px; height: 14px; }
+    .mini-cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      text-align: center; padding: 0 2px 8px;
+    }
+    .mini-cal-dow {
+      font-size: 10px; font-weight: 700; color: var(--ink-4);
+      text-transform: uppercase; padding: 4px 0;
+    }
+    .mini-cal-day {
+      width: 36px; height: 36px; line-height: 36px; margin: 1px auto;
+      font-size: 14px; border-radius: 50%; cursor: pointer;
+      position: relative;
+    }
+    .mini-cal-day.today { background: var(--gold-lt); font-weight: 700; color: var(--ink); }
+    .mini-cal-day.selected { background: var(--gold); color: white; font-weight: 700; }
+    .mini-cal-day.other-month { color: var(--ink-4); }
+    .mini-cal-day.weekend { color: var(--ink-4); }
+    .mini-cal-dots {
+      position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 2px;
+    }
+    .mini-cal-dot-indicator { width: 3px; height: 3px; border-radius: 50%; }
+
+    /* ================================================================
+       CalendarBadge
+       ================================================================ */
+    .cal-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 500;
+      padding: 2px 8px; border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .cal-badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* ================================================================
+       ColorPicker
+       ================================================================ */
+    .color-picker { display: flex; gap: 10px; flex-wrap: wrap; }
+    .color-swatch {
+      width: 36px; height: 36px; border-radius: 50%;
+      cursor: pointer; border: 2px solid transparent;
+    }
+    .color-swatch.selected { border-color: var(--ink); }
+
+    /* ================================================================
+       Skeleton
+       ================================================================ */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
+      background-size: 200% 100%;
+      border-radius: var(--r-sm);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton { animation: none; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <h1 class="page-title">Componentes — Mobile</h1>
+  <p class="page-subtitle">Adaptaciones mobile (375px) de los componentes reutilizables del plugin calendar</p>
+
+
+  <!-- ============================================================
+       0. CalendarView — Mobile (todas las vistas)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">CalendarView</h2>
+      <span class="ref-subtitle">Mobile: sin sidebar, toolbar 3 filas, 5 vistas</span>
+      <span class="ref-import">import { CalendarView } from '@coongro/calendar'</span>
+    </div>
+
+    <!-- ─── Vista: Dia ─────────────────────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Vista — Dia</div>
+
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+        <div class="toolbar">
+          <div class="tb-row1">
+            <span class="tb-title">Agenda</span>
+            <button class="tb-action-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div class="tb-row2">
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="tb-date">Mie 9 Abril 2026</span>
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+          <div class="tb-row3">
+            <div class="tb-views">
+              <button class="tb-view-btn active">Dia</button>
+              <button class="tb-view-btn">3D</button>
+              <button class="tb-view-btn">Sem</button>
+              <button class="tb-view-btn">Mes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day grid: gutter + 1 columna full-width -->
+        <div style="display: flex; overflow: auto;">
+          <div style="width: 44px; flex-shrink: 0; border-right: 1px solid var(--border);">
+            <div style="height: 60px; font-size: 10px; color: var(--ink-4); text-align: right; padding: 0 6px; display: flex; align-items: flex-start; justify-content: flex-end; transform: translateY(-6px);">08:00</div>
+            <div style="height: 60px; font-size: 10px; color: var(--ink-4); text-align: right; padding: 0 6px; display: flex; align-items: flex-start; justify-content: flex-end; transform: translateY(-6px);">09:00</div>
+            <div style="height: 60px; font-size: 10px; color: var(--ink-4); text-align: right; padding: 0 6px; display: flex; align-items: flex-start; justify-content: flex-end; transform: translateY(-6px);">10:00</div>
+            <div style="height: 60px; font-size: 10px; color: var(--ink-4); text-align: right; padding: 0 6px; display: flex; align-items: flex-start; justify-content: flex-end; transform: translateY(-6px);">11:00</div>
+            <div style="height: 60px; font-size: 10px; color: var(--ink-4); text-align: right; padding: 0 6px; display: flex; align-items: flex-start; justify-content: flex-end; transform: translateY(-6px);">12:00</div>
+          </div>
+          <div style="flex: 1; position: relative; background: rgba(245,168,0,0.02);">
+            <div style="height: 60px; border-bottom: 1px solid var(--border);"></div>
+            <div style="height: 60px; border-bottom: 1px solid var(--border);"></div>
+            <div style="height: 60px; border-bottom: 1px solid var(--border);"></div>
+            <div style="height: 60px; border-bottom: 1px solid var(--border);"></div>
+            <div style="height: 60px;"></div>
+            <!-- Now line at ~09:20 -->
+            <div style="position: absolute; top: 80px; left: 0; right: 0; display: flex; align-items: center; z-index: 10; pointer-events: none;">
+              <svg width="8" height="10" style="flex-shrink: 0; margin-left: -1px;"><polygon points="0,0 8,5 0,10" fill="var(--gold)"/></svg>
+              <div style="flex: 1; height: 1.5px; background: var(--gold);"></div>
+            </div>
+            <!-- Event: 09:00-10:00 (standard variant, wider) -->
+            <div style="position: absolute; top: 60px; left: 4px; right: 4px; height: 58px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer;">
+              <div style="padding: 4px 10px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 5px;">
+                <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold);"></span>
+                <span style="font-size: 10px; font-weight: 600; color: var(--ink-3);">09:00 - 10:00</span>
+              </div>
+              <div style="padding: 4px 10px;">
+                <span style="font-size: 13px; font-weight: 500;">Vacunacion — Mia</span>
+                <div style="font-size: 11px; color: var(--ink-3); margin-top: 1px;">Consultorio 2</div>
+              </div>
+            </div>
+            <!-- Event: 10:30-11:00 (compact, 30min) -->
+            <div style="position: absolute; top: 150px; left: 4px; right: 4px; height: 28px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 0 8px;">
+              <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--teal-dk);"></span>
+              <span style="font-size: 11px; font-weight: 500;">10:30 Control Rocky</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Dia:</strong> 1 columna full-width. Eventos standard (timebar+body) para 60min+, compact (inline) para 30min. Time gutter 44px.
+      </div>
+    </div>
+
+    <!-- ─── Vista: 3 Dias ──────────────────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Vista — 3 Dias (default mobile)</div>
+
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+        <div class="toolbar">
+          <div class="tb-row1">
+            <span class="tb-title">Agenda</span>
+            <button class="tb-action-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div class="tb-row2">
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="tb-date">9 – 11 Abril 2026</span>
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+          <div class="tb-row3">
+            <div class="tb-views">
+              <button class="tb-view-btn">Dia</button>
+              <button class="tb-view-btn active">3D</button>
+              <button class="tb-view-btn">Sem</button>
+              <button class="tb-view-btn">Mes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Day grid -->
+        <div style="display: flex; overflow: auto;">
+          <div style="width: 40px; flex-shrink: 0; border-right: 1px solid var(--border); padding-top: 36px;">
+            <div style="height: 52px; font-size: 10px; color: var(--ink-4); text-align: right; padding-right: 4px;">08</div>
+            <div style="height: 52px; font-size: 10px; color: var(--ink-4); text-align: right; padding-right: 4px;">09</div>
+            <div style="height: 52px; font-size: 10px; color: var(--ink-4); text-align: right; padding-right: 4px;">10</div>
+            <div style="height: 52px; font-size: 10px; color: var(--ink-4); text-align: right; padding-right: 4px;">11</div>
+          </div>
+          <div style="flex: 1; display: flex; min-width: 0;">
+            <!-- Mie 9 (hoy) -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 36px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--gold-lt);">
+                <span style="font-size: 9px; font-weight: 600; color: var(--gold-hover); text-transform: uppercase;">Mie</span>
+                <span style="font-family: var(--font-serif); font-weight: 900; font-size: 14px;">9</span>
+              </div>
+              <div style="position: relative; background: rgba(245,168,0,0.02);">
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px;"></div>
+                <!-- Now line -->
+                <div style="position: absolute; top: 60px; left: 0; right: 0; display: flex; align-items: center; z-index: 10; pointer-events: none;">
+                  <svg width="8" height="10" style="flex-shrink: 0; margin-left: -1px;"><polygon points="0,0 8,5 0,10" fill="var(--gold)"/></svg>
+                  <div style="flex: 1; height: 1.5px; background: var(--gold);"></div>
+                </div>
+                <!-- Event: 09-10 -->
+                <div style="position: absolute; top: 52px; left: 2px; right: 2px; height: 50px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer;">
+                  <div style="padding: 2px 5px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 3px;">
+                    <span style="width: 4px; height: 4px; border-radius: 50%; background: var(--gold);"></span>
+                    <span style="font-size: 9px; font-weight: 600; color: var(--ink-3);">09:00</span>
+                  </div>
+                  <div style="padding: 2px 5px;"><span style="font-size: 10px; font-weight: 500;">Vacunacion</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- Jue 10 -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 36px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 9px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">Jue</span>
+                <span style="font-family: var(--font-serif); font-weight: 700; font-size: 14px;">10</span>
+              </div>
+              <div style="position: relative;">
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px;"></div>
+                <!-- Event: 11-12 -->
+                <div style="position: absolute; top: 156px; left: 2px; right: 2px; height: 50px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer;">
+                  <div style="padding: 2px 5px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 3px;">
+                    <span style="width: 4px; height: 4px; border-radius: 50%; background: var(--ink-4);"></span>
+                    <span style="font-size: 9px; font-weight: 600; color: var(--ink-3);">11:00</span>
+                  </div>
+                  <div style="padding: 2px 5px;"><span style="font-size: 10px; font-weight: 500;">Llamada</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- Vie 11 -->
+            <div style="flex: 1; min-width: 0;">
+              <div style="height: 36px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 9px; font-weight: 600; color: var(--ink-4); text-transform: uppercase;">Vie</span>
+                <span style="font-family: var(--font-serif); font-weight: 700; font-size: 14px;">11</span>
+              </div>
+              <div style="position: relative; background: var(--bg);">
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 52px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>3D (default mobile):</strong> 3 columnas amplias. Gutter 40px, horas abreviadas (08, 09...). Slot 52px. Eventos week variant.
+      </div>
+    </div>
+
+    <!-- ─── Vista: Semana ──────────────────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Vista — Semana (7 columnas compactas)</div>
+
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+        <div class="toolbar">
+          <div class="tb-row1">
+            <span class="tb-title">Agenda</span>
+            <button class="tb-action-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div class="tb-row2">
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="tb-date">7 – 13 Abril 2026</span>
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+          <div class="tb-row3">
+            <div class="tb-views">
+              <button class="tb-view-btn">Dia</button>
+              <button class="tb-view-btn">3D</button>
+              <button class="tb-view-btn active">Sem</button>
+              <button class="tb-view-btn">Mes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7-day compact grid -->
+        <div style="display: flex; overflow: auto;">
+          <div style="width: 28px; flex-shrink: 0; border-right: 1px solid var(--border); padding-top: 30px;">
+            <div style="height: 44px; font-size: 9px; color: var(--ink-4); text-align: right; padding-right: 3px;">08</div>
+            <div style="height: 44px; font-size: 9px; color: var(--ink-4); text-align: right; padding-right: 3px;">09</div>
+            <div style="height: 44px; font-size: 9px; color: var(--ink-4); text-align: right; padding-right: 3px;">10</div>
+            <div style="height: 44px; font-size: 9px; color: var(--ink-4); text-align: right; padding-right: 3px;">11</div>
+          </div>
+          <div style="flex: 1; display: flex; min-width: 0;">
+            <!-- Lun 7 -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 8px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">L</span>
+                <span style="font-size: 11px; font-weight: 700;">7</span>
+              </div>
+              <div style="position: relative;">
+                <div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 44px;"></div>
+                <!-- Event dot at 08 -->
+                <div style="position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--teal-dk);"></div>
+              </div>
+            </div>
+            <!-- Mar 8 -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 8px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">M</span>
+                <span style="font-size: 11px; font-weight: 700;">8</span>
+              </div>
+              <div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px;"></div></div>
+            </div>
+            <!-- Mie 9 (hoy) -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--gold-lt);">
+                <span style="font-size: 8px; font-weight: 600; color: var(--gold-hover); text-transform: uppercase;">X</span>
+                <span style="font-size: 11px; font-weight: 900;">9</span>
+              </div>
+              <div style="position: relative; background: rgba(245,168,0,0.02);">
+                <div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                <div style="height: 44px;"></div>
+                <!-- 2 event dots -->
+                <div style="position: absolute; top: 48px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 3px; align-items: center;">
+                  <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold);"></div>
+                  <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--teal-dk);"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Jue 10 -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 8px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">J</span>
+                <span style="font-size: 11px; font-weight: 700;">10</span>
+              </div>
+              <div style="position: relative;">
+                <div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px;"></div>
+                <div style="position: absolute; top: 136px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--ink-4);"></div>
+              </div>
+            </div>
+            <!-- Vie 11 -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 8px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">V</span>
+                <span style="font-size: 11px; font-weight: 700;">11</span>
+              </div>
+              <div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px;"></div></div>
+            </div>
+            <!-- Sab 12 -->
+            <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+              <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 8px; font-weight: 600; color: var(--ink-4); text-transform: uppercase;">S</span>
+                <span style="font-size: 11px; font-weight: 700; color: var(--ink-4);">12</span>
+              </div>
+              <div style="background: var(--bg);"><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px;"></div></div>
+            </div>
+            <!-- Dom 13 -->
+            <div style="flex: 1; min-width: 0;">
+              <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <span style="font-size: 8px; font-weight: 600; color: var(--ink-4); text-transform: uppercase;">D</span>
+                <span style="font-size: 11px; font-weight: 700; color: var(--ink-4);">13</span>
+              </div>
+              <div style="background: var(--bg);"><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div><div style="height: 44px;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Semana mobile:</strong> 7 columnas muy estrechas. Headers 1 letra (L,M,X,J,V,S,D). Gutter 28px. Eventos como dots posicionados (no cards, no caben). Tap en columna navega a vista Dia.
+      </div>
+    </div>
+
+    <!-- ─── Vista: Mes ─────────────────────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Vista — Mes (dots only)</div>
+
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+        <div class="toolbar">
+          <div class="tb-row1">
+            <span class="tb-title">Agenda</span>
+            <button class="tb-action-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div class="tb-row2">
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="tb-date">Abril 2026</span>
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+          <div class="tb-row3">
+            <div class="tb-views">
+              <button class="tb-view-btn">Dia</button>
+              <button class="tb-view-btn">3D</button>
+              <button class="tb-view-btn">Sem</button>
+              <button class="tb-view-btn active">Mes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Month grid compact -->
+        <div>
+          <div class="month-grid" style="border-bottom: 1px solid var(--border);">
+            <div class="month-dow">L</div><div class="month-dow">M</div><div class="month-dow">X</div>
+            <div class="month-dow">J</div><div class="month-dow">V</div><div class="month-dow">S</div><div class="month-dow">D</div>
+          </div>
+          <div class="month-grid">
+            <!-- Wk 1 -->
+            <div class="month-cell other-month"><span class="month-day-num other">30</span></div>
+            <div class="month-cell other-month"><span class="month-day-num other">31</span></div>
+            <div class="month-cell"><span class="month-day-num">1</span></div>
+            <div class="month-cell"><span class="month-day-num">2</span></div>
+            <div class="month-cell"><span class="month-day-num">3</span></div>
+            <div class="month-cell weekend"><span class="month-day-num other">4</span></div>
+            <div class="month-cell weekend"><span class="month-day-num other">5</span></div>
+            <!-- Wk 2 -->
+            <div class="month-cell"><span class="month-day-num">6</span><div class="month-dots"><span class="month-dot" style="background: var(--teal-dk);"></span></div></div>
+            <div class="month-cell"><span class="month-day-num">7</span><div class="month-dots"><span class="month-dot" style="background: var(--teal-dk);"></span><span class="month-dot" style="background: var(--gold);"></span></div></div>
+            <div class="month-cell"><span class="month-day-num">8</span><div class="month-dots"><span class="month-dot" style="background: var(--green);"></span></div></div>
+            <div class="month-cell today"><span class="month-day-num today">9</span><div class="month-dots"><span class="month-dot" style="background: var(--gold);"></span><span class="month-dot" style="background: var(--teal-dk);"></span><span class="month-dot" style="background: var(--green);"></span></div></div>
+            <div class="month-cell"><span class="month-day-num">10</span><div class="month-dots"><span class="month-dot" style="background: var(--ink-4);"></span></div></div>
+            <div class="month-cell weekend"><span class="month-day-num other">11</span></div>
+            <div class="month-cell weekend"><span class="month-day-num other">12</span></div>
+            <!-- Wk 3 -->
+            <div class="month-cell"><span class="month-day-num">13</span></div>
+            <div class="month-cell"><span class="month-day-num">14</span><div class="month-dots"><span class="month-dot" style="background: var(--gold);"></span></div></div>
+            <div class="month-cell"><span class="month-day-num">15</span></div>
+            <div class="month-cell"><span class="month-day-num">16</span></div>
+            <div class="month-cell"><span class="month-day-num">17</span></div>
+            <div class="month-cell weekend"><span class="month-day-num other">18</span></div>
+            <div class="month-cell weekend"><span class="month-day-num other">19</span></div>
+            <!-- Wk 4 -->
+            <div class="month-cell"><span class="month-day-num">20</span></div>
+            <div class="month-cell"><span class="month-day-num">21</span></div>
+            <div class="month-cell"><span class="month-day-num">22</span></div>
+            <div class="month-cell"><span class="month-day-num">23</span></div>
+            <div class="month-cell"><span class="month-day-num">24</span></div>
+            <div class="month-cell weekend"><span class="month-day-num other">25</span></div>
+            <div class="month-cell weekend"><span class="month-day-num other">26</span></div>
+            <!-- Wk 5 -->
+            <div class="month-cell"><span class="month-day-num">27</span></div>
+            <div class="month-cell"><span class="month-day-num">28</span></div>
+            <div class="month-cell"><span class="month-day-num">29</span></div>
+            <div class="month-cell"><span class="month-day-num">30</span></div>
+            <div class="month-cell other-month"><span class="month-day-num other">1</span></div>
+            <div class="month-cell weekend other-month"><span class="month-day-num other">2</span></div>
+            <div class="month-cell weekend other-month"><span class="month-day-num other">3</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Mes mobile:</strong> solo dots (max 3), sin texto de evento. Tap en dia abre vista Dia. Today: gold circle. Weekend: ink-4. Celdas 52px min-height.
+      </div>
+    </div>
+
+    <!-- ─── Vista: Agenda ──────────────────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Vista — Agenda (lista cronologica)</div>
+
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+        <div class="toolbar">
+          <div class="tb-row1">
+            <span class="tb-title">Agenda</span>
+            <button class="tb-action-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div class="tb-row2">
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <span class="tb-date">Abril 2026</span>
+            <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+          <div class="tb-row3">
+            <div class="tb-views">
+              <button class="tb-view-btn">Dia</button>
+              <button class="tb-view-btn">3D</button>
+              <button class="tb-view-btn">Sem</button>
+              <button class="tb-view-btn">Mes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agenda list inside CalendarView -->
+        <div style="padding: 12px 14px;">
+          <!-- Hoy -->
+          <div style="margin-bottom: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <div style="display: flex; flex-direction: column; align-items: center; width: 36px; flex-shrink: 0;">
+                <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gold-hover);">MIE</span>
+                <span style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--gold); color: white; font-size: 18px; font-weight: 700;">9</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 1px;">
+                <span style="font-size: 10px; color: var(--ink-3);">Abril 2026</span>
+                <span style="font-size: 9px; font-weight: 700; color: var(--gold-hover); text-transform: uppercase;">Hoy</span>
+              </div>
+              <div style="flex: 1; height: 1px; background: rgba(245,168,0,0.4);"></div>
+              <span style="font-size: 10px; color: var(--ink-4);">3</span>
+            </div>
+            <div style="padding-left: 44px; display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface);">
+                <div class="ev-dot ev-dot-gold"></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Vacunacion — Mia</div>
+                  <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">09:00 - 09:30</div>
+                </div>
+                <span class="ev-badge badge-scheduled" style="align-self: center;">Agendado</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface);">
+                <div class="ev-dot ev-dot-teal"></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 14px; font-weight: 500;">Control Rocky</div>
+                  <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">10:30 - 11:00</div>
+                </div>
+                <span class="ev-badge badge-confirmed" style="align-self: center;">Confirm.</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface);">
+                <div class="ev-dot ev-dot-green"></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 14px; font-weight: 500;">Auditoria stock</div>
+                  <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">14:00 - 15:00</div>
+                </div>
+                <span class="ev-badge badge-completed" style="align-self: center;">Complet.</span>
+              </div>
+            </div>
+          </div>
+          <!-- Manana -->
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <div style="display: flex; flex-direction: column; align-items: center; width: 36px; flex-shrink: 0;">
+                <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-4);">JUE</span>
+                <span style="font-size: 18px; font-weight: 700;">10</span>
+              </div>
+              <div><span style="font-size: 10px; color: var(--ink-3);">Abril 2026</span></div>
+              <div style="flex: 1; height: 1px; background: var(--border);"></div>
+              <span style="font-size: 10px; color: var(--ink-4);">1</span>
+            </div>
+            <div style="padding-left: 44px;">
+              <div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface);">
+                <div class="ev-dot ev-dot-neutral"></div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 14px; font-weight: 500;">Llamada distribuidor</div>
+                  <div style="font-size: 11px; color: var(--ink-3); margin-top: 2px;">11:00 - 12:00</div>
+                </div>
+                <span class="ev-badge badge-scheduled" style="align-self: center;">Agendado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Agenda:</strong> usa AgendaList dentro de CalendarView. Sin time grid — lista cronologica. Mejor vista para mobile cuando hay muchos eventos.<br>
+        <strong>Nota:</strong> el view switcher no muestra "Agenda" como boton — se accede via la 5ta opcion o se puede ocultar segun enabledViews.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       1. EventCard
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventCard</h2>
+      <span class="ref-subtitle">Touch targets mas grandes, texto 14px</span>
+      <span class="ref-import">import { EventCard } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Basico + con status</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
+        <div class="ev-card">
+          <div class="ev-dot ev-dot-teal"></div>
+          <div class="ev-info"><div class="ev-title">Reunion de equipo</div><div class="ev-meta">08:00 - 09:00</div></div>
+        </div>
+        <div style="height: 1px; background: var(--border); margin: 0 12px;"></div>
+        <div class="ev-card">
+          <div class="ev-dot ev-dot-gold"></div>
+          <div class="ev-info">
+            <div class="ev-title">Vacunacion — Mia</div>
+            <div class="ev-meta">09:00 - 09:30</div>
+          </div>
+          <span class="ev-badge badge-scheduled">Agendado</span>
+        </div>
+        <div style="height: 1px; background: var(--border); margin: 0 12px;"></div>
+        <div class="ev-card" style="opacity: 0.6;">
+          <div class="ev-dot ev-dot-red"></div>
+          <div class="ev-info"><div class="ev-title" style="text-decoration: line-through;">Seguimiento cancelado</div><div class="ev-meta">16:30</div></div>
+          <span class="ev-badge badge-cancelled">Cancelado</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       2. EventList (cards, no table)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventList</h2>
+      <span class="ref-subtitle">Cards en vez de tabla — touch friendly</span>
+      <span class="ref-import">import { EventList } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Cards + busqueda</div>
+      <div style="margin-bottom: 10px;">
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" placeholder="Buscar eventos..." />
+        </div>
+      </div>
+      <div class="cards-list">
+        <div class="el-card">
+          <div class="el-card-top"><div class="ev-dot ev-dot-teal"></div><span class="el-card-title">Reunion de equipo semanal</span></div>
+          <div class="el-card-meta">Lun 7 Abr, 08:00</div>
+          <div style="margin-top: 6px;"><span class="ev-badge badge-confirmed">Confirmado</span></div>
+        </div>
+        <div class="el-card">
+          <div class="el-card-top"><div class="ev-dot ev-dot-gold"></div><span class="el-card-title">Vacunacion — Mia (Triple felina)</span></div>
+          <div class="el-card-meta">Lun 7 Abr, 10:30</div>
+          <div style="margin-top: 6px;"><span class="ev-badge badge-scheduled">Agendado</span></div>
+        </div>
+        <div class="el-card">
+          <div class="el-card-top"><div class="ev-dot ev-dot-red"></div><span class="el-card-title">Capacitacion proveedores</span></div>
+          <div class="el-card-meta">Mie 9 Abr, 09:00</div>
+          <div style="margin-top: 6px;"><span class="ev-badge badge-cancelled">Cancelado</span></div>
+        </div>
+      </div>
+      <div class="pagination-bar">
+        <span>1-3 de 23</span>
+        <div class="page-btns">
+          <button class="page-btn" disabled>&#8249;</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">&#8250;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       3. EventStats (2 cols)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventStats</h2>
+      <span class="ref-subtitle">Grid 2 columnas en vez de 4</span>
+      <span class="ref-import">import { EventStats } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Dashboard cards</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+        <div class="stat-card" style="background: var(--surface);">
+          <div class="stat-number" style="color: var(--teal-dk);">24</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card" style="background: var(--gold-lt);">
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <div class="stat-number">10</div>
+            <span class="stat-pct" style="color: #8A6800;">42%</span>
+          </div>
+          <div class="stat-label"><span class="stat-dot" style="background: var(--gold);"></span> Agendado</div>
+        </div>
+        <div class="stat-card" style="background: var(--green-lt);">
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <div class="stat-number">8</div>
+            <span class="stat-pct" style="color: var(--green);">33%</span>
+          </div>
+          <div class="stat-label"><span class="stat-dot" style="background: var(--green);"></span> Confirmado</div>
+        </div>
+        <div class="stat-card" style="background: var(--red-lt);">
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <div class="stat-number">6</div>
+            <span class="stat-pct" style="color: var(--red);">25%</span>
+          </div>
+          <div class="stat-label"><span class="stat-dot" style="background: var(--red);"></span> Cancelado</div>
+        </div>
+      </div>
+      <div class="stat-bar" style="margin-bottom: 8px;">
+        <div class="stat-bar-seg" style="width: 42%; background: var(--gold);"></div>
+        <div class="stat-bar-seg" style="width: 33%; background: var(--green);"></div>
+        <div class="stat-bar-seg" style="width: 25%; background: var(--red);"></div>
+      </div>
+      <div class="stat-legend">
+        <div class="stat-legend-item"><span class="stat-dot" style="background: var(--gold);"></span> Agendado: 10</div>
+        <div class="stat-legend-item"><span class="stat-dot" style="background: var(--green);"></span> Confirmado: 8</div>
+        <div class="stat-legend-item"><span class="stat-dot" style="background: var(--red);"></span> Cancelado: 6</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       4. AgendaList
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">AgendaList</h2>
+      <span class="ref-subtitle">Eventos stacked con hora debajo del titulo</span>
+      <span class="ref-import">import { AgendaList } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Vista agenda mobile</div>
+
+      <!-- Grupo: Hoy -->
+      <div class="agenda-group">
+        <div class="agenda-date-header">
+          <div class="agenda-day-block">
+            <span class="agenda-day-abbr" style="color: var(--gold-hover);">MIE</span>
+            <span class="agenda-day-num today">9</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1px;">
+            <span class="agenda-month">Abril 2026</span>
+            <span class="agenda-today-pill">Hoy</span>
+          </div>
+          <div class="agenda-separator today"></div>
+          <span class="agenda-count">3</span>
+        </div>
+        <div class="agenda-events">
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-gold"></div>
+            <div class="agenda-event-info">
+              <div class="agenda-event-title">Vacunacion — Mia</div>
+              <div class="agenda-event-time">09:00 - 09:30</div>
+            </div>
+            <span class="ev-badge badge-scheduled" style="align-self: center;">Agendado</span>
+          </div>
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-teal"></div>
+            <div class="agenda-event-info">
+              <div class="agenda-event-title">Control peso — Rocky</div>
+              <div class="agenda-event-time">10:30 - 11:00</div>
+            </div>
+            <span class="ev-badge badge-confirmed" style="align-self: center;">Confirm.</span>
+          </div>
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-green"></div>
+            <div class="agenda-event-info">
+              <div class="agenda-event-title">Auditoria de stock</div>
+              <div class="agenda-event-time">14:00 - 15:00</div>
+            </div>
+            <span class="ev-badge badge-completed" style="align-self: center;">Complet.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grupo: Manana -->
+      <div class="agenda-group">
+        <div class="agenda-date-header">
+          <div class="agenda-day-block">
+            <span class="agenda-day-abbr">JUE</span>
+            <span class="agenda-day-num">10</span>
+          </div>
+          <div><span class="agenda-month">Abril 2026</span></div>
+          <div class="agenda-separator"></div>
+          <span class="agenda-count">1</span>
+        </div>
+        <div class="agenda-events">
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-neutral"></div>
+            <div class="agenda-event-info">
+              <div class="agenda-event-title">Llamada con distribuidor</div>
+              <div class="agenda-event-time">11:00 - 12:00</div>
+            </div>
+            <span class="ev-badge badge-scheduled" style="align-self: center;">Agendado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Mobile:</strong> hora debajo del titulo (no columna lateral). Badges abreviados si no caben. Dot + info + badge en una fila.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       5. MonthGrid (compact — dots only)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">MonthGrid</h2>
+      <span class="ref-subtitle">Celdas compactas — solo dots, sin texto de evento</span>
+      <span class="ref-import">import { MonthGrid } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Semana ejemplo</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden;">
+        <div class="month-grid">
+          <div class="month-dow">L</div><div class="month-dow">M</div><div class="month-dow">X</div>
+          <div class="month-dow">J</div><div class="month-dow">V</div><div class="month-dow">S</div><div class="month-dow">D</div>
+        </div>
+        <div class="month-grid">
+          <div class="month-cell">
+            <span class="month-day-num">7</span>
+            <div class="month-dots"><span class="month-dot" style="background: var(--teal-dk);"></span><span class="month-dot" style="background: var(--gold);"></span></div>
+          </div>
+          <div class="month-cell">
+            <span class="month-day-num">8</span>
+            <div class="month-dots"><span class="month-dot" style="background: var(--green);"></span></div>
+          </div>
+          <div class="month-cell today">
+            <span class="month-day-num today">9</span>
+            <div class="month-dots"><span class="month-dot" style="background: var(--gold);"></span><span class="month-dot" style="background: var(--teal-dk);"></span><span class="month-dot" style="background: var(--green);"></span></div>
+          </div>
+          <div class="month-cell">
+            <span class="month-day-num">10</span>
+            <div class="month-dots"><span class="month-dot" style="background: var(--ink-4);"></span></div>
+          </div>
+          <div class="month-cell"><span class="month-day-num">11</span></div>
+          <div class="month-cell weekend"><span class="month-day-num other">12</span></div>
+          <div class="month-cell weekend"><span class="month-day-num other">13</span></div>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Mobile:</strong> solo dots (max 3) — sin texto de evento. Tap en dia abre vista Dia. Celdas 52px min-height.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       6. UpcomingEvents
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">UpcomingEvents</h2>
+      <span class="ref-subtitle">Full-width, misma estructura que desktop</span>
+      <span class="ref-import">import { UpcomingEvents } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Con eventos</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border);">
+          <span style="font-family: var(--font-serif); font-weight: 700; font-size: 15px;">Proximos eventos</span>
+          <span style="font-size: 12px; color: var(--gold-hover); font-weight: 500;">Ver todos</span>
+        </div>
+        <div style="padding: 4px 6px;">
+          <div class="ev-card"><div class="ev-dot ev-dot-gold"></div><div class="ev-info"><div class="ev-title">Vacunacion — Mia</div><div class="ev-meta">Hoy, 09:00</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+          <div class="ev-card"><div class="ev-dot ev-dot-teal"></div><div class="ev-info"><div class="ev-title">Control peso — Rocky</div><div class="ev-meta">Hoy, 10:30</div></div><span class="ev-badge badge-confirmed">Confirm.</span></div>
+          <div class="ev-card"><div class="ev-dot ev-dot-green"></div><div class="ev-info"><div class="ev-title">Desparasitacion — Luna</div><div class="ev-meta">Manana, 08:00</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Vacio</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+        <div style="padding: 12px 14px; border-bottom: 1px solid var(--border);">
+          <span style="font-family: var(--font-serif); font-weight: 700; font-size: 15px;">Proximos eventos</span>
+        </div>
+        <div style="padding: 24px; text-align: center; font-size: 13px; color: var(--ink-4);">No hay proximos eventos</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       7. MiniCalendar (full-width en mobile)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">MiniCalendar</h2>
+      <span class="ref-subtitle">Full-width, celdas mas grandes para touch</span>
+      <span class="ref-import">import { MiniCalendar } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Full-width mobile</div>
+      <div class="mini-cal" style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface);">
+        <div class="mini-cal-header">
+          <span class="mini-cal-month">Abril 2026</span>
+          <div class="mini-cal-nav">
+            <button class="mini-cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <button class="mini-cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+        </div>
+        <div class="mini-cal-grid">
+          <span class="mini-cal-dow">L</span><span class="mini-cal-dow">M</span><span class="mini-cal-dow">X</span>
+          <span class="mini-cal-dow">J</span><span class="mini-cal-dow">V</span><span class="mini-cal-dow">S</span><span class="mini-cal-dow">D</span>
+          <span class="mini-cal-day other-month">30</span><span class="mini-cal-day other-month">31</span>
+          <span class="mini-cal-day">1</span><span class="mini-cal-day">2</span><span class="mini-cal-day">3</span>
+          <span class="mini-cal-day weekend">4</span><span class="mini-cal-day weekend">5</span>
+          <span class="mini-cal-day selected">6<div class="mini-cal-dots"><span class="mini-cal-dot-indicator" style="background:var(--teal-dk)"></span></div></span>
+          <span class="mini-cal-day">7</span>
+          <span class="mini-cal-day today">8</span>
+          <span class="mini-cal-day">9<div class="mini-cal-dots"><span class="mini-cal-dot-indicator" style="background:var(--gold)"></span></div></span>
+          <span class="mini-cal-day">10</span>
+          <span class="mini-cal-day weekend">11</span><span class="mini-cal-day weekend">12</span>
+          <span class="mini-cal-day">13</span><span class="mini-cal-day">14</span>
+          <span class="mini-cal-day">15</span><span class="mini-cal-day">16</span><span class="mini-cal-day">17</span>
+          <span class="mini-cal-day weekend">18</span><span class="mini-cal-day weekend">19</span>
+          <span class="mini-cal-day">20</span><span class="mini-cal-day">21</span><span class="mini-cal-day">22</span>
+          <span class="mini-cal-day">23</span><span class="mini-cal-day">24</span>
+          <span class="mini-cal-day weekend">25</span><span class="mini-cal-day weekend">26</span>
+          <span class="mini-cal-day">27</span><span class="mini-cal-day">28</span><span class="mini-cal-day">29</span>
+          <span class="mini-cal-day">30</span>
+          <span class="mini-cal-day other-month">1</span>
+          <span class="mini-cal-day other-month weekend">2</span><span class="mini-cal-day other-month weekend">3</span>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Mobile:</strong> ocupa ancho completo, celdas 36x36px para touch. Misma logica: today gold-lt, selected gold solido.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       8. EventForm (full-width, stacked)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventForm</h2>
+      <span class="ref-subtitle">Campos stacked, inputs 14px, botones full-width</span>
+      <span class="ref-import">import { EventForm } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Crear evento</div>
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px;">
+        <div class="form-group">
+          <label class="form-label">Titulo *</label>
+          <input class="form-input" placeholder="Titulo del evento" value="Vacunacion — Mia" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha *</label>
+          <input class="form-input" type="date" value="2026-04-09" />
+        </div>
+        <!-- Stacked: inicio + fin -->
+        <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label class="form-label">Inicio</label>
+            <input class="form-input" value="09:00" />
+          </div>
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label class="form-label">Fin</label>
+            <input class="form-input" value="09:30" />
+          </div>
+        </div>
+        <div class="form-switch">
+          <div class="form-switch-track"><div class="form-switch-thumb"></div></div>
+          <span class="form-label">Todo el dia</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Calendario</label>
+          <select class="form-select"><option>General</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select"><option>Agendado</option></select>
+        </div>
+        <!-- Contribution slot -->
+        <div style="border: 1px dashed var(--border-md); border-radius: 4px; padding: 8px 10px; margin-bottom: 14px; font-size: 10px; color: var(--ink-4);">
+          contribution slot (PetPicker, StaffPicker)
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descripcion</label>
+          <textarea class="form-input form-textarea" placeholder="Descripcion del evento"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div class="color-picker">
+            <div class="color-swatch selected" style="background: var(--gold);"></div>
+            <div class="color-swatch" style="background: var(--teal-dk);"></div>
+            <div class="color-swatch" style="background: var(--green);"></div>
+            <div class="color-swatch" style="background: var(--red);"></div>
+            <div class="color-swatch" style="background: var(--ink-4);"></div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="cta-btn cta-btn-primary">Crear evento</button>
+          <button class="cta-btn cta-btn-outline">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       9. EventDetail (single column)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventDetail</h2>
+      <span class="ref-subtitle">Single column, acciones sticky al fondo</span>
+      <span class="ref-import">import { EventDetail } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Vista detalle</div>
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px;">
+        <div class="detail-header">
+          <div class="detail-title">Vacunacion — Mia</div>
+          <span class="ev-badge badge-scheduled">Agendado</span>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">Inicio</div>
+          <div class="detail-field-value">Mie 9 Abr, 09:00</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">Fin</div>
+          <div class="detail-field-value">Mie 9 Abr, 09:30</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">Ubicacion</div>
+          <div class="detail-field-value">Consultorio 2</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-field-label">Descripcion</div>
+          <div class="detail-field-value">Triple felina + desparasitacion interna</div>
+        </div>
+        <!-- Contribution slot -->
+        <div style="border: 1px dashed var(--border-md); border-radius: 4px; padding: 8px 10px; margin-bottom: 12px; font-size: 10px; color: var(--ink-4);">
+          contribution: entity-info (paciente, staff)
+        </div>
+        <div class="detail-actions">
+          <button class="cta-btn cta-btn-outline" style="flex: 1; padding: 10px;">Editar</button>
+          <button class="cta-btn" style="flex: 1; padding: 10px; background: var(--red-lt); color: var(--red); border: 1px solid rgba(200,66,58,0.2);">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       10. EventPicker (full-width)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventPicker</h2>
+      <span class="ref-subtitle">Full-width, inputs 14px</span>
+      <span class="ref-import">import { EventPicker } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Estados</div>
+      <div style="margin-bottom: 12px;">
+        <span class="state-label" style="display: block; margin-bottom: 6px;">Sin seleccion</span>
+        <div class="picker-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Buscar evento...</span>
+        </div>
+      </div>
+      <div style="margin-bottom: 12px;">
+        <span class="state-label" style="display: block; margin-bottom: 6px;">Seleccionado</span>
+        <div class="picker-chip">
+          <div class="ev-dot ev-dot-gold" style="margin-top: 0;"></div>
+          Vacunacion — Mia
+          <button class="picker-chip-x">x</button>
+        </div>
+      </div>
+      <div>
+        <span class="state-label" style="display: block; margin-bottom: 6px;">Dropdown</span>
+        <div class="picker-dropdown">
+          <div class="picker-search"><input placeholder="Buscar evento..." value="vac" /></div>
+          <div class="picker-item">
+            <div class="ev-dot ev-dot-gold" style="margin-top: 0;"></div>
+            <div><div class="picker-item-title">Vacunacion — Mia</div><div class="picker-item-sub">Mie 9 Abr, 09:00</div></div>
+          </div>
+          <div class="picker-item">
+            <div class="ev-dot ev-dot-teal" style="margin-top: 0;"></div>
+            <div><div class="picker-item-title">Vacunacion — Rocky</div><div class="picker-item-sub">Jue 10 Abr, 14:00</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       11. CalendarBadge + ColorPicker
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">CalendarBadge + ColorPicker</h2>
+      <span class="ref-subtitle">Sin cambios estructurales en mobile</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">CalendarBadge</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+        <span class="cal-badge"><span class="cal-badge-dot" style="background: var(--gold);"></span> 3 turnos</span>
+        <span class="cal-badge">5 eventos</span>
+        <span class="cal-badge" style="border-color: var(--teal-dk); color: var(--teal-dk);"><span class="cal-badge-dot" style="background: var(--teal-dk);"></span> 2 consultas</span>
+        <span class="cal-badge" style="border-color: var(--red); color: var(--red);"><span class="cal-badge-dot" style="background: var(--red);"></span> 1 urgencia</span>
+      </div>
+      <div class="ref-label">ColorPicker (swatches 36px para touch)</div>
+      <div class="color-picker">
+        <div class="color-swatch selected" style="background: var(--gold);"></div>
+        <div class="color-swatch" style="background: var(--teal-dk);"></div>
+        <div class="color-swatch" style="background: var(--green);"></div>
+        <div class="color-swatch" style="background: var(--red);"></div>
+        <div class="color-swatch" style="background: var(--ink-4);"></div>
+        <div class="color-swatch" style="background: #3B82F6;"></div>
+        <div class="color-swatch" style="background: #7C3AED;"></div>
+        <div class="color-swatch" style="background: #EC4899;"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       12. CalendarSkeleton (mobile)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">CalendarSkeleton</h2>
+      <span class="ref-subtitle">Loading states para cada vista mobile</span>
+    </div>
+
+    <!-- 3-Day skeleton -->
+    <div class="ref-section">
+      <div class="ref-label">3-Day skeleton</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden;">
+        <!-- Toolbar skeleton -->
+        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+          <div class="skeleton" style="width: 120px; height: 20px; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="width: 160px; height: 14px; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="width: 100%; height: 32px; border-radius: var(--r-sm);"></div>
+        </div>
+        <!-- Grid skeleton -->
+        <div style="display: flex;">
+          <div style="width: 40px; border-right: 1px solid var(--border); padding-top: 36px;">
+            <div style="height: 52px; padding: 0 4px;"><div class="skeleton" style="width: 20px; height: 10px; margin-left: auto;"></div></div>
+            <div style="height: 52px; padding: 0 4px;"><div class="skeleton" style="width: 20px; height: 10px; margin-left: auto;"></div></div>
+          </div>
+          <div style="flex: 1; display: flex;">
+            <div style="flex: 1; border-right: 1px solid var(--border);">
+              <div style="height: 36px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                <div class="skeleton" style="width: 16px; height: 6px;"></div><div class="skeleton" style="width: 12px; height: 12px;"></div>
+              </div>
+              <div style="position: relative; height: 104px;">
+                <div class="skeleton" style="position: absolute; top: 10px; left: 2px; right: 2px; height: 40px;"></div>
+              </div>
+            </div>
+            <div style="flex: 1; border-right: 1px solid var(--border);">
+              <div style="height: 36px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                <div class="skeleton" style="width: 16px; height: 6px;"></div><div class="skeleton" style="width: 12px; height: 12px;"></div>
+              </div>
+              <div style="height: 104px;"></div>
+            </div>
+            <div style="flex: 1;">
+              <div style="height: 36px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+                <div class="skeleton" style="width: 16px; height: 6px;"></div><div class="skeleton" style="width: 12px; height: 12px;"></div>
+              </div>
+              <div style="position: relative; height: 104px;">
+                <div class="skeleton" style="position: absolute; top: 50px; left: 2px; right: 2px; height: 30px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MonthGrid skeleton -->
+    <div class="ref-section">
+      <div class="ref-label">MonthGrid skeleton</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden;">
+        <div class="month-grid">
+          <div class="month-dow">L</div><div class="month-dow">M</div><div class="month-dow">X</div>
+          <div class="month-dow">J</div><div class="month-dow">V</div><div class="month-dow">S</div><div class="month-dow">D</div>
+        </div>
+        <div class="month-grid">
+          <div class="month-cell" style="min-height: 44px;"><div class="skeleton" style="width: 14px; height: 12px; margin: 0 auto 4px;"></div><div class="month-dots"><div class="skeleton" style="width: 4px; height: 4px; border-radius: 50%;"></div></div></div>
+          <div class="month-cell" style="min-height: 44px;"><div class="skeleton" style="width: 14px; height: 12px; margin: 0 auto;"></div></div>
+          <div class="month-cell" style="min-height: 44px;"><div class="skeleton" style="width: 14px; height: 12px; margin: 0 auto 4px;"></div><div class="month-dots"><div class="skeleton" style="width: 4px; height: 4px; border-radius: 50%;"></div><div class="skeleton" style="width: 4px; height: 4px; border-radius: 50%;"></div></div></div>
+          <div class="month-cell" style="min-height: 44px;"><div class="skeleton" style="width: 14px; height: 12px; margin: 0 auto;"></div></div>
+          <div class="month-cell" style="min-height: 44px;"><div class="skeleton" style="width: 14px; height: 12px; margin: 0 auto 4px;"></div><div class="month-dots"><div class="skeleton" style="width: 4px; height: 4px; border-radius: 50%;"></div></div></div>
+          <div class="month-cell" style="min-height: 44px;"><div class="skeleton" style="width: 14px; height: 12px; margin: 0 auto;"></div></div>
+          <div class="month-cell" style="min-height: 44px;"><div class="skeleton" style="width: 14px; height: 12px; margin: 0 auto;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AgendaList skeleton -->
+    <div class="ref-section">
+      <div class="ref-label">AgendaList skeleton</div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; width: 36px;">
+            <div class="skeleton" style="width: 18px; height: 8px;"></div>
+            <div class="skeleton" style="width: 26px; height: 26px; border-radius: 50%;"></div>
+          </div>
+          <div class="skeleton" style="width: 50px; height: 10px;"></div>
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          <div class="skeleton" style="width: 14px; height: 10px;"></div>
+        </div>
+        <div style="padding-left: 44px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);">
+            <div class="skeleton" style="width: 8px; height: 8px; border-radius: 50%;"></div>
+            <div style="flex: 1;"><div class="skeleton" style="height: 14px; width: 65%; margin-bottom: 4px;"></div><div class="skeleton" style="height: 10px; width: 40%;"></div></div>
+            <div class="skeleton" style="width: 50px; height: 16px; border-radius: 10px;"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);">
+            <div class="skeleton" style="width: 8px; height: 8px; border-radius: 50%;"></div>
+            <div style="flex: 1;"><div class="skeleton" style="height: 14px; width: 50%; margin-bottom: 4px;"></div><div class="skeleton" style="height: 10px; width: 35%;"></div></div>
+            <div class="skeleton" style="width: 50px; height: 16px; border-radius: 10px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       13. FAB (Floating Action Button)
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">FAB</h2>
+      <span class="ref-subtitle">Boton flotante para crear — solo mobile</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Posicion: bottom-right, 24px del borde</div>
+      <div style="position: relative; height: 120px; background: var(--bg); border-radius: var(--r-md); border: 1px dashed var(--border);">
+        <div style="position: absolute; bottom: 16px; right: 16px;">
+          <button class="fab-inline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+        <div style="padding: 8px 12px; font-size: 10px; color: var(--ink-4);">
+          52x52px, gold, shadow. Alternativa al CTA circular del toolbar cuando la vista no tiene toolbar propio (ej: dashboard widget).
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       14. Uso en contexto mobile
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Uso en contexto</h2>
+      <span class="ref-subtitle">Dashboard veterinaria — mobile</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Turnos de hoy widget</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); background: var(--surface); overflow: hidden;">
+        <div style="padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-family: var(--font-serif); font-weight: 700; font-size: 15px;">Turnos de hoy</span>
+            <span class="cal-badge" style="border-color: var(--gold); color: #8A6800;"><span class="cal-badge-dot" style="background: var(--gold);"></span> 3</span>
+          </div>
+          <button class="tb-action-circle" style="width: 30px; height: 30px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+        <div style="padding: 4px 6px;">
+          <div class="ev-card"><div class="ev-dot ev-dot-gold"></div><div class="ev-info"><div class="ev-title">Vacunacion — Mia</div><div class="ev-meta">09:00 - Dra. Martinez</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+          <div class="ev-card"><div class="ev-dot ev-dot-teal"></div><div class="ev-info"><div class="ev-title">Castracion — Rocky</div><div class="ev-meta">10:30 - Dr. Lopez</div></div><span class="ev-badge badge-confirmed">Confirm.</span></div>
+          <div class="ev-card"><div class="ev-dot ev-dot-green"></div><div class="ev-info"><div class="ev-title">Control post-op — Luna</div><div class="ev-meta">14:00 - Dra. Martinez</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Mobile:</strong> CTA circular 30px en header (no boton rectangular). Badges abreviados ("Confirm." en vez de "Confirmado") si el espacio es limitado.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar Toolbar — Desktop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --r-xl: 18px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    /* ── Card header (toolbar dentro de card r-xl) ──── */
+    .card-header {
+      padding: 14px 22px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .hd-left { display: flex; align-items: center; gap: 16px; }
+
+    /* Titulo: Noto Serif JP 700 17px (patron card header) */
+    .hd-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+
+    .hd-nav { display: flex; align-items: center; gap: 6px; }
+    .hd-nav-btn {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-3); transition: border-color 150ms;
+    }
+    .hd-nav-btn:hover { border-color: var(--border-md); }
+    .hd-nav-btn svg { width: 13px; height: 13px; }
+
+    .hd-date {
+      font-size: 14px; font-weight: 500;
+      min-width: 180px; text-align: center;
+      color: var(--ink-2);
+    }
+
+    .hd-today {
+      padding: 4px 12px; font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      background: transparent; cursor: pointer; color: var(--ink-3);
+      font-family: var(--font-body); transition: all 150ms;
+    }
+    .hd-today:hover { border-color: var(--ink); color: var(--ink); }
+
+    .hd-right { display: flex; align-items: center; gap: 10px; }
+
+    /* View toggle */
+    .hd-views {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .hd-view-btn {
+      padding: 5px 14px; font-size: 11px; font-weight: 500;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--ink-3); font-family: var(--font-body); transition: all 150ms;
+    }
+    .hd-view-btn + .hd-view-btn { border-left: 1px solid var(--border); }
+    .hd-view-btn.active { background: var(--ink); color: white; }
+    .hd-view-btn:not(.active):hover { background: var(--bg); color: var(--ink-2); }
+
+    /* CTA gold (solo 1 por vista — patron Coongro) */
+    .btn-gold {
+      font-family: var(--font-body); font-weight: 700; font-size: 13px;
+      padding: 8px 18px; border-radius: var(--r-sm); cursor: pointer;
+      background: var(--gold); color: white; border: 1px solid var(--gold);
+      display: flex; align-items: center; gap: 6px; transition: background 150ms;
+    }
+    .btn-gold:hover { background: var(--gold-hover); }
+    .btn-gold svg { width: 14px; height: 14px; }
+
+    /* ── Demo layout ──────────────────────────────── */
+    .demo-note {
+      padding: 20px 22px;
+      color: var(--ink-3); font-size: 12px;
+    }
+    .demo-card {
+      margin: 24px 44px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      background: var(--surface);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Variante 1: Con CTA (appointments pasa "Nuevo turno") -->
+<div class="demo-card">
+  <div class="card-header">
+    <div class="hd-left">
+      <h2 class="hd-title">Agenda</h2>
+      <div class="hd-nav">
+        <button class="hd-nav-btn" aria-label="Dia anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <span class="hd-date">Lunes 07 Abril 2026</span>
+        <button class="hd-nav-btn" aria-label="Dia siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <button class="hd-today">Hoy</button>
+    </div>
+    <div class="hd-right">
+      <button class="btn-gold">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo turno
+      </button>
+      <div class="hd-views">
+        <button class="hd-view-btn active">Dia</button>
+        <button class="hd-view-btn">Semana</button>
+      </div>
+    </div>
+  </div>
+  <div class="demo-note">Con extraToolbarActions (appointments pasa "Nuevo turno")</div>
+</div>
+
+<!-- Variante 2: Sin CTA (calendar generico) -->
+<div class="demo-card">
+  <div class="card-header">
+    <div class="hd-left">
+      <h2 class="hd-title">Calendario</h2>
+      <div class="hd-nav">
+        <button class="hd-nav-btn" aria-label="Semana anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <span class="hd-date">6 – 12 Abril 2026</span>
+        <button class="hd-nav-btn" aria-label="Semana siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <button class="hd-today">Hoy</button>
+    </div>
+    <div class="hd-right">
+      <div class="hd-views">
+        <button class="hd-view-btn">Dia</button>
+        <button class="hd-view-btn active">Semana</button>
+        <button class="hd-view-btn">Mes</button>
+      </div>
+    </div>
+  </div>
+  <div class="demo-note">Sin extraToolbarActions (calendar generico)</div>
+</div>
+
+</body>
+</html>

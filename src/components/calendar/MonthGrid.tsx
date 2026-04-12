@@ -1,6 +1,7 @@
 import { getHostReact } from '@coongro/plugin-sdk';
 
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { TOKENS } from '../../styles/tokens.js';
 import type { MonthGridProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import { getMonthGridDays, getShortDayName, toDateString, isSameDay } from '../../utils/date.js';
@@ -10,21 +11,52 @@ const React = getHostReact();
 const { useMemo } = React;
 
 // Nombres de 1 letra para mobile
-function getDayNumberClass(isToday: boolean, isMobile: boolean, isCurrentMonth: boolean): string {
-  const sizeClass = isMobile ? 'w-8 h-8 text-sm' : 'w-6 h-6 text-xs';
+function getDayNumberStyle(
+  isToday: boolean,
+  isMobile: boolean,
+  isCurrentMonth: boolean
+): React.CSSProperties {
+  const size = isMobile ? 32 : 24;
+  const fontSize = isMobile ? '14px' : '12px';
+
   if (isToday) {
-    return `${sizeClass} flex items-center justify-center rounded-full bg-cg-accent text-white font-bold`;
+    return {
+      width: `${size}px`,
+      height: `${size}px`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '50%',
+      background: TOKENS.gold,
+      color: 'var(--cg-brand-text)',
+      fontWeight: 700,
+      fontSize,
+    };
   }
-  const textSize = isMobile ? 'text-sm' : 'text-xs';
-  const textColor = isCurrentMonth ? 'text-cg-text' : 'text-cg-text-muted';
-  return `${textSize} ${textColor}`;
+
+  return {
+    fontSize: isMobile ? '14px' : '12px',
+    color: isCurrentMonth ? TOKENS.ink : TOKENS.ink4,
+  };
 }
 
-function getDayCellClass(isCurrentMonth: boolean, isWeekend: boolean, isToday: boolean): string {
-  const todayClass = isToday ? 'bg-cg-accent/5' : '';
-  if (!isCurrentMonth) return `bg-cg-bg-muted/30 ${todayClass}`;
-  if (isWeekend) return `bg-cg-bg-secondary/30 hover:bg-cg-accent/5 ${todayClass}`;
-  return `hover:bg-cg-accent/5 ${todayClass}`;
+function getDayCellStyle(
+  isCurrentMonth: boolean,
+  isWeekend: boolean,
+  isToday: boolean
+): React.CSSProperties {
+  const base: React.CSSProperties = {};
+  if (isToday) {
+    base.background = `${TOKENS.gold}0D`; // ~5% opacity
+  }
+  if (!isCurrentMonth) {
+    if (!isToday) base.background = `${TOKENS.ink4}08`; // muted/30
+    return base;
+  }
+  if (isWeekend && !isToday) {
+    base.background = `${TOKENS.bg}4D`; // secondary/30
+  }
+  return base;
 }
 
 const SHORT_DAY_LETTERS: Record<number, string> = {
@@ -63,7 +95,7 @@ export function MonthGrid({
 
   // Filtrar columnas según showWeekends
   const weekDayIndices = showWeekends ? [1, 2, 3, 4, 5, 6, 0] : [1, 2, 3, 4, 5];
-  const gridColsClass = showWeekends ? 'grid-cols-7' : 'grid-cols-5';
+  const colCount = showWeekends ? 7 : 5;
 
   const weekDayHeaders = weekDayIndices.map((d) => {
     if (isMobile) return SHORT_DAY_LETTERS[d];
@@ -78,18 +110,36 @@ export function MonthGrid({
 
   return React.createElement(
     'div',
-    { className: `flex flex-col ${className}` },
+    {
+      className,
+      style: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+      },
+    },
 
     // Header
     React.createElement(
       'div',
-      { className: `grid ${gridColsClass} border-b border-cg-border` },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: `repeat(${colCount}, 1fr)`,
+          borderBottom: `1px solid ${TOKENS.border}`,
+        },
+      },
       weekDayHeaders.map((name) =>
         React.createElement(
           'div',
           {
             key: name,
-            className: 'text-center text-xs text-cg-text-muted py-2 font-medium',
+            style: {
+              textAlign: 'center' as const,
+              fontSize: '12px',
+              color: TOKENS.ink4,
+              padding: '8px 0',
+              fontWeight: 500,
+            },
           },
           name
         )
@@ -99,7 +149,13 @@ export function MonthGrid({
     // Grid
     React.createElement(
       'div',
-      { className: `grid ${gridColsClass} flex-1` },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: `repeat(${colCount}, 1fr)`,
+          flex: 1,
+        },
+      },
       filteredDays.map((day, i) => {
         const dateStr = toDateString(day);
         const isCurrentMonth = day.getMonth() === month;
@@ -112,11 +168,15 @@ export function MonthGrid({
           'div',
           {
             key: i,
-            className: `min-h-16 border-b border-r border-cg-border p-1 cursor-pointer group transition-colors ${getDayCellClass(
-              isCurrentMonth,
-              isWeekend,
-              isToday
-            )}`,
+            style: {
+              minHeight: '64px',
+              borderBottom: `1px solid ${TOKENS.border}`,
+              borderRight: `1px solid ${TOKENS.border}`,
+              padding: '4px',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s',
+              ...getDayCellStyle(isCurrentMonth, isWeekend, isToday),
+            },
             onClick: onDayClick ? () => onDayClick(dateStr) : undefined,
           },
 
@@ -124,23 +184,20 @@ export function MonthGrid({
           React.createElement(
             'div',
             {
-              className: `flex items-center justify-between ${isMobile ? 'justify-center' : 'mb-1'}`,
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isMobile ? 'center' : 'space-between',
+                marginBottom: isMobile ? 0 : '4px',
+              },
             },
             React.createElement(
               'div',
-              { className: getDayNumberClass(isToday, isMobile, isCurrentMonth) },
+              { style: getDayNumberStyle(isToday, isMobile, isCurrentMonth) },
               day.getDate()
-            ),
-            !isMobile &&
-              isCurrentMonth &&
-              React.createElement(
-                'span',
-                {
-                  className:
-                    'inline-flex items-center gap-0.5 text-[10px] font-semibold text-cg-accent bg-cg-accent/10 border border-cg-accent/20 rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity select-none leading-none whitespace-nowrap',
-                },
-                '+ Nuevo'
-              )
+            )
+            // Nota: el "+ Nuevo" hover se omite porque requiere group-hover CSS
+            // que no se puede replicar con inline styles puro
           ),
 
           // Eventos: dots en mobile, cards en desktop
@@ -148,24 +205,42 @@ export function MonthGrid({
             ? dayEvents.length > 0 &&
                 React.createElement(
                   'div',
-                  { className: 'flex justify-center gap-0.5 mt-1' },
+                  {
+                    style: {
+                      display: 'flex',
+                      justifyContent: 'center',
+                      gap: '2px',
+                      marginTop: '4px',
+                    },
+                  },
                   dayEvents.slice(0, 3).map((evt) =>
                     React.createElement('span', {
                       key: evt.id,
-                      className: 'w-1.5 h-1.5 rounded-full',
-                      style: { background: evt.color ?? '#3B82F6' },
+                      style: {
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: evt.color ?? 'var(--cg-accent)',
+                      },
                     })
                   )
                 )
             : React.createElement(
                 'div',
-                { className: 'flex flex-col gap-0.5' },
+                {
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column' as const,
+                    gap: '2px',
+                  },
+                },
                 dayEvents.slice(0, 3).map((evt) =>
                   renderEvent
                     ? React.createElement(React.Fragment, { key: evt.id }, renderEvent(evt))
                     : React.createElement(EventCard, {
                         key: evt.id,
                         event: evt,
+                        variant: 'mini',
                         showTime: false,
                         onClick: onEventClick,
                       })
@@ -173,7 +248,13 @@ export function MonthGrid({
                 dayEvents.length > 3 &&
                   React.createElement(
                     'div',
-                    { className: 'text-[10px] text-cg-text-muted pl-1' },
+                    {
+                      style: {
+                        fontSize: '10px',
+                        color: TOKENS.ink4,
+                        paddingLeft: '4px',
+                      },
+                    },
                     `+${dayEvents.length - 3} más`
                   )
               )

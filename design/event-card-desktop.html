@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventCard — Desktop (variantes)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A; --red-lt: #FEF2F2;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    .page { padding: 32px 44px; max-width: 900px; }
+
+    /* ── Reference card ──────────────────────────── */
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .ref-header {
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 12px;
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+    .ref-subtitle { font-size: 12px; color: var(--ink-3); }
+    .ref-section {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 14px;
+    }
+    .ref-row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .ref-note {
+      font-size: 11px; color: var(--ink-4); margin-top: 10px;
+      padding-left: 12px; border-left: 2px solid var(--border);
+    }
+
+    /* ── EventCard — dot de color + card limpia ──── */
+    .ev {
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      cursor: pointer; overflow: hidden;
+      width: 220px;
+      transition: border-color 150ms;
+    }
+    .ev:hover { border-color: var(--border-md); }
+
+    /* Color dot (patron badge Coongro) */
+    .ev-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-gold    { background: var(--gold); }
+    .dot-teal    { background: var(--teal-dk); }
+    .dot-green   { background: var(--green); }
+    .dot-red     { background: var(--red); }
+    .dot-neutral { background: var(--ink-4); }
+
+    /* Timebar: dot + hora + badge */
+    .ev-timebar {
+      padding: 5px 10px;
+      display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .ev-time {
+      font-size: 10px; font-weight: 700; color: var(--ink-3);
+      letter-spacing: 0.3px;
+      flex: 1;
+    }
+
+    /* Body */
+    .ev-body { padding: 6px 10px 8px; background: var(--surface); }
+    .ev-title {
+      font-size: 13px; font-weight: 500; color: var(--ink-2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ev-sub {
+      font-size: 10px; color: var(--ink-3); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* Badge */
+    .ev-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 9px; font-weight: 600;
+      padding: 1px 6px; border-radius: 10px;
+    }
+    .ev-badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .ev-badge-scheduled { background: rgba(212,168,0,0.12); color: #8A6800; }
+    .ev-badge-scheduled .ev-badge-dot { background: var(--gold); }
+    .ev-badge-completed { background: rgba(61,154,92,0.12); color: var(--green); }
+    .ev-badge-completed .ev-badge-dot { background: var(--green); }
+    .ev-badge-cancelled { background: rgba(200,66,58,0.08); color: var(--red); }
+    .ev-badge-cancelled .ev-badge-dot { background: var(--red); }
+
+    /* ── Compact (30min — una linea) ──────────────── */
+    .ev-compact {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+      background: var(--surface);
+    }
+    .ev-compact .ev-time { font-size: 10px; font-weight: 600; flex: none; }
+    .ev-compact .ev-title { font-size: 12px; margin: 0; }
+
+    /* ── Week grid (misma estructura, mas compacto) ── */
+    .ev-week { width: 150px; }
+    .ev-week .ev-timebar { padding: 3px 8px; }
+    .ev-week .ev-body { padding: 3px 8px 5px; }
+    .ev-week .ev-title { font-size: 11px; }
+    .ev-week .ev-time { font-size: 9px; }
+    .ev-week .ev-dot { width: 5px; height: 5px; }
+
+    /* Week compact (28px, una linea) */
+    .ev-week.ev-compact { padding: 4px 8px; gap: 5px; }
+    .ev-week.ev-compact .ev-dot { width: 5px; height: 5px; }
+    .ev-week.ev-compact .ev-title { font-size: 10px; }
+
+    /* ── Mini (month grid) ────────────────────────── */
+    .ev-mini {
+      display: flex; align-items: center; gap: 5px;
+      padding: 2px 6px;
+      border: none;
+      width: auto;
+      background: transparent;
+    }
+    .ev-mini .ev-dot { width: 5px; height: 5px; }
+    .ev-mini .ev-title { font-size: 11px; }
+
+    /* ── Month mobile dots ────────────────────────── */
+    .month-dots { display: flex; gap: 3px; justify-content: center; }
+    .month-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+    /* ── Selected ──────────────────────────────────── */
+    .ev-selected { outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold); }
+
+    /* ── Cancelled ─────────────────────────────────── */
+    .ev-cancelled .ev-title { text-decoration: line-through; color: var(--ink-4); }
+
+    /* ── Palette swatch ───────────────────────────── */
+    .swatch {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventCard</h2>
+      <span class="ref-subtitle">Variantes para day, week y month grids</span>
+    </div>
+
+    <!-- Standard -->
+    <div class="ref-section">
+      <div class="ref-label">Standard — Day grid (60min+)</div>
+      <div class="ref-row">
+        <div class="ev" style="height: 80px;">
+          <div class="ev-timebar">
+            <div class="ev-dot dot-teal"></div>
+            <span class="ev-time">08:00 – 09:00</span>
+          </div>
+          <div class="ev-body">
+            <div class="ev-title">Reunion de equipo</div>
+            <div class="ev-sub">Sala 1 · Planificacion semanal</div>
+          </div>
+        </div>
+
+        <div class="ev" style="height: 80px;">
+          <div class="ev-timebar">
+            <div class="ev-dot dot-gold"></div>
+            <span class="ev-time">10:00 – 11:00</span>
+            <span class="ev-badge ev-badge-scheduled"><span class="ev-badge-dot"></span>Agendado</span>
+          </div>
+          <div class="ev-body">
+            <div class="ev-title">Capacitacion ingresos</div>
+            <div class="ev-sub">Zoom · 5 participantes</div>
+          </div>
+        </div>
+
+        <div class="ev" style="height: 80px;">
+          <div class="ev-timebar">
+            <div class="ev-dot dot-green"></div>
+            <span class="ev-time">14:00 – 15:00</span>
+            <span class="ev-badge ev-badge-completed"><span class="ev-badge-dot"></span>Completado</span>
+          </div>
+          <div class="ev-body">
+            <div class="ev-title">Auditoria de stock</div>
+            <div class="ev-sub">Deposito central</div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">Card limpia con borde --border. Color via dot 6px (patron badge Coongro). Timebar con fondo --bg separado del body blanco.</div>
+    </div>
+
+    <!-- Compact -->
+    <div class="ref-section">
+      <div class="ref-label">Compact — Day grid (30min)</div>
+      <div class="ref-row">
+        <div class="ev ev-compact" style="height: 36px;">
+          <div class="ev-dot dot-gold"></div>
+          <span class="ev-time">09:30</span>
+          <span class="ev-title">Llamada con proveedor</span>
+        </div>
+
+        <div class="ev ev-compact" style="height: 36px;">
+          <div class="ev-dot dot-teal"></div>
+          <span class="ev-time">14:00</span>
+          <span class="ev-title">Revision de inventario</span>
+        </div>
+
+        <div class="ev ev-compact ev-cancelled" style="height: 36px;">
+          <div class="ev-dot dot-red"></div>
+          <span class="ev-time">16:30</span>
+          <span class="ev-title">Seguimiento cancelado</span>
+        </div>
+      </div>
+      <div class="ref-note">Una linea: dot + hora + titulo. Sin timebar separado.</div>
+    </div>
+
+    <!-- Week grid -->
+    <div class="ref-section">
+      <div class="ref-label">Week grid — Compacto con fondo sutil</div>
+      <div class="ref-row">
+        <div class="ev ev-week" style="height: 56px;">
+          <div class="ev-timebar">
+            <div class="ev-dot dot-teal"></div>
+            <span class="ev-time">08:00</span>
+          </div>
+          <div class="ev-body">
+            <div class="ev-title">Reunion equipo</div>
+          </div>
+        </div>
+
+        <div class="ev ev-week" style="height: 84px;">
+          <div class="ev-timebar">
+            <div class="ev-dot dot-gold"></div>
+            <span class="ev-time">10:00</span>
+          </div>
+          <div class="ev-body">
+            <div class="ev-title">Capacitacion</div>
+          </div>
+        </div>
+
+        <div class="ev ev-week ev-compact" style="height: 28px;">
+          <div class="ev-dot dot-neutral"></div>
+          <span class="ev-title">14:00 Rev. stock</span>
+        </div>
+      </div>
+      <div class="ref-note">Misma estructura que standard pero mas compacto. Borde + dot. Consistencia en todas las vistas.</div>
+    </div>
+
+    <!-- Mini -->
+    <div class="ref-section">
+      <div class="ref-label">Mini — Month grid</div>
+      <div class="ref-row" style="gap: 32px;">
+        <div>
+          <div style="display:flex; flex-direction:column; gap:3px; width:140px;">
+            <div class="ev ev-mini">
+              <div class="ev-dot dot-teal"></div>
+              <div class="ev-title">Reunion equipo</div>
+            </div>
+            <div class="ev ev-mini">
+              <div class="ev-dot dot-gold"></div>
+              <div class="ev-title">Capacitacion</div>
+            </div>
+            <div class="ev ev-mini">
+              <div class="ev-dot dot-green"></div>
+              <div class="ev-title">Auditoria stock</div>
+            </div>
+            <div style="font-size:10px; color:var(--ink-3); padding-left:11px;">+2 mas</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <span style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-3);">Mobile dots</span>
+          <div class="month-dots">
+            <div class="month-dot" style="background:var(--teal-dk);"></div>
+            <div class="month-dot" style="background:var(--gold);"></div>
+            <div class="month-dot" style="background:var(--green);"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">Dot + titulo. En mobile se reducen a dots sin texto.</div>
+    </div>
+
+    <!-- Selected -->
+    <div class="ref-section">
+      <div class="ref-label">Selected state</div>
+      <div class="ref-row">
+        <div class="ev ev-selected" style="height: 80px;">
+          <div class="ev-timebar">
+            <div class="ev-dot dot-gold"></div>
+            <span class="ev-time">09:00 – 09:30</span>
+            <span class="ev-badge ev-badge-scheduled"><span class="ev-badge-dot"></span>Agendado</span>
+          </div>
+          <div class="ev-body">
+            <div class="ev-title">Vacunacion — Mia</div>
+            <div class="ev-sub">Dra. Martinez · Triple felina</div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">Outline 2px gold (mismo patron que :focus-visible).</div>
+    </div>
+
+    <!-- Palette -->
+    <div class="ref-section" style="background:var(--bg);">
+      <div class="ref-label">Paleta semantica</div>
+      <div class="ref-row">
+        <div class="swatch"><div class="ev-dot dot-gold"></div> Gold — importante</div>
+        <div class="swatch"><div class="ev-dot dot-teal"></div> Teal — equipo</div>
+        <div class="swatch"><div class="ev-dot dot-green"></div> Green — confirmado</div>
+        <div class="swatch"><div class="ev-dot dot-red"></div> Red — cancelado</div>
+        <div class="swatch"><div class="ev-dot dot-neutral"></div> Neutral — default</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
