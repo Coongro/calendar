@@ -7,15 +7,33 @@ import type { EventFilters } from './filters.js';
 
 // --- Calendario ---
 
-export type CalendarViewMode = 'month' | 'week' | 'day' | 'agenda';
+export type CalendarViewMode = 'month' | 'week' | 'three-day' | 'day' | 'agenda';
+
+/** Contexto pasado a renderEvent con info del layout para elegir variante */
+export interface EventRenderContext {
+  variant: EventCardVariant;
+  height: number;
+}
 
 export interface CalendarViewProps {
   enabledViews?: CalendarViewMode[];
   defaultView?: CalendarViewMode;
-  renderEvent?: (event: CalendarEvent) => ReactNode;
+  /** Titulo mostrado a la izquierda del toolbar (ej: "Agenda", "Calendario"). */
+  title?: string;
+  /** Eventos externos. Se mergean con los eventos internos del calendario. */
+  events?: CalendarEvent[];
+  /** Si true, NO fetchea eventos internos — solo muestra los externos. Default: false. */
+  skipInternalEvents?: boolean;
+  /** Estado de carga externo. Se combina con el loading interno (OR). */
+  loading?: boolean;
+  /** Callback cuando cambia el rango de fechas visible (navegacion). */
+  onDateRangeChange?: (from: string, to: string) => void;
+  renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   renderToolbar?: () => ReactNode;
   showCalendarSidebar?: boolean;
   extraToolbarActions?: ReactNode;
+  /** Altura en px de cada slot en vista Dia. Si no se pasa, usa el default del design system. */
+  daySlotHeight?: number;
   onEventClick?: (event: CalendarEvent) => void;
   onSlotClick?: (date: string) => void;
   className?: string;
@@ -25,7 +43,7 @@ export interface MonthGridProps {
   year: number;
   month: number;
   events: CalendarEvent[];
-  renderEvent?: (event: CalendarEvent) => ReactNode;
+  renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   onEventClick?: (event: CalendarEvent) => void;
   onDayClick?: (date: string) => void;
   showWeekends?: boolean;
@@ -38,7 +56,7 @@ export interface WeekGridProps {
   startHour?: number;
   endHour?: number;
   slotDuration?: number;
-  renderEvent?: (event: CalendarEvent) => ReactNode;
+  renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   onEventClick?: (event: CalendarEvent) => void;
   onSlotClick?: (date: string, hour: number) => void;
   showWeekends?: boolean;
@@ -51,7 +69,9 @@ export interface DayColumnProps {
   startHour?: number;
   endHour?: number;
   slotDuration?: number;
-  renderEvent?: (event: CalendarEvent) => ReactNode;
+  /** Altura en px de cada slot. Si no se pasa, usa el default del design system (56 desktop, 48 mobile). */
+  slotHeight?: number;
+  renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   onEventClick?: (event: CalendarEvent) => void;
   onSlotClick?: (hour: number) => void;
   className?: string;
@@ -59,6 +79,7 @@ export interface DayColumnProps {
 
 export interface AgendaListProps {
   events: CalendarEvent[];
+  renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   onEventClick?: (event: CalendarEvent) => void;
   emptyMessage?: string;
   className?: string;
@@ -98,8 +119,12 @@ export interface FieldDef {
   required?: boolean;
 }
 
+export type EventCardVariant = 'standard' | 'compact' | 'week' | 'mini' | 'list';
+
 export interface EventCardProps {
   event: CalendarEvent;
+  /** Variante visual: standard (day 60min+), compact (30min), week, mini (month), list (widget/agenda) */
+  variant?: EventCardVariant;
   showDate?: boolean;
   showTime?: boolean;
   showStatus?: boolean;
@@ -137,7 +162,7 @@ export interface EventListProps {
   extraColumns?: ColumnDef[];
   extraActions?: ActionDef[];
   statusConfig?: Record<string, { label: string; color: string }>;
-  renderEvent?: (event: CalendarEvent) => ReactNode;
+  renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   onRowClick?: (event: CalendarEvent) => void;
   pageSize?: number;
   emptyMessage?: string;

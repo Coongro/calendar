@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Now Line — Exploracion de variantes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A; --red-lt: #FEF2F2;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+      --slot-h: 56px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+
+    .page { padding: 32px 44px 64px; max-width: 1100px; }
+
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .ref-header {
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 12px;
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+    .ref-subtitle { font-size: 12px; color: var(--ink-3); }
+    .ref-section {
+      padding: 24px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 16px;
+    }
+    .ref-note {
+      font-size: 11px; color: var(--ink-4); margin-top: 14px;
+      padding-left: 12px; border-left: 2px solid var(--border);
+      line-height: 1.6;
+    }
+
+    /* ── Demo container (simula grilla) ── */
+    .nl-demo {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      overflow: hidden;
+      display: flex;
+    }
+    .nl-gutter {
+      width: 56px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+    }
+    .nl-gutter-hour {
+      height: var(--slot-h);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 8px;
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+      transform: translateY(-7px);
+    }
+    .nl-gutter-hour:first-child { transform: none; align-items: center; }
+    .nl-grid {
+      flex: 1;
+      position: relative;
+    }
+    .nl-slot {
+      height: var(--slot-h);
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Event dummy ── */
+    .nl-event {
+      position: absolute; left: 3px; right: 50%;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden; z-index: 2;
+    }
+    .nl-ev-timebar {
+      padding: 3px 8px;
+      display: flex; align-items: center; gap: 5px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .nl-ev-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal-dk); }
+    .nl-ev-time { font-size: 9px; font-weight: 700; color: var(--ink-3); }
+    .nl-ev-body { padding: 3px 8px 5px; }
+    .nl-ev-title { font-size: 11px; font-weight: 500; color: var(--ink-2); }
+
+    /* ════════════════════════════════════════════════════
+       NOW LINE VARIANTS
+       ════════════════════════════════════════════════════ */
+
+    /* ── N1: Classic Red — dot + linea roja (Google Calendar) ── */
+    .n1-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n1-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--red);
+      margin-left: -5px; flex-shrink: 0;
+    }
+    .n1-rule { flex: 1; height: 2px; background: var(--red); }
+
+    /* ── N2: Gold Line — usa gold en vez de red ── */
+    .n2-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n2-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold);
+      margin-left: -5px; flex-shrink: 0;
+    }
+    .n2-rule { flex: 1; height: 2px; background: var(--gold); }
+
+    /* ── N3: Ink Line — linea oscura, sobria ── */
+    .n3-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n3-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ink);
+      margin-left: -4px; flex-shrink: 0;
+    }
+    .n3-rule { flex: 1; height: 1.5px; background: var(--ink); }
+
+    /* ── N4: Gold + Label — linea gold con hora ── */
+    .n4-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n4-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold);
+      margin-left: -5px; flex-shrink: 0;
+    }
+    .n4-rule { flex: 1; height: 2px; background: var(--gold); }
+    .n4-time {
+      position: absolute; left: 14px; top: -9px;
+      font-size: 9px; font-weight: 700; color: var(--gold-hover);
+      letter-spacing: 0.3px;
+      background: var(--surface);
+      padding: 0 4px;
+    }
+
+    /* ── N5: Dashed Gold — linea dashed dorada ── */
+    .n5-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n5-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gold);
+      margin-left: -4px; flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(245, 168, 0, 0.15);
+    }
+    .n5-rule {
+      flex: 1; height: 0;
+      border-top: 2px dashed var(--gold);
+    }
+
+    /* ── N6: Teal Line — coherencia con hover teal-lt ── */
+    .n6-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n6-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--teal-dk);
+      margin-left: -5px; flex-shrink: 0;
+    }
+    .n6-rule { flex: 1; height: 2px; background: var(--teal-dk); }
+
+    /* ── N7: Gold Glow — linea gold con halo sutil ── */
+    .n7-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n7-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold);
+      margin-left: -5px; flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(245, 168, 0, 0.12);
+    }
+    .n7-rule {
+      flex: 1; height: 2px;
+      background: var(--gold);
+      box-shadow: 0 0 6px rgba(245, 168, 0, 0.25);
+    }
+
+    /* ── N8: Red + Gold Dot — linea red, dot gold (link con today) ── */
+    .n8-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n8-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--gold);
+      border: 2px solid var(--red);
+      margin-left: -5px; flex-shrink: 0;
+    }
+    .n8-rule { flex: 1; height: 2px; background: var(--red); }
+
+    /* ── N9: Ink + Gold Tip — linea ink, dot gold ── */
+    .n9-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n9-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gold);
+      margin-left: -4px; flex-shrink: 0;
+    }
+    .n9-rule { flex: 1; height: 1.5px; background: var(--ink-3); }
+
+    /* ── N10: Triangle Marker — triangulo gold en vez de dot ── */
+    .n10-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n10-arrow {
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid var(--gold);
+      margin-left: -2px; flex-shrink: 0;
+    }
+    .n10-rule { flex: 1; height: 1.5px; background: var(--gold); }
+
+    /* ── N11: Gold + Gutter Label — label en el gutter ── */
+    .n11-line {
+      position: absolute; right: 0;
+      display: flex; align-items: center;
+      z-index: 5; pointer-events: none;
+    }
+    .n11-rule { flex: 1; height: 2px; background: var(--gold); }
+    .n11-gutter-label {
+      position: absolute; right: calc(100%); top: -8px;
+      width: 56px;
+      text-align: right;
+      padding-right: 8px;
+      font-size: 10px; font-weight: 700; color: var(--gold-hover);
+      letter-spacing: 0.2px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Now Line</h2>
+      <span class="ref-subtitle">Indicador de hora actual — variantes Coongro + experimentales</span>
+    </div>
+
+    <!-- N1 -->
+    <div class="ref-section">
+      <div class="ref-label">N1 — Classic Red (dot + linea roja)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n1-line" style="top: 75px;"><div class="n1-dot"></div><div class="n1-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Patron universal (Google Calendar, Outlook). Funciona pero es generico. Red no es un token semantico Coongro para "ahora".</div>
+    </div>
+
+    <!-- N2 -->
+    <div class="ref-section">
+      <div class="ref-label">N2 — Gold Line (gold = "hoy" en Coongro)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n2-line" style="top: 75px;"><div class="n2-dot"></div><div class="n2-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Gold como indicador de "ahora". Coherencia con Warm Glow del day header (gold-lt = hoy, gold = ahora). Sin red.</div>
+    </div>
+
+    <!-- N3 -->
+    <div class="ref-section">
+      <div class="ref-label">N3 — Ink Line (sobria, editorial)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n3-line" style="top: 75px;"><div class="n3-dot"></div><div class="n3-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Ink puro, 1.5px. Elegante, no compite con nada. Pero puede ser dificil de encontrar en una grilla con muchos eventos.</div>
+    </div>
+
+    <!-- N4 -->
+    <div class="ref-section">
+      <div class="ref-label">N4 — Gold + Label (linea gold con hora exacta)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n4-line" style="top: 75px;"><div class="n4-dot"></div><div class="n4-rule"></div><span class="n4-time">09:20</span></div>
+        </div>
+      </div>
+      <div class="ref-note">Gold + label de hora exacta (9px gold-hover con fondo surface). Informa sin requerir que el usuario mire el gutter.</div>
+    </div>
+
+    <!-- N5 -->
+    <div class="ref-section">
+      <div class="ref-label">N5 — Dashed Gold (linea dashed dorada)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n5-line" style="top: 75px;"><div class="n5-dot"></div><div class="n5-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Dashed gold. Mas ligera que solida, se diferencia de los bordes de la grilla (que son solidos). Dot con glow sutil.</div>
+    </div>
+
+    <!-- N6 -->
+    <div class="ref-section">
+      <div class="ref-label">N6 — Teal Line (teal = "ahora activo")</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n6-line" style="top: 75px;"><div class="n6-dot"></div><div class="n6-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Teal = estado activo en Coongro. Now line es un "estado activo" del momento. Coherencia con hover teal-lt del day header.</div>
+    </div>
+
+    <!-- N7 -->
+    <div class="ref-section">
+      <div class="ref-label">N7 — Gold Glow (linea gold con halo)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n7-line" style="top: 75px;"><div class="n7-dot"></div><div class="n7-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Gold + box-shadow glow sutil (6px, 25% opacity). El halo le da presencia sin agregar grosor. Dot con anillo de 3px.</div>
+    </div>
+
+    <!-- N8 -->
+    <div class="ref-section">
+      <div class="ref-label">N8 — Red + Gold Dot (hibrido: urgencia + identidad)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n8-line" style="top: 75px;"><div class="n8-dot"></div><div class="n8-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Linea red (visibilidad universal) + dot gold con borde red. El gold conecta con today, el red da urgencia temporal.</div>
+    </div>
+
+    <!-- N9 -->
+    <div class="ref-section">
+      <div class="ref-label">N9 — Ink + Gold Tip (linea discreta, punta dorada)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n9-line" style="top: 75px;"><div class="n9-dot"></div><div class="n9-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Linea ink-3 fina (1.5px) con dot gold. La linea no compite, el dot gold marca el punto de referencia. Minimalista.</div>
+    </div>
+
+    <!-- N10 -->
+    <div class="ref-section">
+      <div class="ref-label">N10 — Triangle Marker (flecha gold en vez de dot)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n10-line" style="top: 75px;"><div class="n10-arrow"></div><div class="n10-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Triangulo gold apuntando a la derecha. Mas direccional que un dot — indica "el tiempo avanza". Linea gold fina 1.5px.</div>
+    </div>
+
+    <!-- N11 -->
+    <div class="ref-section">
+      <div class="ref-label">N11 — Gold + Gutter Label (hora en el gutter)</div>
+      <div class="nl-demo">
+        <div class="nl-gutter" style="position:relative;">
+          <div class="nl-gutter-hour">09:00</div>
+          <div class="nl-gutter-hour">10:00</div>
+          <div class="nl-gutter-hour">11:00</div>
+          <span style="position:absolute; top:68px; right:8px; font-size:10px; font-weight:700; color:var(--gold-hover); letter-spacing:0.2px;">09:20</span>
+        </div>
+        <div class="nl-grid">
+          <div class="nl-slot"></div><div class="nl-slot"></div><div class="nl-slot"></div>
+          <div class="nl-event" style="top: 0; height: 56px;">
+            <div class="nl-ev-timebar"><div class="nl-ev-dot"></div><span class="nl-ev-time">09:00</span></div>
+            <div class="nl-ev-body"><div class="nl-ev-title">Reunion equipo</div></div>
+          </div>
+          <div class="n2-line" style="top: 75px;"><div class="n2-dot"></div><div class="n2-rule"></div></div>
+        </div>
+      </div>
+      <div class="ref-note">Linea gold limpia + la hora exacta reemplaza la hora redondeada en el gutter (gold-hover 700). La info va donde el usuario ya mira las horas.</div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

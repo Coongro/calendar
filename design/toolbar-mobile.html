@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar Toolbar — Mobile (375px)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); width: 375px; margin: 0 auto; }
+
+    /* ─── Mobile toolbar ──────────────────────────── */
+    .toolbar {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Row 1: título + acción */
+    .tb-row1 {
+      padding: 12px 16px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tb-title {
+      font-family: var(--font-serif);
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .tb-action-circle {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: var(--gold);
+      color: white;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tb-action-circle svg { width: 18px; height: 18px; }
+
+    /* Row 2: navegación de fecha */
+    .tb-row2 {
+      padding: 0 16px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tb-nav-btn {
+      width: 30px; height: 30px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-3);
+    }
+    .tb-nav-btn svg { width: 14px; height: 14px; }
+
+    .tb-date {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Row 3: view switcher (segmented control) */
+    .tb-row3 {
+      padding: 0 16px 10px;
+    }
+
+    .tb-views {
+      display: flex;
+      background: var(--bg);
+      border-radius: var(--r-sm);
+      padding: 2px;
+    }
+    .tb-view-btn {
+      flex: 1;
+      padding: 7px 0;
+      font-size: 12px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--ink-3);
+      font-family: var(--font-body);
+      border-radius: 5px;
+      text-align: center;
+      transition: all 150ms;
+    }
+    .tb-view-btn.active {
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
+
+    /* ─── Demo ──────────────────────────────── */
+    .demo-below {
+      padding: 30px 16px;
+      color: var(--ink-3);
+      font-size: 12px;
+      text-align: center;
+    }
+    .spacer { height: 30px; }
+  </style>
+</head>
+<body>
+
+<!-- Variante 1: Con acción (appointments pasa botón circular +) -->
+<div class="toolbar">
+  <div class="tb-row1">
+    <h1 class="tb-title">Agenda</h1>
+    <button class="tb-action-circle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="tb-row2">
+    <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="tb-date">Lun 07 Abril 2026</span>
+    <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+  <div class="tb-row3">
+    <div class="tb-views">
+      <button class="tb-view-btn active">Día</button>
+      <button class="tb-view-btn">Sem</button>
+      <button class="tb-view-btn">Mes</button>
+    </div>
+  </div>
+</div>
+
+<div class="demo-below">↑ Con extraToolbarActions (circle +)</div>
+
+<div class="spacer"></div>
+
+<!-- Variante 2: Sin acción extra -->
+<div class="toolbar">
+  <div class="tb-row1">
+    <h1 class="tb-title">Calendario</h1>
+  </div>
+  <div class="tb-row2">
+    <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="tb-date">Abril 2026</span>
+    <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+  <div class="tb-row3">
+    <div class="tb-views">
+      <button class="tb-view-btn">Día</button>
+      <button class="tb-view-btn">Sem</button>
+      <button class="tb-view-btn active">Mes</button>
+      <button class="tb-view-btn">Lista</button>
+    </div>
+  </div>
+</div>
+
+<div class="demo-below">↑ Sin acción extra (calendar genérico)</div>
+
+</body>
+</html>

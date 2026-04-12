@@ -31,7 +31,9 @@ export type {
   MiniCalendarProps,
   EventFormProps,
   FieldDef,
+  EventRenderContext,
   EventCardProps,
+  EventCardVariant,
   EventDetailProps,
   EventPickerProps,
   EventListProps,
@@ -77,6 +79,7 @@ export type { UseDateNavigationResult } from './hooks/useDateNavigation.js';
 export { CalendarView } from './components/calendar/CalendarView.js';
 export { MonthGrid } from './components/calendar/MonthGrid.js';
 export { WeekGrid } from './components/calendar/WeekGrid.js';
+export { ThreeDayGrid } from './components/calendar/ThreeDayGrid.js';
 export { DayColumn } from './components/calendar/DayColumn.js';
 export { AgendaList } from './components/calendar/AgendaList.js';
 export { MiniCalendar } from './components/calendar/MiniCalendar.js';

@@ -1,11 +1,12 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import { useEvents } from '../../hooks/useEvents.js';
+import { TOKENS, TRUNCATE, statusBadgeStyle } from '../../styles/tokens.js';
 import type { EventListProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import type { SortDirection } from '../../types/filters.js';
 import { formatEventDateTime } from '../../utils/date.js';
-import { formatStatus, STATUS_BADGE_CLASSES } from '../../utils/labels.js';
+import { formatStatus } from '../../utils/labels.js';
 import { CalendarIcon, PinIcon } from '../internal/icons.js';
 
 const React = getHostReact();
@@ -14,12 +15,17 @@ const { useState, useCallback, useMemo } = React;
 
 const SORTABLE_KEYS = new Set(['title', 'start_at', 'status']);
 
-// Helpers de renderizado reutilizados en columnas desktop y cards móvil
+// Helpers de renderizado reutilizados en columnas desktop y cards movil
 function renderColorDot(color: string | undefined | null) {
   if (!color) return null;
   return React.createElement('span', {
-    className: 'w-2.5 h-2.5 rounded-full shrink-0',
-    style: { backgroundColor: color },
+    style: {
+      width: '7px',
+      height: '7px',
+      borderRadius: '50%',
+      flexShrink: 0,
+      backgroundColor: color,
+    },
   });
 }
 
@@ -28,11 +34,7 @@ function renderStatusBadge(
   statusConfig?: Record<string, { label: string; color: string }>
 ) {
   const label = statusConfig?.[status]?.label ?? formatStatus(status);
-  return React.createElement(
-    UI.Badge,
-    { variant: 'outline', className: STATUS_BADGE_CLASSES[status] ?? '' },
-    label
-  );
+  return React.createElement('span', { style: statusBadgeStyle(status) }, label);
 }
 
 export function EventList({
@@ -86,20 +88,34 @@ export function EventList({
         render: (evt: CalendarEvent) =>
           React.createElement(
             'div',
-            { className: 'flex items-center gap-2' },
+            { style: { display: 'flex', alignItems: 'center', gap: '0.5rem' } },
             renderColorDot(evt.color),
             React.createElement(
               'div',
-              { className: 'flex flex-col gap-0.5 min-w-0' },
-              React.createElement('span', { className: 'truncate' }, evt.title),
+              {
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.125rem',
+                  minWidth: 0,
+                },
+              },
+              React.createElement('span', { style: { ...TRUNCATE } }, evt.title),
               evt.location &&
                 React.createElement(
                   'div',
                   {
-                    className: 'flex items-center gap-1 text-xs text-cg-text-muted font-normal',
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      fontSize: '0.75rem',
+                      color: TOKENS.ink4,
+                      fontWeight: 'normal',
+                    },
                   },
                   React.createElement(PinIcon, null),
-                  React.createElement('span', { className: 'truncate' }, evt.location)
+                  React.createElement('span', { style: { ...TRUNCATE } }, evt.location)
                 )
             )
           ),
@@ -133,31 +149,46 @@ export function EventList({
     (evt: CalendarEvent) =>
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1' },
+        { style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' } },
         React.createElement(
           'div',
-          { className: 'flex items-center gap-2' },
+          { style: { display: 'flex', alignItems: 'center', gap: '0.5rem' } },
           renderColorDot(evt.color),
-          React.createElement('span', { className: 'font-medium text-sm truncate' }, evt.title)
+          React.createElement(
+            'span',
+            {
+              style: {
+                fontWeight: 500,
+                fontSize: '0.875rem',
+                ...TRUNCATE,
+              },
+            },
+            evt.title
+          )
         ),
         React.createElement(
           'div',
-          { className: 'text-xs', style: { color: 'var(--cg-text-muted)' } },
+          { style: { fontSize: '0.75rem', color: TOKENS.ink4 } },
           formatEventDateTime(evt.start_at)
         ),
         evt.location &&
           React.createElement(
             'div',
             {
-              className: 'flex items-center gap-1 text-xs',
-              style: { color: 'var(--cg-text-muted)' },
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                fontSize: '0.75rem',
+                color: TOKENS.ink4,
+              },
             },
             React.createElement(PinIcon, null),
-            React.createElement('span', { className: 'truncate' }, evt.location)
+            React.createElement('span', { style: { ...TRUNCATE } }, evt.location)
           ),
         React.createElement(
           'div',
-          { className: 'mt-1' },
+          { style: { marginTop: '0.25rem' } },
           renderStatusBadge(evt.status, statusConfig)
         )
       ),

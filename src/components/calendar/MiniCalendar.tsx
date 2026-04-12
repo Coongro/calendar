@@ -9,20 +9,18 @@ import { CalendarGrid } from '../internal/CalendarGrid.js';
 
 const React = getHostReact();
 
-export function MiniCalendar({
-  selectedDate,
-  onDateSelect,
-  eventDots = {},
-  className = '',
-}: MiniCalendarProps) {
-  return React.createElement(CalendarGrid, {
-    selectedDate,
-    onDateSelect,
-    eventDots,
-    showMonthPicker: true,
-    showYearPicker: true,
-    showTodayButton: true,
-    daySize: 'sm',
-    className: `w-56 ${className}`,
-  });
+export function MiniCalendar({ selectedDate, onDateSelect, eventDots = {} }: MiniCalendarProps) {
+  return React.createElement(
+    'div',
+    { style: { width: '224px' } },
+    React.createElement(CalendarGrid, {
+      selectedDate,
+      onDateSelect,
+      eventDots,
+      showMonthPicker: true,
+      showYearPicker: true,
+      showTodayButton: true,
+      daySize: 'sm',
+    })
+  );
 }
