@@ -1,5 +1,11 @@
 # @coongro/calendar
 
+## 0.4.0
+
+### Minor Changes
+
+- a185f30: Redesign all UI components with inline styles and design system tokens, add dark mode support, responsive mobile layouts, ThreeDayGrid component, and shared grid-helpers utilities
+
 ## 0.3.0
 
 ### Minor Changes
