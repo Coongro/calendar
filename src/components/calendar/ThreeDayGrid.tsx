@@ -8,19 +8,23 @@ import { getHostReact } from '@coongro/plugin-sdk';
 import { TOKENS } from '../../styles/tokens.js';
 import type { WeekGridProps } from '../../types/components.js';
 import { getShortDayName, generateTimeSlots, toDateString, isSameDay } from '../../utils/date.js';
-import { SLOT_HEIGHT_3DAY, EVENT_Z } from '../../utils/grid-constants.js';
+import { SLOT_HEIGHT_3DAY, GUTTER_WIDTH_3DAY, EVENT_Z } from '../../utils/grid-constants.js';
 import {
   computeNowPosition,
   computeEventPosition,
   groupEventsByDay,
   renderNowLine,
+  dayBackground,
+  dayColumnBackground,
+  dayNameColor,
+  dayNumberStyles,
 } from '../../utils/grid-helpers.js';
 import { EventCard } from '../event/EventCard.js';
 
 const React = getHostReact();
 const { useMemo } = React;
 
-const GUTTER_W = 40;
+const GUTTER_W = GUTTER_WIDTH_3DAY;
 
 export function ThreeDayGrid({
   startDate,
@@ -53,16 +57,13 @@ export function ThreeDayGrid({
 
   const slotsPerHour = Math.round(60 / slotDuration);
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
 
-  const { gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
+  const { nowHour, nowTimeStr, gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
     startHour,
     endHour,
     slotDuration,
     slotHeight
   );
-  const nowTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
   return React.createElement(
     'div',
@@ -102,7 +103,7 @@ export function ThreeDayGrid({
               padding: '10px 0 8px',
               textAlign: 'center',
               borderRight: i < 2 ? `1px solid ${TOKENS.border}` : 'none',
-              background: isToday ? TOKENS.goldLt : isWeekend ? TOKENS.bg : TOKENS.surface,
+              background: dayBackground(isToday, isWeekend),
               minWidth: '0',
             },
           },
@@ -114,7 +115,7 @@ export function ThreeDayGrid({
                 fontWeight: '700',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                color: isToday ? TOKENS.goldHover : isWeekend ? TOKENS.ink4 : TOKENS.ink3,
+                color: dayNameColor(isToday, isWeekend),
                 marginBottom: '3px',
               },
             },
@@ -124,10 +125,9 @@ export function ThreeDayGrid({
             'div',
             {
               style: {
-                fontFamily: "'Noto Serif JP', serif",
+                fontFamily: TOKENS.fontSerif,
                 fontSize: isToday ? '20px' : '19px',
-                fontWeight: isToday ? '900' : isWeekend ? '400' : '700',
-                color: isToday ? TOKENS.ink : isWeekend ? TOKENS.ink4 : TOKENS.ink3,
+                ...dayNumberStyles(isToday, isWeekend),
                 lineHeight: '1',
               },
             },
@@ -166,7 +166,7 @@ export function ThreeDayGrid({
           },
           timeSlots.map((slot, i) => {
             const [h] = slot.split(':').map(Number);
-            const isNowHour = h === currentHour && i % slotsPerHour === 0 && nowInRange;
+            const isNowHour = h === nowHour && i % slotsPerHour === 0 && nowInRange;
 
             return React.createElement(
               'div',
@@ -198,6 +198,7 @@ export function ThreeDayGrid({
             const isToday = isSameDay(day, now);
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const dayEvents = eventsByDay[dateStr] ?? [];
+            const colBg = dayColumnBackground(isToday, isWeekend);
 
             return React.createElement(
               'div',
@@ -208,11 +209,7 @@ export function ThreeDayGrid({
                   position: 'relative',
                   borderRight: dayIdx < 2 ? `1px solid ${TOKENS.border}` : 'none',
                   minWidth: '0',
-                  ...(isToday
-                    ? { background: 'color-mix(in srgb, var(--cg-accent) 3%, transparent)' }
-                    : isWeekend
-                      ? { background: TOKENS.bg }
-                      : {}),
+                  ...(colBg ? { background: colBg } : {}),
                 },
               },
 

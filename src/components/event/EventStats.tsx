@@ -238,7 +238,7 @@ export function EventStats({ from, to, className = '' }: EventStatsProps) {
             borderRadius: '9999px',
             overflow: 'hidden',
             gap: '1px',
-            backgroundColor: `${TOKENS.border}30`,
+            backgroundColor: `color-mix(in srgb, ${TOKENS.border} 19%, transparent)`,
           },
         },
         ...activeStats.map((stat) =>

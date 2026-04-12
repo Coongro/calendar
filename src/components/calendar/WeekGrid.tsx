@@ -10,12 +10,22 @@ import {
   toDateString,
   isSameDay,
 } from '../../utils/date.js';
-import { SLOT_HEIGHT_DESKTOP, SLOT_HEIGHT_MOBILE, EVENT_Z } from '../../utils/grid-constants.js';
+import {
+  SLOT_HEIGHT_DESKTOP,
+  SLOT_HEIGHT_MOBILE,
+  GUTTER_WIDTH_DESKTOP,
+  GUTTER_WIDTH_MOBILE,
+  EVENT_Z,
+} from '../../utils/grid-constants.js';
 import {
   computeNowPosition,
   computeEventPosition,
   groupEventsByDay,
   renderNowLine,
+  dayBackground,
+  dayColumnBackground,
+  dayNameColor,
+  dayNumberStyles,
 } from '../../utils/grid-helpers.js';
 import { EventCard } from '../event/EventCard.js';
 
@@ -35,7 +45,7 @@ export function WeekGrid({
 }: WeekGridProps) {
   const isMobile = useIsMobile();
   const slotHeight = isMobile ? SLOT_HEIGHT_MOBILE : SLOT_HEIGHT_DESKTOP;
-  const gutterWidth = isMobile ? 36 : 56;
+  const gutterWidth = isMobile ? GUTTER_WIDTH_MOBILE : GUTTER_WIDTH_DESKTOP;
 
   const weekDays = useMemo(() => {
     const d = new Date(startDate);
@@ -52,10 +62,8 @@ export function WeekGrid({
 
   const slotsPerHour = Math.round(60 / slotDuration);
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
 
-  const { gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
+  const { nowHour, nowTimeStr, gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
     startHour,
     endHour,
     slotDuration,
@@ -68,9 +76,6 @@ export function WeekGrid({
     if (isMobile) return slot.split(':')[0]; // "08"
     return slot; // "08:00"
   };
-
-  // Hora actual formateada para el gutter
-  const nowTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
 
   return React.createElement(
     'div',
@@ -103,17 +108,17 @@ export function WeekGrid({
         const isWeekend = day.getDay() === 0 || day.getDay() === 6;
         const dayName = isMobile ? getShortDayName(day).charAt(0) : getShortDayName(day);
 
+        const numProps = dayNumberStyles(isToday, isWeekend);
+        const todayFontSize = isMobile ? '17px' : '22px';
+        const normalFontSize = isMobile ? '15px' : '20px';
+
         const headerStyle: Record<string, string> = {
           flex: '1',
           padding: isMobile ? '8px 0 6px' : '12px 0 10px',
           textAlign: 'center',
           borderRight: `1px solid ${TOKENS.border}`,
           minWidth: '0',
-          ...(isToday
-            ? { background: TOKENS.goldLt }
-            : isWeekend
-              ? { background: TOKENS.bg }
-              : { background: TOKENS.surface }),
+          background: dayBackground(isToday, isWeekend),
         };
 
         const nameStyle: Record<string, string> = {
@@ -121,15 +126,15 @@ export function WeekGrid({
           fontWeight: '700',
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
-          color: isToday ? TOKENS.goldHover : isWeekend ? TOKENS.ink4 : TOKENS.ink3,
+          color: dayNameColor(isToday, isWeekend),
           marginBottom: isMobile ? '2px' : '4px',
         };
 
         const numStyle: Record<string, string> = {
-          fontFamily: "'Noto Serif JP', serif",
-          fontSize: isToday ? (isMobile ? '17px' : '22px') : isMobile ? '15px' : '20px',
-          fontWeight: isToday ? '900' : isWeekend ? '400' : '700',
-          color: isToday ? TOKENS.ink : isWeekend ? TOKENS.ink4 : TOKENS.ink3,
+          fontFamily: TOKENS.fontSerif,
+          fontSize: isToday ? todayFontSize : normalFontSize,
+          fontWeight: numProps.fontWeight,
+          color: numProps.color,
           lineHeight: '1',
         };
 
@@ -164,7 +169,7 @@ export function WeekGrid({
           },
           timeSlots.map((slot, i) => {
             const [h] = slot.split(':').map(Number);
-            const isNowHour = h === currentHour && i % slotsPerHour === 0 && nowInRange;
+            const isNowHour = h === nowHour && i % slotsPerHour === 0 && nowInRange;
 
             return React.createElement(
               'div',
@@ -197,16 +202,13 @@ export function WeekGrid({
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const dayEvents = eventsByDay[dateStr] ?? [];
 
+            const colBg = dayColumnBackground(isToday, isWeekend);
             const colStyle: Record<string, string> = {
               flex: '1',
               position: 'relative',
               borderRight: `1px solid ${TOKENS.border}`,
               minWidth: '0',
-              ...(isToday
-                ? { background: 'color-mix(in srgb, var(--cg-accent) 3%, transparent)' }
-                : isWeekend
-                  ? { background: TOKENS.bg }
-                  : {}),
+              ...(colBg ? { background: colBg } : {}),
             };
 
             return React.createElement(

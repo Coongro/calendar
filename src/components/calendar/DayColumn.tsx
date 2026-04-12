@@ -108,7 +108,10 @@ export function DayColumn({
         React.createElement('div', {
           key: `slot-${slot}`,
           style: {
-            borderBottom: `1px solid ${i % slotsPerHour === 0 ? TOKENS.border + '66' : TOKENS.border + '33'}`,
+            borderBottom:
+              i % slotsPerHour === 0
+                ? `1px solid color-mix(in srgb, ${TOKENS.border} 40%, transparent)`
+                : `1px solid color-mix(in srgb, ${TOKENS.border} 20%, transparent)`,
             height: `${slotHeight}px`,
             cursor: onSlotClick ? 'pointer' : undefined,
           },

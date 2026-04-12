@@ -179,7 +179,9 @@ export function AgendaList({
             style: {
               flex: 1,
               height: '1px',
-              background: isToday ? `${TOKENS.gold}66` : TOKENS.border,
+              background: isToday
+                ? `color-mix(in srgb, ${TOKENS.gold} 40%, transparent)`
+                : TOKENS.border,
             },
           }),
 

@@ -3,8 +3,8 @@ import { getHostReact } from '@coongro/plugin-sdk';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { MonthGridProps } from '../../types/components.js';
-import type { CalendarEvent } from '../../types/event.js';
 import { getMonthGridDays, getShortDayName, toDateString, isSameDay } from '../../utils/date.js';
+import { groupEventsByDay } from '../../utils/grid-helpers.js';
 import { EventCard } from '../event/EventCard.js';
 
 const React = getHostReact();
@@ -47,14 +47,14 @@ function getDayCellStyle(
 ): React.CSSProperties {
   const base: React.CSSProperties = {};
   if (isToday) {
-    base.background = `${TOKENS.gold}0D`; // ~5% opacity
+    base.background = `color-mix(in srgb, ${TOKENS.gold} 5%, transparent)`; // ~5% opacity
   }
   if (!isCurrentMonth) {
-    if (!isToday) base.background = `${TOKENS.ink4}08`; // muted/30
+    if (!isToday) base.background = `color-mix(in srgb, ${TOKENS.ink4} 3%, transparent)`; // muted
     return base;
   }
   if (isWeekend && !isToday) {
-    base.background = `${TOKENS.bg}4D`; // secondary/30
+    base.background = `color-mix(in srgb, ${TOKENS.bg} 30%, transparent)`; // secondary/30
   }
   return base;
 }
@@ -82,16 +82,7 @@ export function MonthGrid({
   const isMobile = useIsMobile();
   const days = useMemo(() => getMonthGridDays(year, month), [year, month]);
 
-  // Agrupar eventos por fecha
-  const eventsByDate = useMemo(() => {
-    const map: Record<string, CalendarEvent[]> = {};
-    for (const evt of events) {
-      const key = toDateString(new Date(evt.start_at));
-      if (!map[key]) map[key] = [];
-      map[key].push(evt);
-    }
-    return map;
-  }, [events]);
+  const eventsByDate = useMemo(() => groupEventsByDay(events), [events]);
 
   // Filtrar columnas según showWeekends
   const weekDayIndices = showWeekends ? [1, 2, 3, 4, 5, 6, 0] : [1, 2, 3, 4, 5];

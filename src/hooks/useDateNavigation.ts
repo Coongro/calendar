@@ -33,49 +33,33 @@ export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDa
   const goToToday = useCallback(() => setCurrentDate(new Date()), []);
   const goToDate = useCallback((date: Date) => setCurrentDate(date), []);
 
-  const goNext = useCallback(() => {
-    setCurrentDate((prev) => {
-      const d = new Date(prev);
-      switch (view) {
-        case 'day':
-          d.setDate(d.getDate() + 1);
-          break;
-        case 'three-day':
-          d.setDate(d.getDate() + 3);
-          break;
-        case 'week':
-          d.setDate(d.getDate() + 7);
-          break;
-        case 'month':
-        case 'agenda':
-          d.setMonth(d.getMonth() + 1);
-          break;
-      }
-      return d;
-    });
-  }, [view]);
+  const navigate = useCallback(
+    (direction: 1 | -1) => {
+      setCurrentDate((prev) => {
+        const d = new Date(prev);
+        switch (view) {
+          case 'day':
+            d.setDate(d.getDate() + direction);
+            break;
+          case 'three-day':
+            d.setDate(d.getDate() + 3 * direction);
+            break;
+          case 'week':
+            d.setDate(d.getDate() + 7 * direction);
+            break;
+          case 'month':
+          case 'agenda':
+            d.setMonth(d.getMonth() + direction);
+            break;
+        }
+        return d;
+      });
+    },
+    [view]
+  );
 
-  const goPrev = useCallback(() => {
-    setCurrentDate((prev) => {
-      const d = new Date(prev);
-      switch (view) {
-        case 'day':
-          d.setDate(d.getDate() - 1);
-          break;
-        case 'three-day':
-          d.setDate(d.getDate() - 3);
-          break;
-        case 'week':
-          d.setDate(d.getDate() - 7);
-          break;
-        case 'month':
-        case 'agenda':
-          d.setMonth(d.getMonth() - 1);
-          break;
-      }
-      return d;
-    });
-  }, [view]);
+  const goNext = useCallback(() => navigate(1), [navigate]);
+  const goPrev = useCallback(() => navigate(-1), [navigate]);
 
   const { rangeStart, rangeEnd } = useMemo(() => {
     switch (view) {

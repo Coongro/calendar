@@ -14,6 +14,7 @@ export type {
   FieldDef,
   EventRenderContext,
   EventCardProps,
+  EventCardVariant,
   EventDetailProps,
   EventPickerProps,
   EventListProps,

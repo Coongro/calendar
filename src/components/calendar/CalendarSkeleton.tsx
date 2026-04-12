@@ -144,7 +144,7 @@ export function WeekGridSkeleton() {
               color: TOKENS.ink4,
               textAlign: 'right',
               paddingRight: '0.5rem',
-              borderBottom: `1px solid ${TOKENS.border}30`,
+              borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 19%, transparent)`,
             },
           },
           t
@@ -198,7 +198,7 @@ export function WeekGridSkeleton() {
               key: t,
               style: {
                 height: `${SLOT_H}px`,
-                borderBottom: `1px solid ${TOKENS.border}20`,
+                borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 13%, transparent)`,
               },
             })
           ),
@@ -254,7 +254,7 @@ export function DayColumnSkeleton() {
               color: TOKENS.ink4,
               textAlign: 'right',
               paddingRight: '0.75rem',
-              borderBottom: `1px solid ${TOKENS.border}30`,
+              borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 19%, transparent)`,
             },
           },
           t
@@ -279,7 +279,7 @@ export function DayColumnSkeleton() {
           key: t,
           style: {
             height: `${SLOT_H}px`,
-            borderBottom: `1px solid ${TOKENS.border}20`,
+            borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 13%, transparent)`,
           },
         })
       ),
