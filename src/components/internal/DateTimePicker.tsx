@@ -151,7 +151,6 @@ export function DateTimePicker({
                 gap: '12px',
                 cursor: 'pointer',
               },
-              className: 'hover:bg-cg-bg-hover transition-colors',
               onClick: () => setView('time'),
             },
             React.createElement(

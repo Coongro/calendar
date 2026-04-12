@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day Header Today — Exploracion de variantes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+
+    .page { padding: 32px 44px 64px; max-width: 1100px; }
+
+    /* ── Reference card ── */
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .ref-header {
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 12px;
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+    .ref-subtitle { font-size: 12px; color: var(--ink-3); }
+    .ref-section {
+      padding: 24px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 16px;
+    }
+    .ref-note {
+      font-size: 11px; color: var(--ink-4); margin-top: 14px;
+      padding-left: 12px; border-left: 2px solid var(--border);
+      line-height: 1.6;
+    }
+
+    /* ── Shared day header base ── */
+    .dh-name {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--ink-3);
+      margin-bottom: 4px;
+    }
+    .dh-num {
+      font-family: var(--font-serif); font-size: 20px; font-weight: 700;
+      color: var(--ink-2); line-height: 1;
+    }
+
+    /* ── Strip context (row of 7) ── */
+    .strip {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .strip-gutter {
+      width: 56px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .strip-day {
+      flex: 1;
+      padding: 14px 0 12px;
+      text-align: center;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+    .strip-day:last-child { border-right: none; }
+    .strip-day.wknd { background: var(--bg); }
+    .strip-day.wknd .dh-name { color: var(--ink-4); font-weight: 500; }
+    .strip-day.wknd .dh-num { color: var(--ink-4); font-weight: 400; font-size: 18px; }
+
+    .variant-label {
+      font-size: 9px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-4);
+      margin-top: 8px; text-align: center;
+    }
+
+    /* ════════════════════════════════════════════════════
+       VARIANTES COONGRO
+       ════════════════════════════════════════════════════ */
+
+    /* ── V1: Nav Active — gold-lt bg + bottom border ── */
+    .strip-day.v1 {
+      background: var(--gold-lt);
+      border-bottom: 2.5px solid var(--gold);
+    }
+    .strip-day.v1 .dh-name { color: var(--ink-2); }
+    .strip-day.v1 .dh-num { color: var(--gold-hover); font-weight: 900; font-size: 22px; }
+
+    /* ── V2: Pure Editorial — solo tipografia, sin color ── */
+    .strip-day.v2 .dh-name { color: var(--ink-2); font-weight: 700; }
+    .strip-day.v2 .dh-num { color: var(--ink); font-weight: 900; font-size: 24px; }
+
+    /* ── V3: Gold Serif — numero dorado, fondo neutro ── */
+    .strip-day.v3 .dh-name { color: var(--ink-3); }
+    .strip-day.v3 .dh-num { color: var(--gold); font-weight: 900; font-size: 22px; }
+
+    /* ── V4: Dot Signal — dot gold sobre el numero ── */
+    .strip-day.v4 .dh-name { color: var(--ink-2); }
+    .strip-day.v4 .dh-num { color: var(--ink); font-weight: 900; }
+    .strip-day.v4::after {
+      content: '';
+      display: block;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--gold);
+      margin: 6px auto 0;
+    }
+
+    /* ── V5: Left Bar — borde izquierdo gold (nav pattern exacto) ── */
+    .strip-day.v5 {
+      background: var(--gold-lt);
+      border-left: 2.5px solid var(--gold);
+    }
+    .strip-day.v5 .dh-name { color: var(--ink-2); }
+    .strip-day.v5 .dh-num { color: var(--ink); font-weight: 900; }
+
+    /* ── V6: Tag — numero en pill gold-lt ── */
+    .strip-day.v6 .dh-name { color: var(--ink-2); }
+    .strip-day.v6 .dh-num {
+      display: inline-block;
+      background: var(--gold-lt);
+      border: 1px solid var(--gold);
+      border-radius: var(--r-sm);
+      padding: 2px 10px;
+      color: var(--gold-hover);
+      font-weight: 900;
+    }
+
+    /* ── V7: Ink Inverse — fondo ink, numero gold (hero pattern) ── */
+    .strip-day.v7 {
+      background: var(--ink);
+    }
+    .strip-day.v7 .dh-name { color: var(--ink-4); }
+    .strip-day.v7 .dh-num { color: var(--gold); font-weight: 900; font-size: 22px; }
+
+    /* ── V8: Gold Underline — linea gold bajo el numero ── */
+    .strip-day.v8 .dh-name { color: var(--ink-2); }
+    .strip-day.v8 .dh-num {
+      color: var(--ink); font-weight: 900;
+      display: inline-block;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 3px;
+    }
+
+    /* ════════════════════════════════════════════════════
+       EXPERIMENTALES
+       ════════════════════════════════════════════════════ */
+
+    /* ── V9: Bento Split — numero en su propio compartimento ── */
+    .strip-day.v9 {
+      padding: 0;
+      display: flex; flex-direction: column;
+    }
+    .strip-day.v9 .dh-name {
+      padding: 8px 0 4px;
+      color: var(--ink-3);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .strip-day.v9 .dh-num {
+      padding: 8px 0 10px;
+      color: var(--ink); font-weight: 900; font-size: 22px;
+      background: var(--gold-lt);
+    }
+
+    /* ── V10: Corner Mark — triangulo gold en esquina ── */
+    .strip-day.v10 .dh-name { color: var(--ink-2); }
+    .strip-day.v10 .dh-num { color: var(--ink); font-weight: 900; }
+    .strip-day.v10::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      border-top: 14px solid var(--gold);
+      border-left: 14px solid transparent;
+    }
+
+    /* ── V11: Serif XL — puro peso tipografico, numero grande ── */
+    .strip-day.v11 .dh-name {
+      font-size: 9px; color: var(--gold-hover); font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .strip-day.v11 .dh-num {
+      color: var(--ink); font-weight: 900; font-size: 28px;
+    }
+
+    /* ── V12: Warm Glow — gold-lt bg suave, sin bordes especiales ── */
+    .strip-day.v12 {
+      background: var(--gold-lt);
+    }
+    .strip-day.v12 .dh-name { color: var(--gold-hover); font-weight: 700; }
+    .strip-day.v12 .dh-num { color: var(--ink); font-weight: 900; font-size: 22px; }
+
+    /* ── V13: Teal Accent — usa teal en vez de gold (diferencia de nav) ── */
+    .strip-day.v13 {
+      background: var(--teal-lt);
+      border-bottom: 2px solid var(--teal-dk);
+    }
+    .strip-day.v13 .dh-name { color: var(--teal-dk); font-weight: 700; }
+    .strip-day.v13 .dh-num { color: var(--ink); font-weight: 900; }
+
+    /* ── V14: Floating Number — numero "flota" sobre linea gold ── */
+    .strip-day.v14 .dh-name { color: var(--ink-3); }
+    .strip-day.v14 .dh-num {
+      color: var(--ink); font-weight: 900; font-size: 22px;
+      position: relative;
+    }
+    .strip-day.v14 .dh-num::after {
+      content: '';
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      bottom: -2px;
+      width: 18px; height: 3px;
+      background: var(--gold);
+      border-radius: 2px;
+    }
+
+    /* ── V15: Stamp — borde completo gold, como un sello ── */
+    .strip-day.v15 .v15-inner {
+      display: inline-flex; flex-direction: column; align-items: center;
+      border: 1.5px solid var(--gold);
+      border-radius: var(--r-sm);
+      padding: 6px 14px 8px;
+      background: var(--gold-lt);
+    }
+    .strip-day.v15 .dh-name { color: var(--gold-hover); margin-bottom: 2px; }
+    .strip-day.v15 .dh-num { color: var(--ink); font-weight: 900; font-size: 20px; }
+
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ══════════════════════════════════════════════════
+       VARIANTES COONGRO (patrones del design system)
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Day Header — Today</h2>
+      <span class="ref-subtitle">Variantes Coongro — patrones del design system</span>
+    </div>
+
+    <!-- V1 -->
+    <div class="ref-section">
+      <div class="ref-label">V1 — Nav Active (gold-lt + bottom border)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v1"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Patron nav-active adaptado: fondo gold-lt, borde inferior 2.5px gold, numero en gold-hover 900.</div>
+    </div>
+
+    <!-- V2 -->
+    <div class="ref-section">
+      <div class="ref-label">V2 — Pure Editorial (solo tipografia)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v2"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Cero color. El peso tipografico hace todo: ink + 900 + 24px. El contraste con ink-3/ink-2 de los otros dias es suficiente.</div>
+    </div>
+
+    <!-- V3 -->
+    <div class="ref-section">
+      <div class="ref-label">V3 — Gold Serif (numero dorado, fondo neutro)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v3"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Minimalista. Solo el numero cambia a gold 900. El fondo no cambia — la tipografia es el unico indicador.</div>
+    </div>
+
+    <!-- V4 -->
+    <div class="ref-section">
+      <div class="ref-label">V4 — Dot Signal (badge pattern)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v4"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Dot gold 6px debajo del numero — mismo patron que badges de tabla y event cards. Numero promovido a ink 900.</div>
+    </div>
+
+    <!-- V5 -->
+    <div class="ref-section">
+      <div class="ref-label">V5 — Left Bar (sidebar nav identico)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v5"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Patron nav-active EXACTO: gold-lt fondo + 2.5px left border gold. Maximo reconocimiento del patron, pero el borde izquierdo puede confundirse con el separador de columnas.</div>
+    </div>
+
+    <!-- V6 -->
+    <div class="ref-section">
+      <div class="ref-label">V6 — Tag / Pill (numero en capsula)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v6"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Numero dentro de pill gold-lt con borde gold. Mas enfatico que el dot, menos que el fondo completo. Evita el circulo generico.</div>
+    </div>
+
+    <!-- V7 -->
+    <div class="ref-section">
+      <div class="ref-label">V7 — Ink Inverse (hero pattern)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v7"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Patron hero invertido: fondo --ink, numero gold. Maximo contraste. Potente pero puede pesar demasiado en el header del calendario.</div>
+    </div>
+
+    <!-- V8 -->
+    <div class="ref-section">
+      <div class="ref-label">V8 — Gold Underline (linea bajo el numero)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v8"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Underline 2px gold directamente bajo el numero. Sutil, editorial, sin cambiar fondos. El numero se promueve a ink 900.</div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       EXPERIMENTALES (innovando dentro de Coongro)
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Experimentales</h2>
+      <span class="ref-subtitle">Innovaciones dentro del aire Coongro</span>
+    </div>
+
+    <!-- V9 -->
+    <div class="ref-section">
+      <div class="ref-label">V9 — Bento Split (compartimento separado)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v9"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Principio bento: nombre y numero en compartimentos separados. El numero vive en su propio bloque con fondo gold-lt. Divide informacion, da jerarquia.</div>
+    </div>
+
+    <!-- V10 -->
+    <div class="ref-section">
+      <div class="ref-label">V10 — Corner Mark (triangulo gold en esquina)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v10"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Marca gold en esquina superior derecha. Discreto, no compite con el contenido. El numero se promueve a ink 900 por peso.</div>
+    </div>
+
+    <!-- V11 -->
+    <div class="ref-section">
+      <div class="ref-label">V11 — Serif XL (escala tipografica extrema)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v11"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Pura escala. Numero 28px Noto Serif 900. Nombre en gold-hover para no perder referencia de "hoy". Jerarquia silenciosa via tamanio.</div>
+    </div>
+
+    <!-- V12 -->
+    <div class="ref-section">
+      <div class="ref-label">V12 — Warm Glow (gold-lt suave, sin bordes)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v12"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Solo fondo gold-lt (sin borde gold). Nombre en gold-hover. Calido, sutil, no agresivo. El "glow" viene del contraste con surface.</div>
+    </div>
+
+    <!-- V13 -->
+    <div class="ref-section">
+      <div class="ref-label">V13 — Teal Accent (diferencia de nav: usa teal para "estado")</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v13"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Usa teal (estado activo/exito) en vez de gold (accion). "Hoy" es un estado, no una accion. Diferencia semantica con el nav.</div>
+    </div>
+
+    <!-- V14 -->
+    <div class="ref-section">
+      <div class="ref-label">V14 — Floating Dash (trazo gold centrado bajo numero)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v14"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Trazo gold corto (18px, 3px alto, redondeado) centrado bajo el numero. Como un subrayado tipografico. El numero en ink 900 — todo el enfasis es tipografico + el acento.</div>
+    </div>
+
+    <!-- V15 -->
+    <div class="ref-section">
+      <div class="ref-label">V15 — Stamp (sello con borde gold)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day v15"><div class="dh-name" style="margin:0;"></div><div class="v15-inner"><div class="dh-name">LUN</div><div class="dh-num">6</div></div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Nombre + numero agrupados en un "sello" con borde gold + fondo gold-lt. Compacto, editorial, diferente a cualquier calendario. No es circulo — es un mini-card.</div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

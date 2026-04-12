@@ -2,6 +2,7 @@
 export { CalendarView } from './calendar/CalendarView.js';
 export { MonthGrid } from './calendar/MonthGrid.js';
 export { WeekGrid } from './calendar/WeekGrid.js';
+export { ThreeDayGrid } from './calendar/ThreeDayGrid.js';
 export { DayColumn } from './calendar/DayColumn.js';
 export { AgendaList } from './calendar/AgendaList.js';
 export { MiniCalendar } from './calendar/MiniCalendar.js';

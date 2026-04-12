@@ -1,6 +1,7 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { TOKENS, statusBadgeStyle } from '../../styles/tokens.js';
 import type { AgendaListProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import {
@@ -10,7 +11,7 @@ import {
   getMonthName,
   isSameDay,
 } from '../../utils/date.js';
-import { formatStatus, STATUS_BADGE_CLASSES } from '../../utils/labels.js';
+import { formatStatus } from '../../utils/labels.js';
 import { PinIcon, CalendarIcon } from '../internal/icons.js';
 
 const React = getHostReact();
@@ -19,6 +20,7 @@ const { useMemo } = React;
 
 export function AgendaList({
   events,
+  renderEvent,
   onEventClick,
   emptyMessage = 'Sin eventos en este período',
   className = '',
@@ -49,7 +51,15 @@ export function AgendaList({
 
   return React.createElement(
     'div',
-    { className: `flex flex-col gap-6 ${className}` },
+    {
+      className,
+      style: {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '24px',
+        padding: '16px',
+      },
+    },
     grouped.map(([dateStr, dayEvents]) => {
       const date = new Date(`${dateStr}T00:00:00`);
       const isToday = isSameDay(date, today);
@@ -64,25 +74,63 @@ export function AgendaList({
         // — Date header —
         React.createElement(
           'div',
-          { className: 'flex items-center gap-3 mb-3' },
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px',
+            },
+          },
 
           // Bloque día: abreviación + número (circle si es hoy)
           React.createElement(
             'div',
             {
-              className: `flex flex-col items-center w-10 shrink-0 ${isToday ? 'text-cg-accent' : 'text-cg-text-muted'}`,
+              style: {
+                display: 'flex',
+                flexDirection: 'column' as const,
+                alignItems: 'center',
+                width: '40px',
+                flexShrink: 0,
+                color: isToday ? TOKENS.gold : TOKENS.ink4,
+              },
             },
             React.createElement(
               'span',
-              { className: 'text-[9px] font-bold tracking-widest leading-none mb-0.5' },
+              {
+                style: {
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  lineHeight: 1,
+                  marginBottom: '2px',
+                },
+              },
               dayName
             ),
             React.createElement(
               'span',
               {
-                className: isToday
-                  ? 'w-8 h-8 flex items-center justify-center rounded-full bg-cg-accent text-white text-base font-bold leading-none'
-                  : 'text-xl font-bold leading-none',
+                style: isToday
+                  ? {
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      background: TOKENS.gold,
+                      color: 'var(--cg-brand-text)',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }
+                  : {
+                      fontSize: '20px',
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    },
               },
               dayNum
             )
@@ -91,18 +139,36 @@ export function AgendaList({
           // Mes/año + pill "Hoy"
           React.createElement(
             'div',
-            { className: 'flex flex-col gap-0.5' },
+            {
+              style: {
+                display: 'flex',
+                flexDirection: 'column' as const,
+                gap: '2px',
+              },
+            },
             React.createElement(
               'span',
-              { className: 'text-xs text-cg-text-muted leading-none' },
+              {
+                style: {
+                  fontSize: '12px',
+                  color: TOKENS.ink4,
+                  lineHeight: 1,
+                },
+              },
               monthYear
             ),
             isToday &&
               React.createElement(
                 'span',
                 {
-                  className:
-                    'text-[9px] font-bold text-cg-accent uppercase tracking-widest leading-none',
+                  style: {
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    color: TOKENS.gold,
+                    textTransform: 'uppercase' as const,
+                    letterSpacing: '0.1em',
+                    lineHeight: 1,
+                  },
                 },
                 'Hoy'
               )
@@ -110,13 +176,25 @@ export function AgendaList({
 
           // Separador horizontal
           React.createElement('div', {
-            className: `flex-1 h-px ${isToday ? 'bg-cg-accent/40' : 'bg-cg-border'}`,
+            style: {
+              flex: 1,
+              height: '1px',
+              background: isToday
+                ? `color-mix(in srgb, ${TOKENS.gold} 40%, transparent)`
+                : TOKENS.border,
+            },
           }),
 
           // Conteo de eventos
           React.createElement(
             'span',
-            { className: 'text-[10px] text-cg-text-muted shrink-0' },
+            {
+              style: {
+                fontSize: '10px',
+                color: TOKENS.ink4,
+                flexShrink: 0,
+              },
+            },
             `${dayEvents.length} evento${dayEvents.length !== 1 ? 's' : ''}`
           )
         ),
@@ -124,80 +202,140 @@ export function AgendaList({
         // — Filas de eventos —
         React.createElement(
           'div',
-          { className: `flex flex-col gap-1.5 ${isMobile ? 'pl-0 mt-2' : 'pl-12'}` },
+          {
+            style: {
+              display: 'flex',
+              flexDirection: 'column' as const,
+              gap: '6px',
+              paddingLeft: isMobile ? 0 : '48px',
+              marginTop: isMobile ? '8px' : 0,
+            },
+          },
           dayEvents.map((evt) =>
-            React.createElement(
-              'div',
-              {
-                key: evt.id,
-                className:
-                  'flex items-center gap-3 py-2.5 px-3 rounded-lg border border-cg-border bg-cg-bg hover:bg-cg-bg-hover transition-colors cursor-pointer',
-                onClick: onEventClick ? () => onEventClick(evt) : undefined,
-              },
-
-              // Dot de color del evento
-              React.createElement('span', {
-                className: 'w-2.5 h-2.5 rounded-full shrink-0',
-                style: { backgroundColor: evt.color ?? '#3B82F6' },
-              }),
-
-              // Horario (columna lateral en desktop, oculto en mobile)
-              !isMobile &&
-                React.createElement(
+            renderEvent
+              ? React.createElement(
+                  'div',
+                  { key: evt.id, style: { cursor: 'pointer' } },
+                  renderEvent(evt, { variant: 'list', height: 48 })
+                )
+              : React.createElement(
                   'div',
                   {
-                    className: 'w-24 shrink-0 text-xs text-cg-text-muted font-medium tabular-nums',
+                    key: evt.id,
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: `1px solid ${TOKENS.border}`,
+                      background: TOKENS.bg,
+                      cursor: 'pointer',
+                      transition: 'background-color 0.15s',
+                    },
+                    onClick: onEventClick ? () => onEventClick(evt) : undefined,
                   },
-                  evt.all_day
-                    ? 'Todo el día'
-                    : `${formatEventTime(evt.start_at)} - ${formatEventTime(evt.end_at)}`
-                ),
 
-              // Título + hora (mobile) / ubicación
-              React.createElement(
-                'div',
-                { className: 'flex-1 min-w-0' },
-                React.createElement(
-                  'div',
-                  { className: 'text-sm font-medium truncate' },
-                  evt.title
-                ),
-                isMobile &&
-                  React.createElement(
-                    'div',
-                    { className: 'text-xs text-cg-text-muted mt-0.5' },
-                    evt.all_day
-                      ? 'Todo el día'
-                      : [
-                          formatEventTime(evt.start_at),
-                          ' — ',
-                          formatEventTime(evt.end_at),
-                          evt.location ? ' · ' + evt.location : '',
-                        ].join('')
-                  ),
-                !isMobile &&
-                  evt.location &&
+                  // Dot de color del evento
+                  React.createElement('span', {
+                    style: {
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      backgroundColor: evt.color ?? 'var(--cg-accent)',
+                    },
+                  }),
+
+                  // Horario (columna lateral en desktop, oculto en mobile)
+                  !isMobile &&
+                    React.createElement(
+                      'div',
+                      {
+                        style: {
+                          width: '96px',
+                          flexShrink: 0,
+                          fontSize: '12px',
+                          color: TOKENS.ink4,
+                          fontWeight: 500,
+                          fontVariantNumeric: 'tabular-nums',
+                        },
+                      },
+                      evt.all_day
+                        ? 'Todo el día'
+                        : `${formatEventTime(evt.start_at)} - ${formatEventTime(evt.end_at)}`
+                    ),
+
+                  // Título + hora (mobile) / ubicación
                   React.createElement(
                     'div',
                     {
-                      className:
-                        'flex items-center gap-1 text-xs text-cg-text-muted truncate mt-0.5',
+                      style: {
+                        flex: 1,
+                        minWidth: 0,
+                      },
                     },
-                    React.createElement(PinIcon, null),
-                    evt.location
-                  )
-              ),
+                    React.createElement(
+                      'div',
+                      {
+                        style: {
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap' as const,
+                        },
+                      },
+                      evt.title
+                    ),
+                    isMobile &&
+                      React.createElement(
+                        'div',
+                        {
+                          style: {
+                            fontSize: '12px',
+                            color: TOKENS.ink4,
+                            marginTop: '2px',
+                          },
+                        },
+                        evt.all_day
+                          ? 'Todo el día'
+                          : [
+                              formatEventTime(evt.start_at),
+                              ' — ',
+                              formatEventTime(evt.end_at),
+                              evt.location ? ' · ' + evt.location : '',
+                            ].join('')
+                      ),
+                    !isMobile &&
+                      evt.location &&
+                      React.createElement(
+                        'div',
+                        {
+                          style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '12px',
+                            color: TOKENS.ink4,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap' as const,
+                            marginTop: '2px',
+                          },
+                        },
+                        React.createElement(PinIcon, null),
+                        evt.location
+                      )
+                  ),
 
-              // Badge de estado con color
-              React.createElement(
-                UI.Badge,
-                {
-                  variant: 'outline',
-                  className: `shrink-0 text-[10px] ${STATUS_BADGE_CLASSES[evt.status] ?? ''}`,
-                },
-                formatStatus(evt.status)
-              )
-            )
+                  // Badge de estado
+                  React.createElement(
+                    'span',
+                    { style: statusBadgeStyle(evt.status) },
+                    formatStatus(evt.status)
+                  )
+                )
           )
         )
       );

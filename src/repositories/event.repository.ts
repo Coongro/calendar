@@ -45,6 +45,20 @@ export class EventRepository {
   }
 
   async create({ data }: { data: NewEventRow }): Promise<EventRow[]> {
+    // Validar solapamiento si tiene fecha inicio y fin
+    if (data.start_at && data.end_at && !data.all_day) {
+      const conflicts = await this.findConflicts({
+        startAt: data.start_at,
+        endAt: data.end_at,
+      });
+      // Ignorar eventos cancelados
+      const activeConflicts = conflicts.filter((c) => c.status !== 'cancelled');
+      if (activeConflicts.length > 0) {
+        const c = activeConflicts[0];
+        throw new Error(`Conflicto de horario: ya existe "${c.title}" en ese rango`);
+      }
+    }
+
     const row = {
       ...data,
       id: data.id ?? crypto.randomUUID(),

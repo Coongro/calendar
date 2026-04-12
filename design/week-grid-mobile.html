@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeekGrid — Mobile (375px)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+      --slot-h: 48px;
+      --gutter-w: 36px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); width: 375px; margin: 0 auto; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    /* ── Toolbar mobile (aprobado en toolbar-mobile.html) ── */
+    .toolbar {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .tb-row1 { padding: 12px 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+    .tb-title { font-family: var(--font-serif); font-weight: 900; font-size: 20px; }
+    .tb-action-circle {
+      width: 34px; height: 34px; border-radius: 50%; border: none;
+      background: var(--gold); color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tb-action-circle svg { width: 18px; height: 18px; }
+    .tb-row2 { padding: 0 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+    .tb-nav-btn {
+      width: 30px; height: 30px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink-3);
+    }
+    .tb-nav-btn svg { width: 14px; height: 14px; }
+    .tb-date { font-size: 14px; font-weight: 500; }
+    .tb-row3 { padding: 0 16px 10px; }
+    .tb-views { display: flex; background: var(--bg); border-radius: var(--r-sm); padding: 2px; }
+    .tb-view-btn {
+      flex: 1; padding: 7px 0; font-size: 12px; font-weight: 500; border: none;
+      background: transparent; cursor: pointer; color: var(--ink-3);
+      font-family: var(--font-body); border-radius: 5px; text-align: center;
+    }
+    .tb-view-btn.active { background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+
+    /* ── Week layout ─────────────────────────────── */
+    .week-layout {
+      display: flex; flex-direction: column;
+      height: calc(100vh - 130px);
+      overflow: hidden;
+    }
+
+    /* ── Day headers (Warm Glow aprobado) ─────────── */
+    .week-header {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .wh-gutter {
+      width: var(--gutter-w); flex-shrink: 0;
+      border-right: 1px solid var(--border);
+    }
+    .wh-day {
+      flex: 1;
+      padding: 8px 0 6px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+      min-width: 0;
+    }
+    .wh-day:last-child { border-right: none; }
+    .wh-day-name {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--ink-3);
+      margin-bottom: 2px;
+    }
+    .wh-day-num {
+      font-family: var(--font-serif);
+      font-size: 16px; font-weight: 700;
+      color: var(--ink-2);
+      line-height: 1;
+    }
+
+    /* Today — Warm Glow */
+    .wh-day.today { background: var(--gold-lt); }
+    .wh-day.today .wh-day-name { color: var(--gold-hover); font-weight: 700; }
+    .wh-day.today .wh-day-num { color: var(--ink); font-weight: 900; font-size: 17px; }
+
+    /* Weekend */
+    .wh-day.weekend { background: var(--bg); }
+    .wh-day.weekend .wh-day-name { color: var(--ink-4); font-weight: 500; }
+    .wh-day.weekend .wh-day-num { color: var(--ink-4); font-weight: 400; font-size: 15px; }
+
+    /* Tap → day view */
+    .wh-day:active { background: var(--teal-lt); }
+    .wh-day.today:active { background: var(--gold-lt); }
+
+    /* ── Grid body ───────────────────────────────── */
+    .week-body { flex: 1; display: flex; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Time gutter — 36px mobile */
+    .wk-gutter {
+      width: var(--gutter-w); flex-shrink: 0;
+      border-right: 1px solid var(--border);
+    }
+    .wk-time {
+      height: var(--slot-h);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 4px;
+      font-size: 10px; color: var(--ink-3); font-weight: 500;
+      transform: translateY(-6px);
+    }
+    .wk-time:first-child {
+      transform: none;
+      align-items: center;
+    }
+    /* Hora actual en red */
+    .wk-time.wk-now { color: var(--red); font-weight: 700; }
+
+    .wk-days { display: flex; flex: 1; }
+    .wk-day-col {
+      flex: 1; position: relative;
+      border-right: 1px solid var(--border);
+      min-width: 0;
+    }
+    .wk-day-col:last-child { border-right: none; }
+    .wk-day-col.today { background: rgba(245, 168, 0, 0.03); }
+    .wk-day-col.weekend { background: var(--bg); }
+
+    .wk-slot {
+      height: var(--slot-h);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    /* Tap CTA */
+    .wk-slot:active { background: var(--gold-lt); }
+    .wk-day-col.today .wk-slot:active { background: rgba(245, 168, 0, 0.07); }
+
+    /* ── Events — compact mobile (dot + title) ───── */
+    /* En mobile week, todas las events usan formato compact:
+       columnas de ~48px no soportan la estructura timebar+body.
+       Se usa el patron compact aprobado (dot + titulo en una linea). */
+    .wk-event {
+      position: absolute; left: 1px; right: 1px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer; overflow: hidden;
+      z-index: 2;
+      padding: 2px 3px;
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .wk-event:active { border-color: var(--border-md); }
+
+    /* Linea de encabezado: dot + hora */
+    .wk-ev-head {
+      display: flex; align-items: center; gap: 2px;
+    }
+
+    /* Color dot (patron badge Coongro aprobado) */
+    .wk-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .wk-dot-gold    { background: var(--gold); }
+    .wk-dot-teal    { background: var(--teal-dk); }
+    .wk-dot-green   { background: var(--green); }
+    .wk-dot-neutral { background: var(--ink-4); }
+    .wk-dot-red     { background: var(--red); }
+
+    .wk-ev-time {
+      font-size: 7px; font-weight: 700; color: var(--ink-3);
+      letter-spacing: 0.1px;
+    }
+    .wk-ev-title {
+      font-size: 8px; font-weight: 500; color: var(--ink-2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    /* Evento largo (>= 1.5h): puede mostrar titulo wrapeado */
+    .wk-event.tall .wk-ev-title {
+      white-space: normal;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+
+    /* Evento corto (30min): solo dot, sin texto */
+    .wk-event.mini {
+      padding: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wk-event.mini .wk-dot { width: 5px; height: 5px; }
+
+    /* ── Now line (Triangle Marker gold — aprobado) ── */
+    .now-line {
+      position: absolute; left: 0; right: 0; z-index: 5;
+      display: flex; align-items: center;
+      pointer-events: none;
+    }
+    .now-arrow {
+      width: 0; height: 0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 6px solid var(--gold);
+      margin-left: -1px;
+      flex-shrink: 0;
+    }
+    .now-rule { flex: 1; height: 1.5px; background: var(--gold); }
+  </style>
+</head>
+<body>
+
+<!-- Toolbar mobile -->
+<div class="toolbar">
+  <div class="tb-row1">
+    <h1 class="tb-title">Agenda</h1>
+    <button class="tb-action-circle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="tb-row2">
+    <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="tb-date">6 – 12 Abr 2026</span>
+    <button class="tb-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+  <div class="tb-row3">
+    <div class="tb-views">
+      <button class="tb-view-btn">Día</button>
+      <button class="tb-view-btn active">Sem</button>
+      <button class="tb-view-btn">Mes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Week grid -->
+<div class="week-layout">
+  <!-- Day headers — 1-letter names, Warm Glow today -->
+  <div class="week-header">
+    <div class="wh-gutter"></div>
+    <div class="wh-day today" aria-label="Lunes 6, hoy">
+      <div class="wh-day-name">L</div>
+      <div class="wh-day-num">6</div>
+    </div>
+    <div class="wh-day" aria-label="Martes 7">
+      <div class="wh-day-name">M</div>
+      <div class="wh-day-num">7</div>
+    </div>
+    <div class="wh-day" aria-label="Miercoles 8">
+      <div class="wh-day-name">X</div>
+      <div class="wh-day-num">8</div>
+    </div>
+    <div class="wh-day" aria-label="Jueves 9">
+      <div class="wh-day-name">J</div>
+      <div class="wh-day-num">9</div>
+    </div>
+    <div class="wh-day" aria-label="Viernes 10">
+      <div class="wh-day-name">V</div>
+      <div class="wh-day-num">10</div>
+    </div>
+    <div class="wh-day weekend" aria-label="Sabado 11">
+      <div class="wh-day-name">S</div>
+      <div class="wh-day-num">11</div>
+    </div>
+    <div class="wh-day weekend" aria-label="Domingo 12">
+      <div class="wh-day-name">D</div>
+      <div class="wh-day-num">12</div>
+    </div>
+  </div>
+
+  <!-- Scrollable grid -->
+  <div class="week-body">
+    <!-- Time gutter -->
+    <div class="wk-gutter">
+      <div class="wk-time">08</div>
+      <div class="wk-time wk-now">09:20</div>
+      <div class="wk-time">10</div>
+      <div class="wk-time">11</div>
+      <div class="wk-time">12</div>
+      <div class="wk-time">13</div>
+      <div class="wk-time">14</div>
+      <div class="wk-time">15</div>
+      <div class="wk-time">16</div>
+      <div class="wk-time">17</div>
+      <div class="wk-time">18</div>
+      <div class="wk-time">19</div>
+    </div>
+
+    <div class="wk-days">
+      <!-- ═══ Monday (today) ═══ -->
+      <div class="wk-day-col today">
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+
+        <!-- 08:00-09:00 (48px) — compact: dot + hora + titulo -->
+        <div class="wk-event" style="top: 0; height: 48px;">
+          <div class="wk-ev-head">
+            <div class="wk-dot wk-dot-teal"></div>
+            <span class="wk-ev-time">08:00</span>
+          </div>
+          <div class="wk-ev-title">Reunion</div>
+        </div>
+
+        <!-- 10:00-11:30 (72px, tall) -->
+        <div class="wk-event tall" style="top: 96px; height: 72px;">
+          <div class="wk-ev-head">
+            <div class="wk-dot wk-dot-gold"></div>
+            <span class="wk-ev-time">10:00</span>
+          </div>
+          <div class="wk-ev-title">Capacitación ingresos</div>
+        </div>
+
+        <!-- 14:00-14:30 (24px, mini — solo dot) -->
+        <div class="wk-event mini" style="top: 288px; height: 24px;">
+          <div class="wk-dot wk-dot-neutral"></div>
+        </div>
+
+        <!-- Now line: ~09:20 -->
+        <div class="now-line" style="top: 64px;">
+          <div class="now-arrow"></div><div class="now-rule"></div>
+        </div>
+      </div>
+
+      <!-- ═══ Tuesday ═══ -->
+      <div class="wk-day-col">
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+
+        <!-- 09:00-10:00 -->
+        <div class="wk-event" style="top: 48px; height: 48px;">
+          <div class="wk-ev-head">
+            <div class="wk-dot wk-dot-green"></div>
+            <span class="wk-ev-time">09:00</span>
+          </div>
+          <div class="wk-ev-title">Control</div>
+        </div>
+
+        <!-- 15:00-16:00 -->
+        <div class="wk-event" style="top: 336px; height: 48px;">
+          <div class="wk-ev-head">
+            <div class="wk-dot wk-dot-teal"></div>
+            <span class="wk-ev-time">15:00</span>
+          </div>
+          <div class="wk-ev-title">Llamada</div>
+        </div>
+      </div>
+
+      <!-- ═══ Wednesday (empty) ═══ -->
+      <div class="wk-day-col">
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+      </div>
+
+      <!-- ═══ Thursday ═══ -->
+      <div class="wk-day-col">
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+
+        <!-- 11:00-12:00 -->
+        <div class="wk-event" style="top: 144px; height: 48px;">
+          <div class="wk-ev-head">
+            <div class="wk-dot wk-dot-teal"></div>
+            <span class="wk-ev-time">11:00</span>
+          </div>
+          <div class="wk-ev-title">Entrevista</div>
+        </div>
+
+        <!-- 15:00-16:30 (tall) -->
+        <div class="wk-event tall" style="top: 336px; height: 72px;">
+          <div class="wk-ev-head">
+            <div class="wk-dot wk-dot-gold"></div>
+            <span class="wk-ev-time">15:00</span>
+          </div>
+          <div class="wk-ev-title">Workshop UX diseño</div>
+        </div>
+      </div>
+
+      <!-- ═══ Friday ═══ -->
+      <div class="wk-day-col">
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+
+        <!-- 09:30-10:00 (24px, mini) -->
+        <div class="wk-event mini" style="top: 72px; height: 24px;">
+          <div class="wk-dot wk-dot-neutral"></div>
+        </div>
+
+        <!-- 13:00-14:30 (tall) -->
+        <div class="wk-event tall" style="top: 240px; height: 72px;">
+          <div class="wk-ev-head">
+            <div class="wk-dot wk-dot-red"></div>
+            <span class="wk-ev-time">13:00</span>
+          </div>
+          <div class="wk-ev-title">Urgencia veterinaria</div>
+        </div>
+      </div>
+
+      <!-- ═══ Saturday ═══ -->
+      <div class="wk-day-col weekend">
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+      </div>
+
+      <!-- ═══ Sunday ═══ -->
+      <div class="wk-day-col weekend">
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+        <div class="wk-slot"></div><div class="wk-slot"></div><div class="wk-slot"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

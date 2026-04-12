@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeekGrid — Componentes atomicos (Mobile)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A; --red-lt: #FEF2F2;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+      --slot-h-desktop: 56px;
+      --slot-h-mobile: 48px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); width: 375px; margin: 0 auto; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    /* ── Reference layout ──────────────────────────── */
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin: 16px 12px;
+    }
+    .ref-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 16px; }
+    .ref-subtitle { font-size: 11px; color: var(--ink-3); display: block; margin-top: 2px; }
+    .ref-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 12px;
+    }
+    .ref-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+    .ref-note {
+      font-size: 10px; color: var(--ink-4); margin-top: 10px;
+      padding-left: 10px; border-left: 2px solid var(--border);
+      line-height: 1.6;
+    }
+    .ref-compare {
+      display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;
+    }
+    .ref-compare-col { display: flex; flex-direction: column; gap: 6px; }
+    .ref-compare-label {
+      font-size: 8px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-4);
+    }
+    .state-label {
+      font-size: 8px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.4px; color: var(--ink-4); text-align: center;
+    }
+    .cell-wrap {
+      display: flex; flex-direction: column; gap: 4px; align-items: center;
+    }
+
+    /* Swatch */
+    .swatch {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 9px; font-weight: 500; color: var(--ink-3);
+    }
+    .swatch-dot {
+      width: 10px; height: 10px; border-radius: 3px;
+      flex-shrink: 0; border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    /* Delta tag */
+    .delta {
+      display: inline-block;
+      font-size: 8px; font-weight: 600;
+      padding: 1px 5px; border-radius: 3px;
+      background: var(--teal-lt); color: var(--teal-dk);
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 1: DAY HEADER
+       ════════════════════════════════════════════════════ */
+
+    .dh-cell {
+      width: 48px;
+      padding: 8px 0 6px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+    }
+    .dh-name {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--ink-3);
+      margin-bottom: 2px;
+    }
+    .dh-num {
+      font-family: var(--font-serif);
+      font-size: 16px; font-weight: 700;
+      color: var(--ink-2);
+      line-height: 1;
+    }
+
+    /* Today — Warm Glow */
+    .dh-cell.dh-today { background: var(--gold-lt); }
+    .dh-cell.dh-today .dh-name { color: var(--gold-hover); font-weight: 700; }
+    .dh-cell.dh-today .dh-num { color: var(--ink); font-weight: 900; font-size: 17px; }
+
+    /* Weekend */
+    .dh-cell.dh-weekend { background: var(--bg); }
+    .dh-cell.dh-weekend .dh-name { color: var(--ink-4); font-weight: 500; }
+    .dh-cell.dh-weekend .dh-num { color: var(--ink-4); font-weight: 400; font-size: 15px; }
+
+    /* Tap (hover equivalent) */
+    .dh-cell.dh-tap { background: var(--teal-lt); }
+    .dh-cell.dh-tap .dh-num { color: var(--ink); }
+
+    /* In-context strip */
+    .dh-strip {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .dh-strip .dh-cell {
+      border: none; border-right: 1px solid var(--border);
+      border-radius: 0; flex: 1; width: auto;
+    }
+    .dh-strip .dh-cell:last-child { border-right: none; }
+    .dh-strip-gutter {
+      width: 36px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 2: TIME GUTTER
+       ════════════════════════════════════════════════════ */
+
+    .tg-col {
+      width: 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .tg-hour {
+      height: var(--slot-h-mobile);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 4px;
+      font-size: 10px; font-weight: 500; color: var(--ink-3);
+      transform: translateY(-6px);
+    }
+    .tg-hour:first-child { transform: none; align-items: center; }
+    .tg-hour.tg-now { color: var(--red); font-weight: 700; font-size: 9px; }
+
+    /* Desktop comparison */
+    .tg-col-desktop {
+      width: 56px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .tg-hour-desktop {
+      height: var(--slot-h-desktop);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 10px;
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+      transform: translateY(-7px);
+    }
+    .tg-hour-desktop:first-child { transform: none; align-items: center; }
+    .tg-hour-desktop.tg-now { color: var(--red); font-weight: 700; }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 3: HOUR SLOT
+       ════════════════════════════════════════════════════ */
+
+    .hs-cell {
+      width: 48px; height: var(--slot-h-mobile);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      position: relative;
+    }
+    .hs-cell.hs-today { background: rgba(245, 168, 0, 0.03); }
+    .hs-cell.hs-today.hs-tap { background: rgba(245, 168, 0, 0.07); }
+    .hs-cell.hs-weekend { background: var(--bg); }
+    .hs-cell.hs-tap { background: var(--gold-lt); }
+    .hs-cell.hs-dashed {
+      border-style: dashed; border-color: var(--border-md);
+    }
+    .hs-cell.hs-dashed.hs-tap {
+      border-color: var(--gold); background: var(--gold-lt);
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 4: NOW LINE
+       ════════════════════════════════════════════════════ */
+
+    .nl-demo {
+      position: relative; width: 100%; height: 144px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      background: var(--surface); overflow: hidden;
+    }
+    .nl-slot { height: var(--slot-h-mobile); border-bottom: 1px solid var(--border); }
+    .nl-slot:last-child { border-bottom: none; }
+
+    .now-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center; z-index: 5; pointer-events: none;
+    }
+    .now-arrow {
+      width: 0; height: 0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 6px solid var(--gold);
+      margin-left: -1px; flex-shrink: 0;
+    }
+    .now-rule { flex: 1; height: 1.5px; background: var(--gold); }
+
+    /* Desktop comparison */
+    .nl-demo-desktop { height: 168px; }
+    .nl-slot-desktop { height: var(--slot-h-desktop); border-bottom: 1px solid var(--border); }
+    .now-arrow-desktop {
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid var(--gold);
+      margin-left: -2px; flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 5: WEEK EVENT
+       ════════════════════════════════════════════════════ */
+
+    /* Mobile event — compact format */
+    .ev-mobile {
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+      padding: 2px 3px;
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .ev-head { display: flex; align-items: center; gap: 2px; }
+    .ev-dot {
+      width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-gold    { background: var(--gold); }
+    .dot-teal    { background: var(--teal-dk); }
+    .dot-green   { background: var(--green); }
+    .dot-neutral { background: var(--ink-4); }
+    .dot-red     { background: var(--red); }
+
+    .ev-time { font-size: 7px; font-weight: 700; color: var(--ink-3); }
+    .ev-title-m {
+      font-size: 8px; font-weight: 500; color: var(--ink-2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      line-height: 1.2;
+    }
+    .ev-mobile.tall .ev-title-m {
+      white-space: normal;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .ev-mobile.mini {
+      padding: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ev-mobile.mini .ev-dot { width: 5px; height: 5px; }
+
+    /* Desktop event — timebar+body */
+    .ev-desktop {
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .ev-timebar {
+      padding: 3px 8px;
+      display: flex; align-items: center; gap: 5px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .ev-body { padding: 3px 8px 5px; }
+    .ev-dot-d { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .ev-time-d { font-size: 9px; font-weight: 700; color: var(--ink-3); }
+    .ev-title-d {
+      font-size: 11px; font-weight: 500; color: var(--ink-2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ev-desktop.compact {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 8px;
+    }
+    .ev-desktop.compact .ev-title-d { font-size: 10px; }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 6: ASSEMBLY
+       ════════════════════════════════════════════════════ */
+
+    .assembly {
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .assembly-header { display: flex; border-bottom: 1px solid var(--border); }
+    .assembly-gutter {
+      width: 36px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+    }
+    .assembly-day {
+      flex: 1; padding: 8px 0 6px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+      min-width: 0;
+    }
+    .assembly-day:last-child { border-right: none; }
+    .assembly-day-name {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.3px; color: var(--ink-3); margin-bottom: 2px;
+    }
+    .assembly-day-num {
+      font-family: var(--font-serif); font-size: 16px; font-weight: 700;
+      color: var(--ink-2); line-height: 1;
+    }
+    .assembly-day.a-today { background: var(--gold-lt); }
+    .assembly-day.a-today .assembly-day-name { color: var(--gold-hover); }
+    .assembly-day.a-today .assembly-day-num { color: var(--ink); font-weight: 900; font-size: 17px; }
+    .assembly-day.a-weekend { background: var(--bg); }
+    .assembly-day.a-weekend .assembly-day-name { color: var(--ink-4); font-weight: 500; }
+    .assembly-day.a-weekend .assembly-day-num { color: var(--ink-4); font-weight: 400; font-size: 15px; }
+
+    .assembly-body { display: flex; }
+    .assembly-gutter-body {
+      width: 36px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+    }
+    .assembly-time {
+      height: var(--slot-h-mobile);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 4px;
+      font-size: 10px; font-weight: 500; color: var(--ink-3);
+      transform: translateY(-6px);
+    }
+    .assembly-time:first-child { transform: none; align-items: center; }
+    .assembly-time.a-now { color: var(--red); font-weight: 700; font-size: 9px; }
+    .assembly-cols { display: flex; flex: 1; }
+    .assembly-col {
+      flex: 1; position: relative;
+      border-right: 1px solid var(--border);
+      min-width: 0;
+    }
+    .assembly-col:last-child { border-right: none; }
+    .assembly-col.a-today-col { background: rgba(245, 168, 0, 0.03); }
+    .assembly-col.a-weekend-col { background: var(--bg); }
+    .assembly-slot { height: var(--slot-h-mobile); border-bottom: 1px solid var(--border); }
+
+    /* Assembly events */
+    .a-event {
+      position: absolute; left: 1px; right: 1px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden; z-index: 2;
+      padding: 2px 3px;
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .a-ev-head { display: flex; align-items: center; gap: 2px; }
+    .a-ev-time { font-size: 7px; font-weight: 700; color: var(--ink-3); }
+    .a-ev-title {
+      font-size: 8px; font-weight: 500; color: var(--ink-2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      line-height: 1.2;
+    }
+    .a-event.a-mini {
+      padding: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .a-event.a-mini .ev-dot { width: 5px; height: 5px; }
+  </style>
+</head>
+<body>
+
+<div style="padding: 0 0 32px;">
+
+  <!-- ══════════════════════════════════════════════════
+       1. DAY HEADER
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Day Header</h2>
+      <span class="ref-subtitle">Celda de dia — adaptacion mobile</span>
+    </div>
+
+    <!-- Estados -->
+    <div class="ref-section">
+      <div class="ref-label">Estados</div>
+      <div class="ref-row">
+        <div class="cell-wrap">
+          <div class="dh-cell"><div class="dh-name">M</div><div class="dh-num">7</div></div>
+          <span class="state-label">Normal</span>
+        </div>
+        <div class="cell-wrap">
+          <div class="dh-cell dh-today"><div class="dh-name">L</div><div class="dh-num">6</div></div>
+          <span class="state-label">Today</span>
+        </div>
+        <div class="cell-wrap">
+          <div class="dh-cell dh-weekend"><div class="dh-name">S</div><div class="dh-num">11</div></div>
+          <span class="state-label">Weekend</span>
+        </div>
+        <div class="cell-wrap">
+          <div class="dh-cell dh-tap"><div class="dh-name">X</div><div class="dh-num">8</div></div>
+          <span class="state-label">Tap</span>
+        </div>
+      </div>
+      <div class="ref-note">
+        Mismos estados que desktop. Diferencias mobile:<br>
+        • Nombre: 1 letra (L, M, X, J, V, S, D) vs 3 letras (LUN, MAR...)<br>
+        • Numero: 16px vs 20px desktop<br>
+        • Today: 17px/900 vs 22px/900 desktop<br>
+        • <strong>Tap</strong> reemplaza hover → teal-lt (navega a day view)
+      </div>
+    </div>
+
+    <!-- Fila completa -->
+    <div class="ref-section">
+      <div class="ref-label">En contexto — Fila completa (7 dias)</div>
+      <div class="dh-strip">
+        <div class="dh-strip-gutter"></div>
+        <div class="dh-cell dh-today"><div class="dh-name">L</div><div class="dh-num">6</div></div>
+        <div class="dh-cell"><div class="dh-name">M</div><div class="dh-num">7</div></div>
+        <div class="dh-cell"><div class="dh-name">X</div><div class="dh-num">8</div></div>
+        <div class="dh-cell"><div class="dh-name">J</div><div class="dh-num">9</div></div>
+        <div class="dh-cell"><div class="dh-name">V</div><div class="dh-num">10</div></div>
+        <div class="dh-cell dh-weekend"><div class="dh-name">S</div><div class="dh-num">11</div></div>
+        <div class="dh-cell dh-weekend"><div class="dh-name">D</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">
+        Gutter 36px (vs 56px desktop). 1 letra por dia maximiza espacio.<br>
+        Warm Glow identifica today sin competir con el contenido.
+      </div>
+    </div>
+
+    <!-- Specs -->
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Desktop → Mobile</div>
+      <div class="ref-row">
+        <div class="swatch">Nombre <span class="delta">3 letras → 1 letra</span></div>
+        <div class="swatch">Num <span class="delta">20px → 16px</span></div>
+        <div class="swatch">Today <span class="delta">22px → 17px</span></div>
+        <div class="swatch">Hover <span class="delta">→ :active tap</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       2. TIME GUTTER
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Time Gutter</h2>
+      <span class="ref-subtitle">Columna de horas — 36px mobile vs 56px desktop</span>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Comparacion desktop vs mobile</div>
+      <div class="ref-compare">
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Desktop (56px)</span>
+          <div class="tg-col-desktop">
+            <div class="tg-hour-desktop" style="align-items:center; transform:none;">08:00</div>
+            <div class="tg-hour-desktop tg-now">09:20</div>
+            <div class="tg-hour-desktop">10:00</div>
+            <div class="tg-hour-desktop">11:00</div>
+          </div>
+        </div>
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Mobile (36px)</span>
+          <div class="tg-col">
+            <div class="tg-hour" style="align-items:center; transform:none;">08</div>
+            <div class="tg-hour tg-now">09:20</div>
+            <div class="tg-hour">10</div>
+            <div class="tg-hour">11</div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Mobile: solo numero sin ":00" (ahorra espacio). Hora actual: formato completo "09:20" en red.<br>
+        Slot height: 48px vs 56px desktop.
+      </div>
+    </div>
+
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Desktop → Mobile</div>
+      <div class="ref-row">
+        <div class="swatch">Ancho <span class="delta">56px → 36px</span></div>
+        <div class="swatch">Font <span class="delta">11px → 10px</span></div>
+        <div class="swatch">Formato <span class="delta">08:00 → 08</span></div>
+        <div class="swatch">Slot <span class="delta">56px → 48px</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       3. HOUR SLOT
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Hour Slot</h2>
+      <span class="ref-subtitle">Celda horaria — 48px alto, tap en vez de hover</span>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Estados</div>
+      <div class="ref-row">
+        <div class="cell-wrap">
+          <div class="hs-cell"></div>
+          <span class="state-label">Normal</span>
+        </div>
+        <div class="cell-wrap">
+          <div class="hs-cell hs-tap"></div>
+          <span class="state-label">Tap</span>
+        </div>
+        <div class="cell-wrap">
+          <div class="hs-cell hs-today"></div>
+          <span class="state-label">Today</span>
+        </div>
+        <div class="cell-wrap">
+          <div class="hs-cell hs-today hs-tap"></div>
+          <span class="state-label">Today tap</span>
+        </div>
+        <div class="cell-wrap">
+          <div class="hs-cell hs-weekend"></div>
+          <span class="state-label">Weekend</span>
+        </div>
+      </div>
+      <div class="ref-note">
+        Mismos fondos que desktop. <strong>Tap</strong> reemplaza hover:<br>
+        • Normal tap → gold-lt (crear evento)<br>
+        • Today tap → gold 7% opacity<br>
+        • No hay empty-slot CTA visible (solo feedback al tocar)
+      </div>
+    </div>
+
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Desktop → Mobile</div>
+      <div class="ref-row">
+        <div class="swatch">Altura <span class="delta">56px → 48px</span></div>
+        <div class="swatch">Ancho <span class="delta">~110px → ~48px</span></div>
+        <div class="swatch">Hover <span class="delta">→ :active</span></div>
+        <div class="swatch">Dashed CTA <span class="delta">→ no visible</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       4. NOW LINE
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Now Line</h2>
+      <span class="ref-subtitle">Triangle Marker gold — misma semantica, escala reducida</span>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Comparacion</div>
+      <div class="ref-compare">
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Desktop</span>
+          <div class="nl-demo nl-demo-desktop" style="width: 150px;">
+            <div class="nl-slot-desktop"></div>
+            <div class="nl-slot-desktop"></div>
+            <div class="nl-slot-desktop"></div>
+            <div class="now-line" style="top: 72px;">
+              <div class="now-arrow-desktop"></div>
+              <div class="now-rule"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Mobile</span>
+          <div class="nl-demo" style="width: 150px;">
+            <div class="nl-slot"></div>
+            <div class="nl-slot"></div>
+            <div class="nl-slot"></div>
+            <div class="now-line" style="top: 60px;">
+              <div class="now-arrow"></div>
+              <div class="now-rule"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Misma estructura: flecha gold + linea gold 1.5px.<br>
+        Flecha: 6x8px mobile vs 8x10px desktop.
+      </div>
+    </div>
+
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Desktop → Mobile</div>
+      <div class="ref-row">
+        <div class="swatch">Flecha <span class="delta">8x10 → 6x8</span></div>
+        <div class="swatch">Linea <span class="delta">1.5px = 1.5px</span></div>
+        <div class="swatch">Color <span class="delta">gold = gold</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       5. WEEK EVENT
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Week Event</h2>
+      <span class="ref-subtitle">Adaptacion critica — columnas de ~48px no soportan timebar+body</span>
+    </div>
+
+    <!-- Comparacion desktop vs mobile -->
+    <div class="ref-section">
+      <div class="ref-label">Standard (1h) — Desktop vs Mobile</div>
+      <div class="ref-compare">
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Desktop (timebar + body)</span>
+          <div class="ev-desktop" style="width: 120px; height: 56px;">
+            <div class="ev-timebar">
+              <div class="ev-dot-d dot-teal"></div>
+              <span class="ev-time-d">08:00</span>
+            </div>
+            <div class="ev-body">
+              <div class="ev-title-d">Reunion equipo</div>
+            </div>
+          </div>
+        </div>
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Mobile (compact)</span>
+          <div class="ev-mobile" style="width: 46px; height: 48px;">
+            <div class="ev-head">
+              <div class="ev-dot dot-teal"></div>
+              <span class="ev-time">08:00</span>
+            </div>
+            <div class="ev-title-m">Reunion</div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Desktop: timebar (bg + border-bottom) + body separado. Funciona a >= 100px de ancho.<br>
+        Mobile: formato flat — dot + hora + titulo en columna. Sin fondo separado para timebar.<br>
+        <strong>Razon:</strong> a 48px de ancho, la estructura de 2 secciones genera ruido visual.
+      </div>
+    </div>
+
+    <!-- Tall -->
+    <div class="ref-section">
+      <div class="ref-label">Tall (>= 1.5h) — Titulo wrapeado</div>
+      <div class="ref-compare">
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Desktop</span>
+          <div class="ev-desktop" style="width: 120px; height: 84px;">
+            <div class="ev-timebar">
+              <div class="ev-dot-d dot-gold"></div>
+              <span class="ev-time-d">10:00</span>
+            </div>
+            <div class="ev-body">
+              <div class="ev-title-d">Capacitacion</div>
+            </div>
+          </div>
+        </div>
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Mobile (tall)</span>
+          <div class="ev-mobile tall" style="width: 46px; height: 72px;">
+            <div class="ev-head">
+              <div class="ev-dot dot-gold"></div>
+              <span class="ev-time">10:00</span>
+            </div>
+            <div class="ev-title-m">Capacitación ingresos</div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Tall: titulo permite 2 lineas (line-clamp: 2). Aprovecha el espacio vertical extra.
+      </div>
+    </div>
+
+    <!-- Compact vs Mini -->
+    <div class="ref-section">
+      <div class="ref-label">Compact (30min) — Desktop vs Mobile</div>
+      <div class="ref-compare">
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Desktop (compact)</span>
+          <div class="ev-desktop compact" style="width: 120px; height: 28px;">
+            <div class="ev-dot-d dot-neutral"></div>
+            <div class="ev-title-d">14:00 Rev. stock</div>
+          </div>
+        </div>
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Mobile (mini — solo dot)</span>
+          <div class="ev-mobile mini" style="width: 46px; height: 24px;">
+            <div class="ev-dot dot-neutral"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Desktop compact: dot + texto en linea. Funciona a >= 100px.<br>
+        Mobile mini: solo dot centrado. Texto no cabe — el usuario toca para ver detalles.<br>
+        El dot preserva la semantica de color (tipo de evento) aun sin texto.
+      </div>
+    </div>
+
+    <!-- Paleta -->
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Desktop → Mobile</div>
+      <div class="ref-row">
+        <div class="swatch">Layout <span class="delta">timebar+body → flat</span></div>
+        <div class="swatch">Dot <span class="delta">5px → 4px</span></div>
+        <div class="swatch">Hora <span class="delta">9px → 7px</span></div>
+        <div class="swatch">Titulo <span class="delta">11px → 8px</span></div>
+        <div class="swatch">30min <span class="delta">compact → dot only</span></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       6. ASSEMBLY — Todo junto
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Assembly</h2>
+      <span class="ref-subtitle">Componentes ensamblados — preview mobile 375px</span>
+    </div>
+
+    <div class="ref-section" style="padding: 16px; background: var(--bg);">
+      <div class="ref-label">Preview — 5 slots visibles</div>
+      <div class="assembly">
+        <div class="assembly-header">
+          <div class="assembly-gutter"></div>
+          <div class="assembly-day a-today">
+            <div class="assembly-day-name">L</div>
+            <div class="assembly-day-num">6</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">M</div>
+            <div class="assembly-day-num">7</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">X</div>
+            <div class="assembly-day-num">8</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">J</div>
+            <div class="assembly-day-num">9</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">V</div>
+            <div class="assembly-day-num">10</div>
+          </div>
+          <div class="assembly-day a-weekend">
+            <div class="assembly-day-name">S</div>
+            <div class="assembly-day-num">11</div>
+          </div>
+          <div class="assembly-day a-weekend">
+            <div class="assembly-day-name">D</div>
+            <div class="assembly-day-num">12</div>
+          </div>
+        </div>
+
+        <div class="assembly-body">
+          <div class="assembly-gutter-body">
+            <div class="assembly-time" style="align-items:center; transform:none;">08</div>
+            <div class="assembly-time a-now">09:20</div>
+            <div class="assembly-time">10</div>
+            <div class="assembly-time">11</div>
+            <div class="assembly-time">12</div>
+          </div>
+          <div class="assembly-cols">
+            <!-- Lun (today) -->
+            <div class="assembly-col a-today-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <!-- 08:00-09:00 -->
+              <div class="a-event" style="top: 0; height: 48px;">
+                <div class="a-ev-head">
+                  <div class="ev-dot dot-teal"></div>
+                  <span class="a-ev-time">08:00</span>
+                </div>
+                <div class="a-ev-title">Reunion</div>
+              </div>
+              <!-- 10:00-11:30 -->
+              <div class="a-event" style="top: 96px; height: 72px;">
+                <div class="a-ev-head">
+                  <div class="ev-dot dot-gold"></div>
+                  <span class="a-ev-time">10:00</span>
+                </div>
+                <div class="a-ev-title">Capacitac...</div>
+              </div>
+              <!-- Now line -->
+              <div class="now-line" style="top: 64px;">
+                <div class="now-arrow"></div>
+                <div class="now-rule"></div>
+              </div>
+            </div>
+            <!-- Mar -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="a-event" style="top: 48px; height: 48px;">
+                <div class="a-ev-head">
+                  <div class="ev-dot dot-green"></div>
+                  <span class="a-ev-time">09:00</span>
+                </div>
+                <div class="a-ev-title">Control</div>
+              </div>
+            </div>
+            <!-- Mie (vacio) -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+            </div>
+            <!-- Jue -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="a-event" style="top: 144px; height: 48px;">
+                <div class="a-ev-head">
+                  <div class="ev-dot dot-teal"></div>
+                  <span class="a-ev-time">11:00</span>
+                </div>
+                <div class="a-ev-title">Entrevista</div>
+              </div>
+            </div>
+            <!-- Vie -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="a-event a-mini" style="top: 72px; height: 24px;">
+                <div class="ev-dot dot-neutral"></div>
+              </div>
+            </div>
+            <!-- Sab -->
+            <div class="assembly-col a-weekend-col">
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+            </div>
+            <!-- Dom -->
+            <div class="assembly-col a-weekend-col">
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div><div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note" style="margin-top: 12px;">
+        Gutter 36px + 7 columnas flex en 375px. Warm Glow en header + tint gold en columna today.<br>
+        Events: formato flat (dot + hora + titulo). Mini: solo dot. Now line: triangle marker gold.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

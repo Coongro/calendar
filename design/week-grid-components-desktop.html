@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeekGrid — Componentes atomicos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A; --red-lt: #FEF2F2;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+      --slot-h: 56px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.01ms !important; } }
+
+    .page { padding: 32px 44px 64px; max-width: 960px; }
+
+    /* ── Reference card (patron del event-card aprobado) ── */
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .ref-header {
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 12px;
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+    .ref-subtitle { font-size: 12px; color: var(--ink-3); }
+    .ref-section {
+      padding: 24px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 16px;
+    }
+    .ref-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+    .ref-note {
+      font-size: 11px; color: var(--ink-4); margin-top: 14px;
+      padding-left: 12px; border-left: 2px solid var(--border);
+      line-height: 1.6;
+    }
+    .ref-compare {
+      display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
+    }
+    .ref-compare-col { display: flex; flex-direction: column; gap: 8px; }
+    .ref-compare-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--ink-4);
+    }
+
+    /* ── Swatch (para mostrar tokens) ── */
+    .swatch {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+    }
+    .swatch-dot {
+      width: 12px; height: 12px; border-radius: 3px;
+      flex-shrink: 0; border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 1: DAY HEADER
+       ════════════════════════════════════════════════════ */
+
+    .dh-cell {
+      width: 110px;
+      padding: 14px 0 12px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      transition: background 150ms;
+    }
+
+    /* Label del dia: LUN, MAR, etc */
+    .dh-name {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--ink-3);
+      margin-bottom: 4px;
+    }
+
+    /* Numero del dia */
+    .dh-num {
+      font-family: var(--font-serif);
+      font-size: 20px; font-weight: 700;
+      color: var(--ink-2);
+      line-height: 1;
+    }
+
+    /* ── Today — Warm Glow: gold-lt suave, sin bordes extra ── */
+    .dh-cell.dh-today {
+      background: var(--gold-lt);
+    }
+    .dh-cell.dh-today .dh-name {
+      color: var(--gold-hover);
+      font-weight: 700;
+    }
+    .dh-cell.dh-today .dh-num {
+      color: var(--ink);
+      font-weight: 900;
+      font-size: 22px;
+    }
+
+    /* ── Weekend ── */
+    .dh-cell.dh-weekend { background: var(--bg); border-color: var(--border); }
+    .dh-cell.dh-weekend .dh-name { color: var(--ink-4); font-weight: 500; }
+    .dh-cell.dh-weekend .dh-num { color: var(--ink-4); font-weight: 400; font-size: 18px; }
+
+    /* ── Hover — Teal Light (frio vs today calido) ── */
+    .dh-cell.dh-hover { background: var(--teal-lt); cursor: pointer; }
+    .dh-cell.dh-hover .dh-num { color: var(--ink); }
+
+    /* ── In-context: como se ve en fila ── */
+    .dh-strip {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .dh-strip .dh-cell {
+      border: none;
+      border-right: 1px solid var(--border);
+      border-radius: 0;
+      flex: 1;
+    }
+    .dh-strip .dh-cell:last-child { border-right: none; }
+    .dh-strip-gutter {
+      width: 56px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 2: TIME GUTTER
+       ════════════════════════════════════════════════════ */
+
+    .tg-col {
+      width: 56px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .tg-hour {
+      height: var(--slot-h);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 10px;
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+      transform: translateY(-7px);
+      letter-spacing: 0.2px;
+    }
+    /* Primera hora: sin offset vertical */
+    .tg-hour:first-child {
+      transform: none;
+      align-items: center;
+      padding-top: 0;
+    }
+
+    /* Variante: hora actual resaltada */
+    .tg-hour.tg-now {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 3: HOUR SLOT
+       ════════════════════════════════════════════════════ */
+
+    .hs-grid {
+      display: flex; gap: 20px; flex-wrap: wrap;
+    }
+    .hs-cell-wrap {
+      display: flex; flex-direction: column; gap: 6px; align-items: center;
+    }
+    .hs-cell {
+      width: 140px; height: var(--slot-h);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      position: relative;
+      transition: background 150ms, border-color 150ms;
+    }
+
+    /* Hover */
+    .hs-cell.hs-hover {
+      background: var(--bg);
+      cursor: pointer;
+    }
+
+    /* Today column */
+    .hs-cell.hs-today {
+      background: rgba(245, 168, 0, 0.03);
+    }
+    .hs-cell.hs-today.hs-hover {
+      background: rgba(245, 168, 0, 0.07);
+    }
+
+    /* Weekend */
+    .hs-cell.hs-weekend {
+      background: var(--bg);
+    }
+    .hs-cell.hs-weekend.hs-hover {
+      background: var(--border);
+    }
+
+    /* Dashed (empty-slot CTA) */
+    .hs-cell.hs-dashed {
+      border-style: dashed;
+      border-color: var(--border-md);
+    }
+    .hs-cell.hs-dashed.hs-hover {
+      border-color: var(--gold);
+      background: var(--gold-lt);
+    }
+    .hs-dashed-icon {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 16px; height: 16px;
+      color: var(--ink-4);
+      transition: color 150ms;
+    }
+    .hs-cell.hs-dashed.hs-hover .hs-dashed-icon { color: var(--gold-hover); }
+
+    .hs-state-label {
+      font-size: 9px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-4);
+    }
+
+    /* Half-hour divider (linea punteada interna) */
+    .hs-half {
+      position: absolute; left: 8px; right: 8px;
+      top: 50%;
+      border-top: 1px dashed var(--border);
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 4: NOW LINE
+       ════════════════════════════════════════════════════ */
+
+    .nl-demo {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    /* Slots de fondo */
+    .nl-slot {
+      height: var(--slot-h);
+      border-bottom: 1px solid var(--border);
+    }
+    .nl-slot:last-child { border-bottom: none; }
+
+    /* Now line */
+    .now-line {
+      position: absolute; left: 0; right: 0;
+      display: flex; align-items: center;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .now-arrow {
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid var(--gold);
+      margin-left: -2px;
+      flex-shrink: 0;
+    }
+    .now-rule {
+      flex: 1; height: 1.5px;
+      background: var(--gold);
+    }
+
+    /* ════════════════════════════════════════════════════
+       COMPONENTE 5: GRID ASSEMBLY (preview)
+       ════════════════════════════════════════════════════ */
+
+    .assembly-preview {
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .assembly-header {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .assembly-gutter {
+      width: 56px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+    }
+    .assembly-day {
+      flex: 1; padding: 14px 0 12px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .assembly-day:last-child { border-right: none; }
+    .assembly-day-name {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--ink-3);
+    }
+    .assembly-day-num {
+      font-family: var(--font-serif); font-size: 20px; font-weight: 700;
+      color: var(--ink-2); margin-top: 4px; line-height: 1;
+    }
+    .assembly-day.a-today {
+      background: var(--gold-lt);
+    }
+    .assembly-day.a-today .assembly-day-name { color: var(--gold-hover); font-weight: 700; }
+    .assembly-day.a-today .assembly-day-num {
+      color: var(--ink);
+      font-weight: 900;
+      font-size: 22px;
+    }
+    .assembly-day.a-weekend { background: var(--bg); }
+    .assembly-day.a-weekend .assembly-day-name { color: var(--ink-4); font-weight: 500; }
+    .assembly-day.a-weekend .assembly-day-num { color: var(--ink-4); font-weight: 400; font-size: 18px; }
+
+    .assembly-body { display: flex; }
+    .assembly-body .tg-col-inline {
+      width: 56px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+    }
+    .assembly-body .tg-hour-inline {
+      height: var(--slot-h);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 8px;
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+      transform: translateY(-7px);
+    }
+    .assembly-cols { display: flex; flex: 1; }
+    .assembly-col {
+      flex: 1; position: relative;
+      border-right: 1px solid var(--border);
+    }
+    .assembly-col:last-child { border-right: none; }
+    .assembly-col.a-today-col { background: rgba(245, 168, 0, 0.03); }
+    .assembly-col.a-weekend-col { background: var(--bg); }
+    .assembly-slot {
+      height: var(--slot-h);
+      border-bottom: 1px solid var(--border);
+    }
+    .assembly-slot:last-child { border-bottom: none; }
+
+    /* Events en assembly */
+    .a-event {
+      position: absolute; left: 3px; right: 3px;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden; cursor: pointer;
+      z-index: 2;
+    }
+    .a-ev-timebar {
+      padding: 3px 8px;
+      display: flex; align-items: center; gap: 5px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .a-ev-body { padding: 3px 8px 5px; }
+    .a-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .a-dot-gold { background: var(--gold); }
+    .a-dot-teal { background: var(--teal-dk); }
+    .a-dot-green { background: var(--green); }
+    .a-dot-neutral { background: var(--ink-4); }
+    .a-ev-time { font-size: 9px; font-weight: 700; color: var(--ink-3); }
+    .a-ev-title {
+      font-size: 11px; font-weight: 500; color: var(--ink-2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .a-event.a-compact {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 8px;
+    }
+    .a-event.a-compact .a-ev-title { font-size: 10px; }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ══════════════════════════════════════════════════
+       1. DAY HEADER
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Day Header</h2>
+      <span class="ref-subtitle">Celda de dia en el header del week-grid</span>
+    </div>
+
+    <!-- Estados individuales -->
+    <div class="ref-section">
+      <div class="ref-label">Estados individuales</div>
+      <div class="ref-row">
+
+        <div class="hs-cell-wrap">
+          <div class="dh-cell">
+            <div class="dh-name">MAR</div>
+            <div class="dh-num">7</div>
+          </div>
+          <span class="hs-state-label">Normal</span>
+        </div>
+
+        <div class="hs-cell-wrap">
+          <div class="dh-cell dh-today">
+            <div class="dh-name">LUN</div>
+            <div class="dh-num">6</div>
+          </div>
+          <span class="hs-state-label">Today</span>
+        </div>
+
+        <div class="hs-cell-wrap">
+          <div class="dh-cell dh-weekend">
+            <div class="dh-name">SAB</div>
+            <div class="dh-num">11</div>
+          </div>
+          <span class="hs-state-label">Weekend</span>
+        </div>
+
+        <div class="hs-cell-wrap">
+          <div class="dh-cell dh-hover">
+            <div class="dh-name">MIE</div>
+            <div class="dh-num">8</div>
+          </div>
+          <span class="hs-state-label">Hover</span>
+        </div>
+
+      </div>
+      <div class="ref-note">
+        <strong>Normal:</strong> nombre ink-3, numero ink-2 (Noto Serif JP 700 20px) — visible sin competir.<br>
+        <strong>Today:</strong> fondo gold-lt suave (Warm Glow). Nombre en gold-hover, numero ink 22px weight 900. Sin bordes extra, sin circulo — el calor del fondo distingue el dia.<br>
+        <strong>Weekend:</strong> fondo --bg, nombre y numero ink-4 (retroceden visualmente).<br>
+        <strong>Hover:</strong> fondo teal-lt (frio vs today calido). Nunca se confunde con today — temperatura opuesta.
+      </div>
+    </div>
+
+    <!-- Contexto: fila completa -->
+    <div class="ref-section">
+      <div class="ref-label">En contexto — Fila completa (7 dias)</div>
+      <div class="dh-strip">
+        <div class="dh-strip-gutter"></div>
+        <div class="dh-cell dh-today" aria-label="Lunes 6, hoy">
+          <div class="dh-name">LUN</div>
+          <div class="dh-num">6</div>
+        </div>
+        <div class="dh-cell" aria-label="Martes 7">
+          <div class="dh-name">MAR</div>
+          <div class="dh-num">7</div>
+        </div>
+        <div class="dh-cell" aria-label="Miercoles 8">
+          <div class="dh-name">MIE</div>
+          <div class="dh-num">8</div>
+        </div>
+        <div class="dh-cell" aria-label="Jueves 9">
+          <div class="dh-name">JUE</div>
+          <div class="dh-num">9</div>
+        </div>
+        <div class="dh-cell" aria-label="Viernes 10">
+          <div class="dh-name">VIE</div>
+          <div class="dh-num">10</div>
+        </div>
+        <div class="dh-cell dh-weekend" aria-label="Sabado 11">
+          <div class="dh-name">SAB</div>
+          <div class="dh-num">11</div>
+        </div>
+        <div class="dh-cell dh-weekend" aria-label="Domingo 12">
+          <div class="dh-name">DOM</div>
+          <div class="dh-num">12</div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Gutter vacio a la izquierda (56px) alineado con la columna de horas.<br>
+        Today se distingue por borde gold + circulo — contraste claro sin romper la fila.<br>
+        Weekend retrocede sutilmente con fondo --bg y tipografia lighter.
+      </div>
+    </div>
+
+    <!-- Tokens -->
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Tokens aplicados</div>
+      <div class="ref-row">
+        <div class="swatch"><div class="swatch-dot" style="background: var(--ink-3);"></div> ink-3 — nombre dia</div>
+        <div class="swatch"><div class="swatch-dot" style="background: var(--ink-2);"></div> ink-2 — numero dia</div>
+        <div class="swatch"><div class="swatch-dot" style="background: var(--gold-lt);"></div> gold-lt — fondo today</div>
+        <div class="swatch"><div class="swatch-dot" style="background: var(--gold-hover);"></div> gold-hover — nombre today</div>
+        <div class="swatch"><div class="swatch-dot" style="background: var(--ink-4);"></div> ink-4 — weekend</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       2. TIME GUTTER
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Time Gutter</h2>
+      <span class="ref-subtitle">Columna de horas a la izquierda del grid</span>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Standard — Horario laboral (08–19)</div>
+      <div class="ref-compare">
+
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Normal</span>
+          <div class="tg-col">
+            <div class="tg-hour" style="align-items:center; transform:none;">08:00</div>
+            <div class="tg-hour">09:00</div>
+            <div class="tg-hour">10:00</div>
+            <div class="tg-hour">11:00</div>
+            <div class="tg-hour">12:00</div>
+          </div>
+        </div>
+
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Con hora actual</span>
+          <div class="tg-col">
+            <div class="tg-hour" style="align-items:center; transform:none;">08:00</div>
+            <div class="tg-hour tg-now">09:20</div>
+            <div class="tg-hour">10:00</div>
+            <div class="tg-hour">11:00</div>
+            <div class="tg-hour">12:00</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="ref-note">
+        Ancho fijo 56px. Horas alineadas a la derecha con padding 10px.<br>
+        Cada hora se posiciona con translateY(-7px) para alinearse con el borde superior del slot.<br>
+        La primera hora no tiene offset (se centra en su slot).<br>
+        <strong>Hora actual:</strong> reemplaza la hora redondeada por la exacta (09:20) en --red weight 700.
+      </div>
+    </div>
+
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Especificaciones</div>
+      <div class="ref-row">
+        <div class="swatch"><div class="swatch-dot" style="background: var(--ink-3);"></div> ink-3 — texto horas</div>
+        <div class="swatch"><div class="swatch-dot" style="background: var(--red);"></div> red — hora actual</div>
+        <div class="swatch" style="gap:4px;">
+          <span style="font-family:var(--font-body); font-size:11px; font-weight:700;">56px</span> ancho fijo
+        </div>
+        <div class="swatch" style="gap:4px;">
+          <span style="font-family:var(--font-body); font-size:11px; font-weight:700;">11px</span> font-size
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       3. HOUR SLOT
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Hour Slot</h2>
+      <span class="ref-subtitle">Celda horaria de la grilla — 56px de alto</span>
+    </div>
+
+    <!-- Estados basicos -->
+    <div class="ref-section">
+      <div class="ref-label">Estados por tipo de columna</div>
+      <div class="hs-grid">
+        <div class="hs-cell-wrap">
+          <div class="hs-cell"></div>
+          <span class="hs-state-label">Normal</span>
+        </div>
+        <div class="hs-cell-wrap">
+          <div class="hs-cell hs-hover"></div>
+          <span class="hs-state-label">Normal hover</span>
+        </div>
+        <div class="hs-cell-wrap">
+          <div class="hs-cell hs-today"></div>
+          <span class="hs-state-label">Today</span>
+        </div>
+        <div class="hs-cell-wrap">
+          <div class="hs-cell hs-today hs-hover"></div>
+          <span class="hs-state-label">Today hover</span>
+        </div>
+        <div class="hs-cell-wrap">
+          <div class="hs-cell hs-weekend"></div>
+          <span class="hs-state-label">Weekend</span>
+        </div>
+        <div class="hs-cell-wrap">
+          <div class="hs-cell hs-weekend hs-hover"></div>
+          <span class="hs-state-label">Weekend hover</span>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Normal:</strong> surface blanco, hover a --bg (sutil).<br>
+        <strong>Today:</strong> gold 3% opacity como tinte base, hover sube a 7% — identifica el dia sin gritar.<br>
+        <strong>Weekend:</strong> fondo --bg permanente, hover a --border (un paso mas oscuro).
+      </div>
+    </div>
+
+    <!-- Empty slot CTA -->
+    <div class="ref-section">
+      <div class="ref-label">Empty slot — CTA para crear evento</div>
+      <div class="hs-grid">
+        <div class="hs-cell-wrap">
+          <div class="hs-cell hs-dashed">
+            <svg class="hs-dashed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <span class="hs-state-label">Dashed</span>
+        </div>
+        <div class="hs-cell-wrap">
+          <div class="hs-cell hs-dashed hs-hover">
+            <svg class="hs-dashed-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <span class="hs-state-label">Dashed hover</span>
+        </div>
+      </div>
+      <div class="ref-note">
+        Patron dashed del design system (4.9): border dashed --border-md, hover a gold + gold-lt.<br>
+        Icono + centrado. Solo se muestra en slots vacios cuando el usuario pasa el mouse (implementacion: mostrar icono solo on hover).
+      </div>
+    </div>
+
+    <!-- Con half-hour divider -->
+    <div class="ref-section">
+      <div class="ref-label">Half-hour divider (opcional)</div>
+      <div class="hs-grid">
+        <div class="hs-cell-wrap">
+          <div class="hs-cell">
+            <div class="hs-half"></div>
+          </div>
+          <span class="hs-state-label">Con divider</span>
+        </div>
+        <div class="hs-cell-wrap">
+          <div class="hs-cell"></div>
+          <span class="hs-state-label">Sin divider</span>
+        </div>
+      </div>
+      <div class="ref-note">
+        Linea dashed al 50% del slot para marcar la media hora. Es sutil (1px dashed --border).<br>
+        <strong>Decision de sesion anterior:</strong> se eliminaron los dashes por ruido visual. Se incluye aqui como opcion — evaluar si en contexto completo ayuda o molesta.
+      </div>
+    </div>
+
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Especificaciones</div>
+      <div class="ref-row">
+        <div class="swatch" style="gap:4px;"><span style="font-weight:700; font-size:11px;">56px</span> altura fija (--slot-h)</div>
+        <div class="swatch" style="gap:4px;"><span style="font-weight:700; font-size:11px;">150ms</span> transicion</div>
+        <div class="swatch"><div class="swatch-dot" style="background: rgba(245,168,0,0.03); border: 1px solid var(--gold);"></div> today tint</div>
+        <div class="swatch"><div class="swatch-dot" style="background: var(--bg);"></div> weekend bg</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       4. NOW LINE
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Now Line</h2>
+      <span class="ref-subtitle">Indicador de hora actual sobre la grilla</span>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Triangle Marker — flecha gold + linea gold 1.5px</div>
+      <div class="nl-demo">
+        <div class="nl-slot"></div>
+        <div class="nl-slot"></div>
+        <div class="nl-slot"></div>
+        <div class="now-line" style="top: 75px;">
+          <div class="now-arrow"></div>
+          <div class="now-rule"></div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Triangulo gold (8x10px) apuntando a la derecha — indica "el tiempo avanza".<br>
+        Linea gold 1.5px. Coherencia con Warm Glow del day header (gold = hoy).<br>
+        z-index: 5 — por encima de events (z-index: 2) y slots.
+      </div>
+    </div>
+
+    <div class="ref-section" style="background: var(--bg);">
+      <div class="ref-label">Tokens</div>
+      <div class="ref-row">
+        <div class="swatch"><div class="swatch-dot" style="background: var(--gold);"></div> gold — flecha y linea</div>
+        <div class="swatch" style="gap:4px;"><span style="font-weight:700; font-size:11px;">8x10</span> flecha</div>
+        <div class="swatch" style="gap:4px;"><span style="font-weight:700; font-size:11px;">1.5px</span> linea</div>
+        <div class="swatch" style="gap:4px;"><span style="font-weight:700; font-size:11px;">z:5</span> z-index</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       5. ASSEMBLY — Todo junto
+       ══════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Assembly</h2>
+      <span class="ref-subtitle">Componentes ensamblados — preview de resultado final</span>
+    </div>
+
+    <div class="ref-section" style="padding: 24px 22px; background: var(--bg);">
+      <div class="ref-label">Preview — 5 slots visibles</div>
+      <div class="assembly-preview">
+        <!-- Header -->
+        <div class="assembly-header">
+          <div class="assembly-gutter"></div>
+          <div class="assembly-day a-today">
+            <div class="assembly-day-name">LUN</div>
+            <div class="assembly-day-num">6</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">MAR</div>
+            <div class="assembly-day-num">7</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">MIE</div>
+            <div class="assembly-day-num">8</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">JUE</div>
+            <div class="assembly-day-num">9</div>
+          </div>
+          <div class="assembly-day">
+            <div class="assembly-day-name">VIE</div>
+            <div class="assembly-day-num">10</div>
+          </div>
+          <div class="assembly-day a-weekend">
+            <div class="assembly-day-name">SAB</div>
+            <div class="assembly-day-num">11</div>
+          </div>
+          <div class="assembly-day a-weekend">
+            <div class="assembly-day-name">DOM</div>
+            <div class="assembly-day-num">12</div>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="assembly-body">
+          <div class="tg-col-inline">
+            <div class="tg-hour-inline" style="align-items:center; transform:none;">08:00</div>
+            <div class="tg-hour-inline">09:00</div>
+            <div class="tg-hour-inline">10:00</div>
+            <div class="tg-hour-inline">11:00</div>
+            <div class="tg-hour-inline">12:00</div>
+          </div>
+          <div class="assembly-cols">
+            <!-- Lun (today) -->
+            <div class="assembly-col a-today-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <!-- Event 08:00-09:00 -->
+              <div class="a-event" style="top: 0; height: 56px;">
+                <div class="a-ev-timebar">
+                  <div class="a-dot a-dot-teal"></div>
+                  <span class="a-ev-time">08:00</span>
+                </div>
+                <div class="a-ev-body">
+                  <div class="a-ev-title">Reunion equipo</div>
+                </div>
+              </div>
+              <!-- Event 10:00-11:30 -->
+              <div class="a-event" style="top: 112px; height: 84px;">
+                <div class="a-ev-timebar">
+                  <div class="a-dot a-dot-gold"></div>
+                  <span class="a-ev-time">10:00</span>
+                </div>
+                <div class="a-ev-body">
+                  <div class="a-ev-title">Capacitacion</div>
+                </div>
+              </div>
+              <!-- Now line -->
+              <div class="now-line" style="top: 75px;">
+                <div class="now-arrow"></div>
+                <div class="now-rule"></div>
+              </div>
+            </div>
+            <!-- Mar -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="a-event" style="top: 56px; height: 56px;">
+                <div class="a-ev-timebar">
+                  <div class="a-dot a-dot-green"></div>
+                  <span class="a-ev-time">09:00</span>
+                </div>
+                <div class="a-ev-body">
+                  <div class="a-ev-title">Control calidad</div>
+                </div>
+              </div>
+            </div>
+            <!-- Mie (vacio) -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+            </div>
+            <!-- Jue -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="a-event" style="top: 168px; height: 56px;">
+                <div class="a-ev-timebar">
+                  <div class="a-dot a-dot-teal"></div>
+                  <span class="a-ev-time">11:00</span>
+                </div>
+                <div class="a-ev-body">
+                  <div class="a-ev-title">Entrevista</div>
+                </div>
+              </div>
+            </div>
+            <!-- Vie -->
+            <div class="assembly-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="a-event a-compact" style="top: 84px; height: 28px;">
+                <div class="a-dot a-dot-neutral"></div>
+                <div class="a-ev-title">09:30 Standup</div>
+              </div>
+            </div>
+            <!-- Sab -->
+            <div class="assembly-col a-weekend-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+            </div>
+            <!-- Dom -->
+            <div class="assembly-col a-weekend-col">
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+              <div class="assembly-slot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note" style="margin-top: 16px;">
+        Preview de los 4 componentes ensamblados: day headers + time gutter + hour slots + now line + events aprobados.<br>
+        Today: gold-lt bg en header (Warm Glow) + tint gold en columna. Weekend: fondo --bg en header y columna.<br>
+        El toolbar (card-header) se revisa por separado en toolbar-desktop.html.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
