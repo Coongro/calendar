@@ -1,6 +1,7 @@
 import { getHostReact } from '@coongro/plugin-sdk';
 
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { WeekGridProps } from '../../types/components.js';
 import {
@@ -8,7 +9,7 @@ import {
   getShortDayName,
   generateTimeSlots,
   toDateString,
-  isSameDay,
+  toDateKey,
 } from '../../utils/date.js';
 import {
   SLOT_HEIGHT_DESKTOP,
@@ -44,6 +45,7 @@ export function WeekGrid({
   showWeekends = true,
 }: WeekGridProps) {
   const isMobile = useIsMobile();
+  const tz = useTenantTimezone();
   const slotHeight = isMobile ? SLOT_HEIGHT_MOBILE : SLOT_HEIGHT_DESKTOP;
   const gutterWidth = isMobile ? GUTTER_WIDTH_MOBILE : GUTTER_WIDTH_DESKTOP;
 
@@ -62,6 +64,7 @@ export function WeekGrid({
 
   const slotsPerHour = Math.round(60 / slotDuration);
   const now = new Date();
+  const todayKey = toDateKey(now, tz);
 
   const { nowHour, nowTimeStr, gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
     startHour,
@@ -104,7 +107,7 @@ export function WeekGrid({
 
       // Headers de días
       ...weekDays.map((day) => {
-        const isToday = isSameDay(day, now);
+        const isToday = toDateString(day) === todayKey;
         const isWeekend = day.getDay() === 0 || day.getDay() === 6;
         const dayName = isMobile ? getShortDayName(day).charAt(0) : getShortDayName(day);
 
@@ -198,7 +201,7 @@ export function WeekGrid({
           { style: { display: 'flex', flex: '1' } },
           ...weekDays.map((day) => {
             const dateStr = toDateString(day);
-            const isToday = isSameDay(day, now);
+            const isToday = toDateString(day) === todayKey;
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const dayEvents = eventsByDay[dateStr] ?? [];
 

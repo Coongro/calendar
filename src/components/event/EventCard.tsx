@@ -1,5 +1,6 @@
 import { getHostReact } from '@coongro/plugin-sdk';
 
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS, TRUNCATE, EVENT_CARD_VARIANTS, statusBadgeStyle } from '../../styles/tokens.js';
 import type { EventCardProps } from '../../types/components.js';
 import { formatEventDate, formatEventTime } from '../../utils/date.js';
@@ -53,6 +54,7 @@ export function EventCard({
   onClick,
   className = '',
 }: EventCardProps) {
+  const tz = useTenantTimezone();
   if (render) {
     return render(event) as ReturnType<typeof React.createElement>;
   }
@@ -134,14 +136,14 @@ export function EventCard({
           React.createElement(
             'div',
             { style: { fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '1px' } },
-            formatEventDate(event.start_at)
+            formatEventDate(event.start_at, tz)
           ),
         showTime &&
           !event.all_day &&
           React.createElement(
             'div',
             { style: { fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '1px' } },
-            `${formatEventTime(event.start_at)} - ${formatEventTime(event.end_at)}`
+            `${formatEventTime(event.start_at, tz)} - ${formatEventTime(event.end_at, tz)}`
           ),
         showLocation &&
           event.location &&
@@ -196,7 +198,7 @@ export function EventCard({
           {
             style: { fontSize: cfg.timeSize, fontWeight: 600, color: TOKENS.ink3 },
           },
-          formatEventTime(event.start_at)
+          formatEventTime(event.start_at, tz)
         ),
       React.createElement(
         'span',
@@ -265,7 +267,7 @@ export function EventCard({
                 flex: 1,
               },
             },
-            `${formatEventTime(event.start_at)} – ${formatEventTime(event.end_at)}`
+            `${formatEventTime(event.start_at, tz)} – ${formatEventTime(event.end_at, tz)}`
           )
         : React.createElement('span', { style: { flex: 1 } }),
       showStatus && renderStatusBadge(event.status),
@@ -312,7 +314,7 @@ export function EventCard({
           {
             style: { fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '2px' },
           },
-          formatEventDate(event.start_at)
+          formatEventDate(event.start_at, tz)
         ),
       subtitle
     )

@@ -1,9 +1,10 @@
 import { getHostReact } from '@coongro/plugin-sdk';
 
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { MonthGridProps } from '../../types/components.js';
-import { getMonthGridDays, getShortDayName, toDateString, isSameDay } from '../../utils/date.js';
+import { getMonthGridDays, getShortDayName, toDateString, toDateKey } from '../../utils/date.js';
 import { groupEventsByDay } from '../../utils/grid-helpers.js';
 import { EventCard } from '../event/EventCard.js';
 
@@ -80,6 +81,8 @@ export function MonthGrid({
   className = '',
 }: MonthGridProps) {
   const isMobile = useIsMobile();
+  const tz = useTenantTimezone();
+  const todayKey = toDateKey(new Date(), tz);
   const days = useMemo(() => getMonthGridDays(year, month), [year, month]);
 
   const eventsByDate = useMemo(() => groupEventsByDay(events), [events]);
@@ -150,7 +153,7 @@ export function MonthGrid({
       filteredDays.map((day, i) => {
         const dateStr = toDateString(day);
         const isCurrentMonth = day.getMonth() === month;
-        const isToday = isSameDay(day, new Date());
+        const isToday = dateStr === todayKey;
         const dayEvents = eventsByDate[dateStr] ?? [];
 
         const isWeekend = day.getDay() === 0 || day.getDay() === 6;

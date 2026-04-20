@@ -2,6 +2,7 @@ import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import { useEvent } from '../../hooks/useEvent.js';
 import { useEvents } from '../../hooks/useEvents.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import type { EventPickerProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import { formatEventDateTime } from '../../utils/date.js';
@@ -17,6 +18,7 @@ function EventSearchContent({
   filters: EventPickerProps['filters'];
   onResults: (events: CalendarEvent[]) => void;
 }) {
+  const tz = useTenantTimezone();
   const { debouncedSearch, setLoading } = UI.useComboboxContext();
   const { data, loading, search: doSearch } = useEvents({ ...filters, pageSize: 10 });
 
@@ -43,7 +45,7 @@ function EventSearchContent({
             {
               key: evt.id,
               value: evt.id,
-              subtitle: formatEventDateTime(evt.start_at),
+              subtitle: formatEventDateTime(evt.start_at, tz),
             },
             evt.title
           )

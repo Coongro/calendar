@@ -74,6 +74,7 @@ export { useEventsByEntity } from './hooks/useEventsByEntity.js';
 export type { UseEventsByEntityResult } from './hooks/useEventsByEntity.js';
 export { useDateNavigation } from './hooks/useDateNavigation.js';
 export type { UseDateNavigationResult } from './hooks/useDateNavigation.js';
+export { useTenantTimezone } from './hooks/useTenantTimezone.js';
 
 // Components
 export { CalendarView } from './components/calendar/CalendarView.js';
