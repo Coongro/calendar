@@ -9,11 +9,11 @@ export const calendarTable = pgTable('module_calendar_calendars', {
   is_visible: boolean('is_visible').notNull(),
   is_default: boolean('is_default').notNull(),
   metadata: jsonb('metadata'),
-  deleted_at: timestamp('deleted_at', { mode: 'string' }),
-  created_at: timestamp('created_at', { mode: 'string' })
+  deleted_at: timestamp('deleted_at', { mode: 'date', withTimezone: true }),
+  created_at: timestamp('created_at', { mode: 'date', withTimezone: true })
     .notNull()
     .default(sql`now()`),
-  updated_at: timestamp('updated_at', { mode: 'string' })
+  updated_at: timestamp('updated_at', { mode: 'date', withTimezone: true })
     .notNull()
     .default(sql`now()`),
 });

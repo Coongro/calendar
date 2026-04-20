@@ -1,6 +1,7 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS, statusBadgeStyle } from '../../styles/tokens.js';
 import type { AgendaListProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
@@ -9,7 +10,7 @@ import {
   toDateString,
   getDayName,
   getMonthName,
-  isSameDay,
+  toDateKey,
 } from '../../utils/date.js';
 import { formatStatus } from '../../utils/labels.js';
 import { PinIcon, CalendarIcon } from '../internal/icons.js';
@@ -26,6 +27,7 @@ export function AgendaList({
   className = '',
 }: AgendaListProps) {
   const isMobile = useIsMobile();
+  const tz = useTenantTimezone();
   const grouped = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
     const sortedEvents = [...events].sort(
@@ -47,7 +49,7 @@ export function AgendaList({
     });
   }
 
-  const today = new Date();
+  const todayKey = toDateKey(new Date(), tz);
 
   return React.createElement(
     'div',
@@ -62,7 +64,7 @@ export function AgendaList({
     },
     grouped.map(([dateStr, dayEvents]) => {
       const date = new Date(`${dateStr}T00:00:00`);
-      const isToday = isSameDay(date, today);
+      const isToday = dateStr === todayKey;
       const dayName = getDayName(date).substring(0, 3).toUpperCase();
       const dayNum = date.getDate();
       const monthYear = `${getMonthName(date.getMonth())} ${date.getFullYear()}`;
@@ -263,7 +265,7 @@ export function AgendaList({
                       },
                       evt.all_day
                         ? 'Todo el día'
-                        : `${formatEventTime(evt.start_at)} - ${formatEventTime(evt.end_at)}`
+                        : `${formatEventTime(evt.start_at, tz)} - ${formatEventTime(evt.end_at, tz)}`
                     ),
 
                   // Título + hora (mobile) / ubicación
@@ -301,9 +303,9 @@ export function AgendaList({
                         evt.all_day
                           ? 'Todo el día'
                           : [
-                              formatEventTime(evt.start_at),
+                              formatEventTime(evt.start_at, tz),
                               ' — ',
-                              formatEventTime(evt.end_at),
+                              formatEventTime(evt.end_at, tz),
                               evt.location ? ' · ' + evt.location : '',
                             ].join('')
                       ),

@@ -22,3 +22,4 @@ export { useEventsByEntity } from './useEventsByEntity.js';
 export type { UseEventsByEntityResult } from './useEventsByEntity.js';
 export { useDateNavigation } from './useDateNavigation.js';
 export type { UseDateNavigationResult } from './useDateNavigation.js';
+export { useTenantTimezone } from './useTenantTimezone.js';

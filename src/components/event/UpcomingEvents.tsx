@@ -1,5 +1,6 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { useUpcomingEvents } from '../../hooks/useUpcomingEvents.js';
 import { TOKENS, TRUNCATE, statusBadgeStyle } from '../../styles/tokens.js';
 import type { UpcomingEventsProps } from '../../types/components.js';
@@ -20,6 +21,7 @@ export function UpcomingEvents({
   emptyMessage = 'No hay próximos eventos',
   className = '',
 }: UpcomingEventsProps) {
+  const tz = useTenantTimezone();
   const { data, loading } = useUpcomingEvents({ limit, calendarIds });
 
   if (loading) {
@@ -97,8 +99,8 @@ export function UpcomingEvents({
               style: { fontSize: '11px', color: TOKENS.ink3, marginTop: '1px' },
             },
             evt.all_day
-              ? formatEventDate(evt.start_at)
-              : `${formatEventDate(evt.start_at)} · ${formatEventTime(evt.start_at)}`
+              ? formatEventDate(evt.start_at, tz)
+              : `${formatEventDate(evt.start_at, tz)} · ${formatEventTime(evt.start_at, tz)}`
           )
         ),
         // Status badge con dot (patron Coongro, no UI.Badge)
