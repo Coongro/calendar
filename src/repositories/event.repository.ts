@@ -1,9 +1,29 @@
+import { dbNow, getDayRange, parseDateKey, toUTCTimestamp } from '@coongro/datetime';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import { eq, and, or, ilike, isNull, gte, lte, asc, desc, sql, inArray } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
 import { eventTable } from '../schema/event.js';
 import type { EventRow, NewEventRow } from '../schema/event.js';
+import type { CalendarEvent } from '../types/event.js';
+
+/** Convierte filtros que llegan como string ISO desde el API a `Date` para Drizzle. */
+function asDate(v: string | Date | undefined): Date | undefined {
+  return typeof v === 'string' ? new Date(v) : v;
+}
+
+/** Mapper boundary: row de DB (Date) → entidad de dominio (UTCTimestamp). */
+function toCalendarEvent(row: EventRow): CalendarEvent {
+  return {
+    ...row,
+    start_at: toUTCTimestamp(row.start_at),
+    end_at: toUTCTimestamp(row.end_at),
+    recurrence_end: row.recurrence_end ? toUTCTimestamp(row.recurrence_end) : null,
+    deleted_at: row.deleted_at ? toUTCTimestamp(row.deleted_at) : null,
+    created_at: toUTCTimestamp(row.created_at),
+    updated_at: toUTCTimestamp(row.updated_at),
+  };
+}
 
 export interface EventSearchParams {
   query?: string;
@@ -13,8 +33,8 @@ export interface EventSearchParams {
   eventTypeId?: string;
   entityId?: string;
   entityType?: string;
-  from?: string;
-  to?: string;
+  from?: string | Date;
+  to?: string | Date;
   tags?: string[];
   includeDeleted?: boolean;
   limit?: number;
@@ -31,21 +51,24 @@ export interface CountResult {
 export class EventRepository {
   constructor(private readonly db: ModuleDatabaseAPI) {}
 
-  async list(): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) =>
+  async list(): Promise<CalendarEvent[]> {
+    const rows = await this.db.ormQuery((tx) =>
       tx.select().from(eventTable).where(isNull(eventTable.deleted_at))
     );
+    return rows.map(toCalendarEvent);
   }
 
-  async getById({ id }: { id: string }): Promise<EventRow | undefined> {
+  async getById({ id }: { id: string }): Promise<CalendarEvent | undefined> {
     const rows = await this.db.ormQuery((tx) =>
       tx.select().from(eventTable).where(eq(eventTable.id, id)).limit(1)
     );
-    return rows[0];
+    return rows[0] ? toCalendarEvent(rows[0]) : undefined;
   }
 
-  async create({ data }: { data: NewEventRow }): Promise<EventRow[]> {
-    // Validar solapamiento si tiene fecha inicio y fin
+  async create({ data }: { data: NewEventRow }): Promise<CalendarEvent[]> {
+    // Normalizar string ISO → Date para columnas mode:'date'
+    if (typeof data.start_at === 'string') data.start_at = new Date(data.start_at);
+    if (typeof data.end_at === 'string') data.end_at = new Date(data.end_at);
     if (data.start_at && data.end_at && !data.all_day) {
       const conflicts = await this.findConflicts({
         startAt: data.start_at,
@@ -66,45 +89,49 @@ export class EventRepository {
       all_day: data.all_day ?? false,
       is_active: data.is_active ?? true,
     };
-    return this.db.ormQuery((tx) => tx.insert(eventTable).values(row).returning());
+    const rows = await this.db.ormQuery((tx) => tx.insert(eventTable).values(row).returning());
+    return rows.map(toCalendarEvent);
   }
 
-  async update({ id, data }: { id: string; data: Partial<NewEventRow> }): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) =>
+  async update({ id, data }: { id: string; data: Partial<NewEventRow> }): Promise<CalendarEvent[]> {
+    const rows = await this.db.ormQuery((tx) =>
       tx
         .update(eventTable)
-        .set({ ...data, updated_at: new Date().toISOString() } as Partial<EventRow>)
+        .set({ ...data, updated_at: dbNow() } as Partial<EventRow>)
         .where(eq(eventTable.id, id))
         .returning()
     );
+    return rows.map(toCalendarEvent);
   }
 
   async delete({ id }: { id: string }): Promise<void> {
     await this.db.ormQuery((tx) => tx.delete(eventTable).where(eq(eventTable.id, id)));
   }
 
-  async softDelete({ id }: { id: string }): Promise<EventRow[]> {
-    const now = new Date().toISOString();
-    return this.db.ormQuery((tx) =>
+  async softDelete({ id }: { id: string }): Promise<CalendarEvent[]> {
+    const now = dbNow();
+    const rows = await this.db.ormQuery((tx) =>
       tx
         .update(eventTable)
         .set({ deleted_at: now, updated_at: now } as Partial<EventRow>)
         .where(eq(eventTable.id, id))
         .returning()
     );
+    return rows.map(toCalendarEvent);
   }
 
-  async restore({ id }: { id: string }): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) =>
+  async restore({ id }: { id: string }): Promise<CalendarEvent[]> {
+    const rows = await this.db.ormQuery((tx) =>
       tx
         .update(eventTable)
-        .set({ deleted_at: null, updated_at: new Date().toISOString() } as Partial<EventRow>)
+        .set({ deleted_at: null, updated_at: dbNow() } as Partial<EventRow>)
         .where(eq(eventTable.id, id))
         .returning()
     );
+    return rows.map(toCalendarEvent);
   }
 
-  async search(params: EventSearchParams): Promise<EventRow[]> {
+  async search(params: EventSearchParams): Promise<CalendarEvent[]> {
     const {
       query,
       status,
@@ -123,7 +150,7 @@ export class EventRepository {
       orderDir = 'asc',
     } = params;
 
-    return this.db.ormQuery((tx) => {
+    const rows = await this.db.ormQuery((tx) => {
       const conditions: SQL[] = [];
 
       if (!includeDeleted) {
@@ -149,8 +176,10 @@ export class EventRepository {
       if (eventTypeId) conditions.push(eq(eventTable.event_type_id, eventTypeId));
       if (entityId) conditions.push(eq(eventTable.entity_id, entityId));
       if (entityType) conditions.push(eq(eventTable.entity_type, entityType));
-      if (from) conditions.push(gte(eventTable.start_at, from));
-      if (to) conditions.push(lte(eventTable.start_at, to));
+      const fromDate = asDate(from);
+      const toDate = asDate(to);
+      if (fromDate) conditions.push(gte(eventTable.start_at, fromDate));
+      if (toDate) conditions.push(lte(eventTable.start_at, toDate));
 
       const sortCol =
         orderBy === 'title'
@@ -173,28 +202,37 @@ export class EventRepository {
 
       return q;
     });
+    return rows.map(toCalendarEvent);
   }
 
-  async listByDateRange({ from, to }: { from: string; to: string }): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) =>
+  async listByDateRange({
+    from,
+    to,
+  }: {
+    from: string | Date;
+    to: string | Date;
+  }): Promise<CalendarEvent[]> {
+    const fromDate = asDate(from);
+    const toDate = asDate(to);
+    const rows = await this.db.ormQuery((tx) =>
       tx
         .select()
         .from(eventTable)
         .where(
           and(
             isNull(eventTable.deleted_at),
-            gte(eventTable.start_at, from),
-            lte(eventTable.start_at, to)
+            gte(eventTable.start_at, fromDate),
+            lte(eventTable.start_at, toDate)
           )
         )
         .orderBy(asc(eventTable.start_at))
     );
+    return rows.map(toCalendarEvent);
   }
 
-  async listByDate({ date }: { date: string }): Promise<EventRow[]> {
-    const dayStart = `${date}T00:00:00.000Z`;
-    const dayEnd = `${date}T23:59:59.999Z`;
-    return this.listByDateRange({ from: dayStart, to: dayEnd });
+  async listByDate({ date, tz }: { date: string; tz: string }): Promise<CalendarEvent[]> {
+    const { startUTC, endUTC } = getDayRange(parseDateKey(date), tz);
+    return this.listByDateRange({ from: startUTC, to: endUTC });
   }
 
   async listByEntity({
@@ -203,8 +241,8 @@ export class EventRepository {
   }: {
     entityId: string;
     entityType: string;
-  }): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) =>
+  }): Promise<CalendarEvent[]> {
+    const rows = await this.db.ormQuery((tx) =>
       tx
         .select()
         .from(eventTable)
@@ -217,6 +255,7 @@ export class EventRepository {
         )
         .orderBy(asc(eventTable.start_at))
     );
+    return rows.map(toCalendarEvent);
   }
 
   async listByCalendar({
@@ -227,14 +266,16 @@ export class EventRepository {
     calendarId: string;
     from?: string;
     to?: string;
-  }): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) => {
+  }): Promise<CalendarEvent[]> {
+    const rows = await this.db.ormQuery((tx) => {
       const conditions: SQL[] = [
         isNull(eventTable.deleted_at),
         eq(eventTable.calendar_id, calendarId),
       ];
-      if (from) conditions.push(gte(eventTable.start_at, from));
-      if (to) conditions.push(lte(eventTable.start_at, to));
+      const fromDate = asDate(from);
+      const toDate = asDate(to);
+      if (fromDate) conditions.push(gte(eventTable.start_at, fromDate));
+      if (toDate) conditions.push(lte(eventTable.start_at, toDate));
 
       return tx
         .select()
@@ -242,6 +283,7 @@ export class EventRepository {
         .where(and(...conditions))
         .orderBy(asc(eventTable.start_at));
     });
+    return rows.map(toCalendarEvent);
   }
 
   async listUpcoming({
@@ -250,9 +292,9 @@ export class EventRepository {
   }: {
     limit?: number;
     calendarIds?: string[];
-  }): Promise<EventRow[]> {
-    const now = new Date().toISOString();
-    return this.db.ormQuery((tx) => {
+  }): Promise<CalendarEvent[]> {
+    const now = dbNow();
+    const rows = await this.db.ormQuery((tx) => {
       const conditions: SQL[] = [isNull(eventTable.deleted_at), gte(eventTable.start_at, now)];
       if (calendarIds && calendarIds.length > 0) {
         conditions.push(inArray(eventTable.calendar_id, calendarIds));
@@ -265,6 +307,7 @@ export class EventRepository {
         .orderBy(asc(eventTable.start_at))
         .limit(limit);
     });
+    return rows.map(toCalendarEvent);
   }
 
   async findConflicts({
@@ -272,16 +315,17 @@ export class EventRepository {
     endAt,
     excludeId,
   }: {
-    startAt: string;
-    endAt: string;
+    startAt: string | Date;
+    endAt: string | Date;
     excludeId?: string;
-  }): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) => {
+  }): Promise<CalendarEvent[]> {
+    const startDate = asDate(startAt);
+    const endDate = asDate(endAt);
+    const rows = await this.db.ormQuery((tx) => {
       const conditions: SQL[] = [
         isNull(eventTable.deleted_at),
-        // Solapamiento: evento existente empieza antes de que termine el nuevo Y termina después de que empiece
-        lte(eventTable.start_at, endAt),
-        gte(eventTable.end_at, startAt),
+        lte(eventTable.start_at, endDate),
+        gte(eventTable.end_at, startDate),
       ];
 
       if (excludeId) {
@@ -294,6 +338,7 @@ export class EventRepository {
         .where(and(...conditions))
         .orderBy(asc(eventTable.start_at));
     });
+    return rows.map(toCalendarEvent);
   }
 
   async moveEvent({
@@ -302,27 +347,30 @@ export class EventRepository {
     endAt,
   }: {
     id: string;
-    startAt: string;
-    endAt: string;
-  }): Promise<EventRow[]> {
-    return this.db.ormQuery((tx) =>
+    startAt: string | Date;
+    endAt: string | Date;
+  }): Promise<CalendarEvent[]> {
+    const rows = await this.db.ormQuery((tx) =>
       tx
         .update(eventTable)
         .set({
-          start_at: startAt,
-          end_at: endAt,
-          updated_at: new Date().toISOString(),
+          start_at: asDate(startAt),
+          end_at: asDate(endAt),
+          updated_at: dbNow(),
         } as Partial<EventRow>)
         .where(eq(eventTable.id, id))
         .returning()
     );
+    return rows.map(toCalendarEvent);
   }
 
   async countByStatus({ from, to }: { from?: string; to?: string } = {}): Promise<CountResult[]> {
     return this.db.ormQuery((tx) => {
       const conditions: SQL[] = [isNull(eventTable.deleted_at)];
-      if (from) conditions.push(gte(eventTable.start_at, from));
-      if (to) conditions.push(lte(eventTable.start_at, to));
+      const fromDate = asDate(from);
+      const toDate = asDate(to);
+      if (fromDate) conditions.push(gte(eventTable.start_at, fromDate));
+      if (toDate) conditions.push(lte(eventTable.start_at, toDate));
 
       return tx
         .select({
@@ -335,7 +383,15 @@ export class EventRepository {
     });
   }
 
-  async countByDate({ from, to }: { from: string; to: string }): Promise<CountResult[]> {
+  async countByDate({
+    from,
+    to,
+  }: {
+    from: string | Date;
+    to: string | Date;
+  }): Promise<CountResult[]> {
+    const fromDate = asDate(from);
+    const toDate = asDate(to);
     return this.db.ormQuery((tx) =>
       tx
         .select({
@@ -346,8 +402,8 @@ export class EventRepository {
         .where(
           and(
             isNull(eventTable.deleted_at),
-            gte(eventTable.start_at, from),
-            lte(eventTable.start_at, to)
+            gte(eventTable.start_at, fromDate),
+            lte(eventTable.start_at, toDate)
           )
         )
         .groupBy(sql`${eventTable.start_at}::date`)
@@ -357,8 +413,10 @@ export class EventRepository {
   async countByCalendar({ from, to }: { from?: string; to?: string } = {}): Promise<CountResult[]> {
     return this.db.ormQuery((tx) => {
       const conditions: SQL[] = [isNull(eventTable.deleted_at)];
-      if (from) conditions.push(gte(eventTable.start_at, from));
-      if (to) conditions.push(lte(eventTable.start_at, to));
+      const fromDate = asDate(from);
+      const toDate = asDate(to);
+      if (fromDate) conditions.push(gte(eventTable.start_at, fromDate));
+      if (toDate) conditions.push(lte(eventTable.start_at, toDate));
 
       return tx
         .select({

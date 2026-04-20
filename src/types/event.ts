@@ -1,3 +1,5 @@
+import type { UTCTimestamp } from '@coongro/datetime';
+
 export type EventStatus =
   | 'scheduled'
   | 'confirmed'
@@ -10,8 +12,8 @@ export interface CalendarEvent {
   id: string;
   title: string;
   description: string | null;
-  start_at: string;
-  end_at: string;
+  start_at: UTCTimestamp;
+  end_at: UTCTimestamp;
   all_day: boolean;
   status: string;
   color: string | null;
@@ -21,24 +23,24 @@ export interface CalendarEvent {
   entity_id: string | null;
   entity_type: string | null;
   recurrence_rule: string | null;
-  recurrence_end: string | null;
+  recurrence_end: UTCTimestamp | null;
   recurrence_parent_id: string | null;
   tags: unknown;
   metadata: unknown;
   reminders: unknown;
   notes: string | null;
   is_active: boolean;
-  deleted_at: string | null;
-  created_at: string;
-  updated_at: string;
+  deleted_at: UTCTimestamp | null;
+  created_at: UTCTimestamp;
+  updated_at: UTCTimestamp;
 }
 
 export interface EventCreateData {
   id?: string;
   title: string;
   description?: string;
-  start_at: string;
-  end_at: string;
+  start_at: UTCTimestamp;
+  end_at: UTCTimestamp;
   all_day?: boolean;
   status?: EventStatus;
   color?: string;
@@ -48,7 +50,7 @@ export interface EventCreateData {
   entity_id?: string;
   entity_type?: string;
   recurrence_rule?: string;
-  recurrence_end?: string;
+  recurrence_end?: UTCTimestamp;
   recurrence_parent_id?: string;
   tags?: unknown;
   metadata?: unknown;

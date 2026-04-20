@@ -1,3 +1,10 @@
+import {
+  formatLocalTime,
+  localToUTC,
+  nowUTC,
+  toDateKey,
+  type UTCTimestamp,
+} from '@coongro/datetime';
 import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
 
 import { useCalendars } from '../../hooks/useCalendars.js';
@@ -6,9 +13,10 @@ import { useEvent } from '../../hooks/useEvent.js';
 import { useEventMutations } from '../../hooks/useEventMutations.js';
 import { useEventTypes } from '../../hooks/useEventTypes.js';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import type { EventFormProps } from '../../types/components.js';
 import type { EventCreateData } from '../../types/event.js';
-import { addMinutes, toDateString } from '../../utils/date.js';
+import { addMinutes } from '../../utils/date.js';
 import { STATUS_LABELS, toSelectOptions } from '../../utils/labels.js';
 import { ColorPicker } from '../internal/ColorPicker.js';
 import { DatePicker } from '../internal/DatePicker.js';
@@ -45,6 +53,7 @@ export function EventForm({
   className = '',
 }: EventFormProps) {
   const isMobile = useIsMobile();
+  const tz = useTenantTimezone();
   const isEdit = !!eventId;
   const { event, loading: loadingEvent } = useEvent(eventId);
   const { settings } = useCalendarSettings();
@@ -63,8 +72,7 @@ export function EventForm({
 
   const isSaving = creating || updating;
 
-  const now = new Date();
-  const defaultStart = now.toISOString();
+  const defaultStart = nowUTC();
   const defaultEnd = addMinutes(defaultStart, settings.defaultDuration);
 
   const [formData, setFormData] = useState<Record<string, unknown>>({
@@ -129,22 +137,11 @@ export function EventForm({
     );
   }
 
-  // Extraer fecha y hora del ISO string usando tiempo local (no UTC)
-  const startDate = formData.start_at ? toDateString(new Date(formData.start_at as string)) : '';
-  const startTime = (formData.start_at as string)
-    ? new Date(formData.start_at as string).toLocaleTimeString('es', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : '';
-  const endTime = (formData.end_at as string)
-    ? new Date(formData.end_at as string).toLocaleTimeString('es', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : '';
+  const startAt = formData.start_at as UTCTimestamp | undefined;
+  const endAt = formData.end_at as UTCTimestamp | undefined;
+  const startDate = startAt ? toDateKey(startAt, tz) : '';
+  const startTime = startAt ? formatLocalTime(startAt, tz) : '';
+  const endTime = endAt ? formatLocalTime(endAt, tz) : '';
 
   return React.createElement(
     'form',
@@ -197,7 +194,7 @@ export function EventForm({
         React.createElement(DatePicker, {
           value: startDate,
           onChange: (date: string) => {
-            const st = new Date(`${date}T${startTime || '09:00'}:00`).toISOString();
+            const st = localToUTC(date, startTime || '09:00', tz);
             handleChange('start_at', st);
             handleChange('end_at', addMinutes(st, settings.defaultDuration));
           },
@@ -214,7 +211,7 @@ export function EventForm({
             minuteStep: settings.minuteStep,
             use24Hour: settings.use24Hour,
             onChange: (time: string) => {
-              const st = new Date(`${startDate}T${time}:00`).toISOString();
+              const st = localToUTC(startDate, time, tz);
               handleChange('start_at', st);
               handleChange('end_at', addMinutes(st, settings.defaultDuration));
             },
@@ -231,7 +228,7 @@ export function EventForm({
             minuteStep: settings.minuteStep,
             use24Hour: settings.use24Hour,
             onChange: (time: string) => {
-              handleChange('end_at', new Date(`${startDate}T${time}:00`).toISOString());
+              handleChange('end_at', localToUTC(startDate, time, tz));
             },
           })
         )

@@ -4,8 +4,9 @@
  */
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
-import { getMonthGridDays, getMonthName, toDateString, isSameDay } from '../../utils/date.js';
+import { getMonthGridDays, getMonthName, toDateString, toDateKey } from '../../utils/date.js';
 
 const React = getHostReact();
 const UI = getHostUI();
@@ -69,6 +70,9 @@ export function CalendarGrid({
   onDayClick,
   daySize = 'sm',
 }: CalendarGridProps) {
+  const tz = useTenantTimezone();
+  const selectedKey = selectedDate ?? null;
+  const todayKey = toDateKey(new Date(), tz);
   const selected = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null;
   const [viewYear, setViewYear] = useState(
     () => selected?.getFullYear() ?? new Date().getFullYear()
@@ -238,8 +242,8 @@ export function CalendarGrid({
           days.map((day, i) => {
             const dateStr = toDateString(day);
             const isCurrentMonth = day.getMonth() === viewMonth;
-            const isSelected = selected && isSameDay(day, selected);
-            const isToday = isSameDay(day, new Date());
+            const isSelected = selectedKey !== null && dateStr === selectedKey;
+            const isToday = dateStr === todayKey;
             const disabled = isDateDisabled(day);
             const dotCount = eventDots[dateStr] ?? 0;
 

@@ -1,6 +1,7 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import { useEvents } from '../../hooks/useEvents.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS, TRUNCATE, statusBadgeStyle } from '../../styles/tokens.js';
 import type { EventListProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
@@ -49,6 +50,7 @@ export function EventList({
   emptyStateAction,
   className = '',
 }: EventListProps) {
+  const tz = useTenantTimezone();
   const { data, loading, error, setFilters, setSort, pagination, goToPage, refetch } = useEvents({
     ...initialFilters,
     pageSize,
@@ -124,7 +126,7 @@ export function EventList({
         key: 'start_at',
         header: 'Fecha',
         sortable: true,
-        render: (evt: CalendarEvent) => formatEventDateTime(evt.start_at),
+        render: (evt: CalendarEvent) => formatEventDateTime(evt.start_at, tz),
       },
       {
         key: 'status',
@@ -169,7 +171,7 @@ export function EventList({
         React.createElement(
           'div',
           { style: { fontSize: '0.75rem', color: TOKENS.ink4 } },
-          formatEventDateTime(evt.start_at)
+          formatEventDateTime(evt.start_at, tz)
         ),
         evt.location &&
           React.createElement(

@@ -8,8 +8,8 @@ export interface EventFilters {
   eventTypeId?: string;
   entityId?: string;
   entityType?: string;
-  from?: string;
-  to?: string;
+  from?: string | Date;
+  to?: string | Date;
   tags?: string[];
   includeDeleted?: boolean;
   limit?: number;

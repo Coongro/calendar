@@ -2,6 +2,7 @@ import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-s
 
 import { useEvent } from '../../hooks/useEvent.js';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS, statusBadgeStyle } from '../../styles/tokens.js';
 import type { EventDetailProps } from '../../types/components.js';
 import { formatEventDateTime } from '../../utils/date.js';
@@ -21,6 +22,7 @@ export function EventDetail({
   className = '',
 }: EventDetailProps) {
   const isMobile = useIsMobile();
+  const tz = useTenantTimezone();
   const { event, loading, error } = useEvent(eventId);
 
   const { sections: entityInfoSections } = useViewContributions(
@@ -166,8 +168,8 @@ export function EventDetail({
           gap: '0.75rem',
         },
       },
-      detail('Inicio', formatEventDateTime(event.start_at)),
-      detail('Fin', formatEventDateTime(event.end_at)),
+      detail('Inicio', formatEventDateTime(event.start_at, tz)),
+      detail('Fin', formatEventDateTime(event.end_at, tz)),
       event.all_day && detail('Tipo', 'Todo el día'),
       event.location
         ? React.createElement(

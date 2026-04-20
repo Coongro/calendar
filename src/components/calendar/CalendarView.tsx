@@ -1,9 +1,11 @@
+import { localToUTC } from '@coongro/datetime';
 import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
 
 import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import { useDateNavigation } from '../../hooks/useDateNavigation.js';
 import { useEvents } from '../../hooks/useEvents.js';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarViewProps, CalendarViewMode } from '../../types/components.js';
 import { toDateString } from '../../utils/date.js';
@@ -51,6 +53,7 @@ export function CalendarView({
 }: CalendarViewProps) {
   const { settings } = useCalendarSettings();
   const isMobile = useIsMobile();
+  const tz = useTenantTimezone();
   const nav = useDateNavigation(defaultView ?? settings.defaultView);
 
   const { data: internalEvents, loading: internalLoading } = useEvents({
@@ -66,8 +69,8 @@ export function CalendarView({
     const external = externalEvents ?? [];
     // Internos ya vienen filtrados por useEvents (from/to). Solo filtrar externos.
     if (external.length === 0) return internal;
-    const start = new Date(nav.rangeStart).getTime();
-    const end = new Date(nav.rangeEnd).getTime();
+    const start = nav.rangeStart.getTime();
+    const end = nav.rangeEnd.getTime();
     const filteredExternal = external.filter((e) => {
       const t = new Date(e.start_at).getTime();
       return t >= start && t <= end;
@@ -81,10 +84,10 @@ export function CalendarView({
   const prevRange = useRef<string>('');
   useEffect(() => {
     if (!onDateRangeChange) return;
-    const rangeKey = `${nav.rangeStart}|${nav.rangeEnd}`;
+    const rangeKey = `${nav.rangeStart.toISOString()}|${nav.rangeEnd.toISOString()}`;
     if (rangeKey !== prevRange.current) {
       prevRange.current = rangeKey;
-      onDateRangeChange(nav.rangeStart, nav.rangeEnd);
+      onDateRangeChange(nav.rangeStart.toISOString(), nav.rangeEnd.toISOString());
     }
   }, [nav.rangeStart, nav.rangeEnd, onDateRangeChange]);
 
@@ -425,7 +428,7 @@ export function CalendarView({
         });
       case 'three-day':
         return React.createElement(ThreeDayGrid, {
-          startDate: nav.rangeStart,
+          startDate: nav.rangeStart.toISOString(),
           events,
           startHour: settings.startHour,
           endHour: settings.endHour,
@@ -434,12 +437,12 @@ export function CalendarView({
           onEventClick,
           onSlotClick: onSlotClick
             ? (date, hour) =>
-                onSlotClick(`${date}T${String(Math.floor(hour)).padStart(2, '0')}:00:00.000Z`)
+                onSlotClick(localToUTC(date, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz))
             : undefined,
         });
       case 'week':
         return React.createElement(WeekGrid, {
-          startDate: nav.rangeStart,
+          startDate: nav.rangeStart.toISOString(),
           events,
           startHour: settings.startHour,
           endHour: settings.endHour,
@@ -448,13 +451,13 @@ export function CalendarView({
           onEventClick,
           onSlotClick: onSlotClick
             ? (date, hour) =>
-                onSlotClick(`${date}T${String(Math.floor(hour)).padStart(2, '0')}:00:00.000Z`)
+                onSlotClick(localToUTC(date, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz))
             : undefined,
           showWeekends: settings.showWeekends,
         });
       case 'day':
         return React.createElement(DayColumn, {
-          date: nav.rangeStart,
+          date: nav.rangeStart.toISOString(),
           events,
           startHour: settings.startHour,
           endHour: settings.endHour,
@@ -464,8 +467,10 @@ export function CalendarView({
           onEventClick,
           onSlotClick: onSlotClick
             ? (hour) => {
-                const dateStr = nav.rangeStart.substring(0, 10);
-                onSlotClick(`${dateStr}T${String(Math.floor(hour)).padStart(2, '0')}:00:00.000Z`);
+                const dateStr = nav.rangeStart.toISOString().substring(0, 10);
+                onSlotClick(
+                  localToUTC(dateStr, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz)
+                );
               }
             : undefined,
         });
