@@ -12,6 +12,17 @@ function asDate(v: string | Date | undefined): Date | undefined {
   return typeof v === 'string' ? new Date(v) : v;
 }
 
+/**
+ * Normaliza `start_at`/`end_at` que llegan como string ISO desde la accion a
+ * `Date`. Drizzle con `mode: 'date'` requiere Date — si le llega un string,
+ * falla con `value.toISOString is not a function`. Se usa en create/update
+ * para evitar divergencia entre ambos paths.
+ */
+function coerceEventTimestamps(data: Partial<NewEventRow>): void {
+  if (typeof data.start_at === 'string') data.start_at = new Date(data.start_at);
+  if (typeof data.end_at === 'string') data.end_at = new Date(data.end_at);
+}
+
 /** Mapper boundary: row de DB (Date) → entidad de dominio (UTCTimestamp). */
 function toCalendarEvent(row: EventRow): CalendarEvent {
   return {
@@ -66,22 +77,7 @@ export class EventRepository {
   }
 
   async create({ data }: { data: NewEventRow }): Promise<CalendarEvent[]> {
-    // Normalizar string ISO → Date para columnas mode:'date'
-    if (typeof data.start_at === 'string') data.start_at = new Date(data.start_at);
-    if (typeof data.end_at === 'string') data.end_at = new Date(data.end_at);
-    if (data.start_at && data.end_at && !data.all_day) {
-      const conflicts = await this.findConflicts({
-        startAt: data.start_at,
-        endAt: data.end_at,
-      });
-      // Ignorar eventos cancelados
-      const activeConflicts = conflicts.filter((c) => c.status !== 'cancelled');
-      if (activeConflicts.length > 0) {
-        const c = activeConflicts[0];
-        throw new Error(`Conflicto de horario: ya existe "${c.title}" en ese rango`);
-      }
-    }
-
+    coerceEventTimestamps(data);
     const row = {
       ...data,
       id: data.id ?? crypto.randomUUID(),
@@ -94,6 +90,7 @@ export class EventRepository {
   }
 
   async update({ id, data }: { id: string; data: Partial<NewEventRow> }): Promise<CalendarEvent[]> {
+    coerceEventTimestamps(data);
     const rows = await this.db.ormQuery((tx) =>
       tx
         .update(eventTable)
@@ -306,37 +303,6 @@ export class EventRepository {
         .where(and(...conditions))
         .orderBy(asc(eventTable.start_at))
         .limit(limit);
-    });
-    return rows.map(toCalendarEvent);
-  }
-
-  async findConflicts({
-    startAt,
-    endAt,
-    excludeId,
-  }: {
-    startAt: string | Date;
-    endAt: string | Date;
-    excludeId?: string;
-  }): Promise<CalendarEvent[]> {
-    const startDate = asDate(startAt);
-    const endDate = asDate(endAt);
-    const rows = await this.db.ormQuery((tx) => {
-      const conditions: SQL[] = [
-        isNull(eventTable.deleted_at),
-        lte(eventTable.start_at, endDate),
-        gte(eventTable.end_at, startDate),
-      ];
-
-      if (excludeId) {
-        conditions.push(sql`${eventTable.id} != ${excludeId}`);
-      }
-
-      return tx
-        .select()
-        .from(eventTable)
-        .where(and(...conditions))
-        .orderBy(asc(eventTable.start_at));
     });
     return rows.map(toCalendarEvent);
   }
