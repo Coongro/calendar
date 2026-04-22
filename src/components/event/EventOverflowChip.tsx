@@ -18,16 +18,10 @@ export interface EventOverflowChipProps {
    */
   onEventClick?: (event: CalendarEvent) => void;
   /**
-   * Callback adicional que dispara cuando se hace click en el chip mismo
-   * (antes de abrir el popover). Uso: analytics, o override total del UX
-   * si un consumer quiere manejar su propio panel custom.
-   * Si onClickOverride === true, suprime el popover default.
+   * Si se pasa, suprime el popover default y delega al consumer (ej: abrir un
+   * panel custom). Sin este callback, el chip abre su propio popover.
    */
-  onChipClick?: (events: CalendarEvent[]) => void;
-  onClickOverride?: boolean;
-  /** Estilos de posicionamiento aplicados al chip por el consumidor. */
-  style?: React.CSSProperties;
-  className?: string;
+  onOverride?: (events: CalendarEvent[]) => void;
 }
 
 /**
@@ -39,21 +33,17 @@ export interface EventOverflowChipProps {
  * Reutilizable en Day/Week/ThreeDay (cluster overflow temporal) y podra
  * usarse en Month view para el "+N mas" del dia.
  */
-export function EventOverflowChip({
-  events,
-  onEventClick,
-  onChipClick,
-  onClickOverride = false,
-  style,
-  className = '',
-}: EventOverflowChipProps) {
+export function EventOverflowChip({ events, onEventClick, onOverride }: EventOverflowChipProps) {
   const [open, setOpen] = useState(false);
   const count = events.length;
   if (count === 0) return null;
 
   const handleChipClick = () => {
-    onChipClick?.(events);
-    if (!onClickOverride) setOpen(true);
+    if (onOverride) {
+      onOverride(events);
+      return;
+    }
+    setOpen(true);
   };
 
   const handleItemClick = (evt: CalendarEvent) => {
@@ -71,7 +61,6 @@ export function EventOverflowChip({
         'button',
         {
           type: 'button',
-          className,
           'aria-label': `${count} ${count === 1 ? 'evento más' : 'eventos más'} en este horario`,
           onClick: handleChipClick,
           style: {
@@ -87,7 +76,6 @@ export function EventOverflowChip({
             alignItems: 'center',
             gap: '4px',
             fontFamily: 'inherit',
-            ...style,
           },
         },
         ...renderDots(events),

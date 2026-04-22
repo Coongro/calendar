@@ -13,7 +13,6 @@ import { NOW_LINE_Z } from './grid-constants.js';
 // ── Now position ──
 
 export interface NowPosition {
-  nowMinutes: number;
   nowHour: number;
   nowTimeStr: string;
   gridStartMin: number;
@@ -38,7 +37,7 @@ export function computeNowPosition(
   const nowInRange = nowMinutes >= gridStartMin && nowMinutes < gridEndMin;
   const nowTop = nowInRange ? ((nowMinutes - gridStartMin) / slotDuration) * slotHeight : -1;
   const nowTimeStr = `${String(nowHour).padStart(2, '0')}:${String(nowMinute).padStart(2, '0')}`;
-  return { nowMinutes, nowHour, nowTimeStr, gridStartMin, gridEndMin, nowInRange, nowTop };
+  return { nowHour, nowTimeStr, gridStartMin, gridEndMin, nowInRange, nowTop };
 }
 
 // ── Event positioning ──

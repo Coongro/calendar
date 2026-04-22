@@ -207,9 +207,7 @@ export function DayColumnCore({
         React.createElement(EventOverflowChip, {
           events: ov.events,
           onEventClick,
-          onChipClick: onClusterOverflowClick,
-          // Si el consumer paso onClusterOverflowClick, asumimos override total.
-          onClickOverride: !!onClusterOverflowClick,
+          onOverride: onClusterOverflowClick,
         })
       );
     })
@@ -243,7 +241,7 @@ function overflowPosition(
   slotHeight: number
 ): { topOffset: number; height: number } | null {
   const start = new Date(startMs);
-  if (toDateString(start) !== (date ?? '').substring(0, 10)) return null;
+  if (toDateString(start) !== date) return null;
   const end = new Date(endMs);
   const startMin = start.getHours() * 60 + start.getMinutes();
   const endMin = end.getHours() * 60 + end.getMinutes();
