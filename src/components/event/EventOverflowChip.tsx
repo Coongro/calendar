@@ -84,7 +84,11 @@ export function EventOverflowChip({ events, onEventClick, onOverride }: EventOve
     ),
     React.createElement(
       UI.PopoverContent,
-      { className: 'w-80 p-0', align: 'center', side: 'bottom' },
+      {
+        align: 'center',
+        side: 'bottom',
+        style: { width: '320px', padding: 0 },
+      },
       React.createElement(ClusterOverflowList, { events, onEventClick: handleItemClick })
     )
   );
