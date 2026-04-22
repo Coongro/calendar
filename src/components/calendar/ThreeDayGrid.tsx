@@ -9,18 +9,17 @@ import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { WeekGridProps } from '../../types/components.js';
 import { getShortDayName, generateTimeSlots, toDateString, toDateKey } from '../../utils/date.js';
-import { SLOT_HEIGHT_3DAY, GUTTER_WIDTH_3DAY, EVENT_Z } from '../../utils/grid-constants.js';
+import { SLOT_HEIGHT_3DAY, GUTTER_WIDTH_3DAY } from '../../utils/grid-constants.js';
 import {
   computeNowPosition,
-  computeEventPosition,
   groupEventsByDay,
-  renderNowLine,
   dayBackground,
   dayColumnBackground,
   dayNameColor,
   dayNumberStyles,
 } from '../../utils/grid-helpers.js';
-import { EventCard } from '../event/EventCard.js';
+
+import { DayColumnCore } from './DayColumnCore.js';
 
 const React = getHostReact();
 const { useMemo } = React;
@@ -33,9 +32,11 @@ export function ThreeDayGrid({
   startHour = 8,
   endHour = 20,
   slotDuration = 60,
+  maxColumns,
   renderEvent,
   onEventClick,
   onSlotClick,
+  onClusterOverflowClick,
 }: WeekGridProps) {
   const tz = useTenantTimezone();
   const slotHeight = SLOT_HEIGHT_3DAY;
@@ -215,69 +216,25 @@ export function ThreeDayGrid({
                   ...(colBg ? { background: colBg } : {}),
                 },
               },
-
-              // Slots
-              ...timeSlots.map((slot) =>
-                React.createElement('div', {
-                  key: `slot-${slot}`,
-                  style: {
-                    height: `${slotHeight}px`,
-                    borderBottom: `1px solid ${TOKENS.border}`,
-                    cursor: onSlotClick ? 'pointer' : 'default',
-                  },
-                  onClick: onSlotClick
-                    ? () => {
-                        const [h, m] = slot.split(':').map(Number);
-                        onSlotClick(dateStr, h + m / 60);
-                      }
-                    : undefined,
-                })
-              ),
-
-              // Now line
-              isToday && nowInRange && renderNowLine(nowTop),
-
-              // Eventos
-              ...dayEvents
-                .map((evt) => {
-                  const pos = computeEventPosition(
-                    evt,
-                    gridStartMin,
-                    gridEndMin,
-                    slotDuration,
-                    slotHeight
-                  );
-                  if (!pos) return null;
-
-                  const { topOffset, height } = pos;
-
-                  return React.createElement(
-                    'div',
-                    {
-                      key: evt.id,
-                      style: {
-                        position: 'absolute',
-                        left: '3px',
-                        right: '3px',
-                        top: `${Math.max(0, topOffset)}px`,
-                        height: `${Math.max(slotHeight / 2, height)}px`,
-                        zIndex: String(EVENT_Z),
-                      },
-                    },
-                    renderEvent
-                      ? renderEvent(evt, {
-                          variant: 'week',
-                          height: Math.max(slotHeight / 2, height),
-                        })
-                      : React.createElement(EventCard, {
-                          event: evt,
-                          variant: 'week',
-                          showTime: true,
-                          onClick: onEventClick,
-                        })
-                  );
-                })
-                .filter(Boolean)
+              React.createElement(DayColumnCore, {
+                date: dateStr,
+                events: dayEvents,
+                timeSlots,
+                slotDuration,
+                slotHeight,
+                gridStartMin,
+                gridEndMin,
+                isToday,
+                nowInRange,
+                nowTop,
+                maxColumns: maxColumns ?? 3,
+                defaultVariant: 'week',
+                sidePadding: 3,
+                renderEvent,
+                onEventClick,
+                onSlotClick,
+                onClusterOverflowClick,
+              })
             );
           })
         )

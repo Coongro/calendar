@@ -56,9 +56,13 @@ export interface WeekGridProps {
   startHour?: number;
   endHour?: number;
   slotDuration?: number;
+  /** Maximo de columnas visibles en un cluster antes de emitir chip "+N". */
+  maxColumns?: number;
   renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   onEventClick?: (event: CalendarEvent) => void;
   onSlotClick?: (date: string, hour: number) => void;
+  /** Se invoca cuando el usuario hace click en el chip "+N" de un cluster con overflow. */
+  onClusterOverflowClick?: (events: CalendarEvent[]) => void;
   showWeekends?: boolean;
   className?: string;
 }
@@ -71,9 +75,13 @@ export interface DayColumnProps {
   slotDuration?: number;
   /** Altura en px de cada slot. Si no se pasa, usa el default del design system (56 desktop, 48 mobile). */
   slotHeight?: number;
+  /** Numero maximo de columnas visibles en un cluster de solapamiento. Default: 4 desktop / 3 mobile. */
+  maxColumns?: number;
   renderEvent?: (event: CalendarEvent, context?: EventRenderContext) => ReactNode;
   onEventClick?: (event: CalendarEvent) => void;
   onSlotClick?: (hour: number) => void;
+  /** Se invoca cuando el usuario hace click en el chip "+N" de un cluster con overflow. */
+  onClusterOverflowClick?: (events: CalendarEvent[]) => void;
   className?: string;
 }
 

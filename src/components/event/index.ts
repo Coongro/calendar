@@ -7,3 +7,5 @@ export { EventStats } from './EventStats.js';
 export { CreateEventButton } from './CreateEventButton.js';
 export { CalendarBadge } from './CalendarBadge.js';
 export { UpcomingEvents } from './UpcomingEvents.js';
+export { EventOverflowChip } from './EventOverflowChip.js';
+export { MobileWeekMiniCard } from './MobileWeekMiniCard.js';
