@@ -49,6 +49,28 @@ export interface EventPosition {
 }
 
 /**
+ * Calcula top y height a partir de un rango de minutos-del-dia.
+ * Si el rango cae totalmente fuera de la grilla visible retorna null.
+ * Recorta el rango al rango visible cuando se solapa parcialmente, asi
+ * un elemento cuyo end cae mas alla de endHour sigue visible hasta el borde.
+ */
+export function computeVerticalPosition(
+  startMin: number,
+  endMin: number,
+  gridStartMin: number,
+  gridEndMin: number,
+  slotDuration: number,
+  slotHeight: number
+): EventPosition | null {
+  if (startMin >= gridEndMin || endMin <= gridStartMin) return null;
+  const clampedStart = Math.max(startMin, gridStartMin);
+  const clampedEnd = Math.min(endMin, gridEndMin);
+  const topOffset = ((clampedStart - gridStartMin) / slotDuration) * slotHeight;
+  const height = ((clampedEnd - clampedStart) / slotDuration) * slotHeight;
+  return { topOffset, height };
+}
+
+/**
  * Calcula top y height de un evento dentro de la grilla.
  * Retorna null si el evento esta fuera del rango visible.
  */
@@ -61,13 +83,16 @@ export function computeEventPosition(
 ): EventPosition | null {
   const evtStart = new Date(evt.start_at);
   const evtStartMin = evtStart.getHours() * 60 + evtStart.getMinutes();
-
   if (evtStartMin < gridStartMin || evtStartMin >= gridEndMin) return null;
-
-  const topOffset = ((evtStartMin - gridStartMin) / slotDuration) * slotHeight;
   const duration = diffMinutes(evt.start_at, evt.end_at);
-  const height = (duration / slotDuration) * slotHeight;
-  return { topOffset, height };
+  return computeVerticalPosition(
+    evtStartMin,
+    evtStartMin + duration,
+    gridStartMin,
+    gridEndMin,
+    slotDuration,
+    slotHeight
+  );
 }
 
 // ── Events by day ──

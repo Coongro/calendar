@@ -9,20 +9,16 @@ import {
   SLOT_HEIGHT_MOBILE,
   GUTTER_WIDTH_DESKTOP,
   GUTTER_WIDTH_MOBILE,
-  EVENT_Z,
 } from '../../utils/grid-constants.js';
-import {
-  computeNowPosition,
-  computeEventPosition,
-  renderNowLine,
-} from '../../utils/grid-helpers.js';
-import { EventCard } from '../event/EventCard.js';
+import { computeNowPosition } from '../../utils/grid-helpers.js';
+
+import { DayColumnCore } from './DayColumnCore.js';
 
 const React = getHostReact();
 const { useMemo } = React;
 
-/** Umbral en px: eventos mas bajos que esto usan variante compact */
-const COMPACT_HEIGHT_PX = 46;
+const MAX_COLUMNS_DESKTOP = 4;
+const MAX_COLUMNS_MOBILE = 3;
 
 export function DayColumn({
   date,
@@ -31,14 +27,18 @@ export function DayColumn({
   endHour = 20,
   slotDuration = 30,
   slotHeight: slotHeightProp,
+  maxColumns: maxColumnsProp,
   renderEvent,
   onEventClick,
   onSlotClick,
+  onClusterOverflowClick,
   className = '',
 }: DayColumnProps) {
   const isMobile = useIsMobile();
   const slotHeight = slotHeightProp ?? (isMobile ? SLOT_HEIGHT_MOBILE : SLOT_HEIGHT_DESKTOP);
   const gutterWidth = isMobile ? GUTTER_WIDTH_MOBILE : GUTTER_WIDTH_DESKTOP;
+  const maxColumns = maxColumnsProp ?? (isMobile ? MAX_COLUMNS_MOBILE : MAX_COLUMNS_DESKTOP);
+
   const timeSlots = useMemo(
     () => generateTimeSlots(startHour, endHour, slotDuration),
     [startHour, endHour, slotDuration]
@@ -46,7 +46,6 @@ export function DayColumn({
 
   const slotsPerHour = Math.round(60 / slotDuration);
 
-  // Now line
   const isToday = toDateString(new Date()) === (date ?? '').substring(0, 10);
   const { gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
     startHour,
@@ -54,6 +53,11 @@ export function DayColumn({
     slotDuration,
     slotHeight
   );
+
+  // Adapter: propaga el hour sin la fecha (firma historica de DayColumnProps).
+  const handleSlotClick = onSlotClick
+    ? (_date: string, hour: number) => onSlotClick(hour)
+    : undefined;
 
   return React.createElement(
     'div',
@@ -64,7 +68,7 @@ export function DayColumn({
       },
     },
 
-    // Columna de horas
+    // Time gutter
     React.createElement(
       'div',
       {
@@ -102,70 +106,30 @@ export function DayColumn({
           minWidth: 0,
         },
       },
-
-      // Slots (filas horarias)
-      ...timeSlots.map((slot, i) =>
-        React.createElement('div', {
-          key: `slot-${slot}`,
-          style: {
-            borderBottom:
-              i % slotsPerHour === 0
-                ? `1px solid color-mix(in srgb, ${TOKENS.border} 40%, transparent)`
-                : `1px solid color-mix(in srgb, ${TOKENS.border} 20%, transparent)`,
-            height: `${slotHeight}px`,
-            cursor: onSlotClick ? 'pointer' : undefined,
-          },
-          onClick: onSlotClick
-            ? () => {
-                const [h, m] = slot.split(':').map(Number);
-                onSlotClick(h + m / 60);
-              }
-            : undefined,
-        })
-      ),
-
-      // Now line (gold triangle marker)
-      isToday && nowInRange && renderNowLine(nowTop),
-
-      // Eventos posicionados
-      ...events
-        .map((evt) => {
-          const pos = computeEventPosition(evt, gridStartMin, gridEndMin, slotDuration, slotHeight);
-          if (!pos) return null;
-
-          const { topOffset, height } = pos;
-          const renderedHeight = Math.max(slotHeight / 2, height);
-          const isCompact = renderedHeight < COMPACT_HEIGHT_PX;
-
-          return React.createElement(
-            'div',
-            {
-              key: evt.id,
-              style: {
-                position: 'absolute' as const,
-                left: '4px',
-                right: '4px',
-                zIndex: String(EVENT_Z),
-                top: `${Math.max(0, topOffset)}px`,
-                height: `${Math.max(slotHeight / 2, height)}px`,
-              },
-            },
-            renderEvent
-              ? renderEvent(evt, {
-                  variant: isCompact ? 'compact' : 'standard',
-                  height: renderedHeight,
-                })
-              : React.createElement(EventCard, {
-                  event: evt,
-                  variant: isCompact ? 'compact' : 'standard',
-                  showTime: true,
-                  showStatus: !isCompact,
-                  showLocation: !isCompact,
-                  onClick: onEventClick,
-                })
-          );
-        })
-        .filter(Boolean)
+      React.createElement(DayColumnCore, {
+        date,
+        events,
+        timeSlots,
+        slotDuration,
+        slotHeight,
+        gridStartMin,
+        gridEndMin,
+        isToday,
+        nowInRange,
+        nowTop,
+        maxColumns,
+        defaultVariant: 'standard',
+        sidePadding: 4,
+        // Mantener la variacion de opacidad historica: hora (40%) vs media hora (20%).
+        slotBorder: (idx: number, sph: number) =>
+          idx % sph === 0
+            ? `1px solid color-mix(in srgb, ${TOKENS.border} 40%, transparent)`
+            : `1px solid color-mix(in srgb, ${TOKENS.border} 20%, transparent)`,
+        renderEvent,
+        onEventClick,
+        onSlotClick: handleSlotClick,
+        onClusterOverflowClick,
+      })
     )
   );
 }

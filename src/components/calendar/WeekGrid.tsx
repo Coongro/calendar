@@ -4,6 +4,7 @@ import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { WeekGridProps } from '../../types/components.js';
+import type { CalendarEvent } from '../../types/event.js';
 import {
   getWeekDays,
   getShortDayName,
@@ -16,19 +17,18 @@ import {
   SLOT_HEIGHT_MOBILE,
   GUTTER_WIDTH_DESKTOP,
   GUTTER_WIDTH_MOBILE,
-  EVENT_Z,
 } from '../../utils/grid-constants.js';
 import {
   computeNowPosition,
-  computeEventPosition,
   groupEventsByDay,
-  renderNowLine,
   dayBackground,
   dayColumnBackground,
   dayNameColor,
   dayNumberStyles,
 } from '../../utils/grid-helpers.js';
-import { EventCard } from '../event/EventCard.js';
+import { MobileWeekMiniCard } from '../event/MobileWeekMiniCard.js';
+
+import { DayColumnCore } from './DayColumnCore.js';
 
 const React = getHostReact();
 const { useMemo } = React;
@@ -39,9 +39,11 @@ export function WeekGrid({
   startHour = 8,
   endHour = 20,
   slotDuration = 60,
+  maxColumns,
   renderEvent,
   onEventClick,
   onSlotClick,
+  onClusterOverflowClick,
   showWeekends = true,
 }: WeekGridProps) {
   const isMobile = useIsMobile();
@@ -204,118 +206,48 @@ export function WeekGrid({
             const isToday = toDateString(day) === todayKey;
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const dayEvents = eventsByDay[dateStr] ?? [];
-
             const colBg = dayColumnBackground(isToday, isWeekend);
-            const colStyle: Record<string, string> = {
-              flex: '1',
-              position: 'relative',
-              borderRight: `1px solid ${TOKENS.border}`,
-              minWidth: '0',
-              ...(colBg ? { background: colBg } : {}),
-            };
+
+            // En mobile, el ancho de columna (~52px) no deja espacio para EventCards —
+            // sustituimos por MobileWeekMiniCard (bloque coloreado con titulo a 7px).
+            // En desktop respetamos el renderEvent si el consumidor lo paso.
+            const effectiveRenderEvent = isMobile
+              ? (evt: CalendarEvent) =>
+                  React.createElement(MobileWeekMiniCard, { event: evt, onClick: onEventClick })
+              : renderEvent;
 
             return React.createElement(
               'div',
-              { key: dateStr, style: colStyle },
-
-              // Slots de fondo
-              ...timeSlots.map((slot, _slotIdx) =>
-                React.createElement('div', {
-                  key: `slot-${slot}`,
-                  style: {
-                    height: `${slotHeight}px`,
-                    borderBottom: `1px solid color-mix(in srgb, var(--cg-border) 40%, transparent)`,
-                    cursor: onSlotClick ? 'pointer' : 'default',
-                  },
-                  onClick: onSlotClick
-                    ? () => {
-                        const [h, m] = slot.split(':').map(Number);
-                        onSlotClick(dateStr, h + m / 60);
-                      }
-                    : undefined,
-                })
-              ),
-
-              // Now line (gold triangle marker)
-              isToday && nowInRange && renderNowLine(nowTop),
-
-              // Eventos posicionados
-              ...dayEvents
-                .map((evt) => {
-                  const pos = computeEventPosition(
-                    evt,
-                    gridStartMin,
-                    gridEndMin,
-                    slotDuration,
-                    slotHeight
-                  );
-                  if (!pos) return null;
-
-                  const { topOffset, height } = pos;
-
-                  return React.createElement(
-                    'div',
-                    {
-                      key: evt.id,
-                      style: {
-                        position: 'absolute',
-                        left: '3px',
-                        right: '3px',
-                        top: `${Math.max(0, topOffset)}px`,
-                        height: `${Math.max(slotHeight / 2, height)}px`,
-                        zIndex: String(EVENT_Z),
-                      },
-                    },
-                    renderEvent && !isMobile
-                      ? renderEvent(evt, {
-                          variant: 'week',
-                          height: Math.max(slotHeight / 2, height),
-                        })
-                      : isMobile
-                        ? // Mobile: bloque coloreado con texto 7px truncado (variante F)
-                          React.createElement(
-                            'div',
-                            {
-                              style: {
-                                width: '100%',
-                                height: '100%',
-                                borderRadius: '3px',
-                                background: `color-mix(in srgb, ${evt.color ?? TOKENS.gold} 20%, transparent)`,
-                                padding: '2px 3px',
-                                overflow: 'hidden',
-                                cursor: onEventClick ? 'pointer' : 'default',
-                                opacity: evt.status === 'cancelled' ? '0.4' : '1',
-                              },
-                              onClick: onEventClick ? () => onEventClick(evt) : undefined,
-                            },
-                            React.createElement(
-                              'span',
-                              {
-                                style: {
-                                  fontSize: '7px',
-                                  fontWeight: '600',
-                                  color: TOKENS.ink2,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  display: 'block',
-                                  lineHeight: '1.2',
-                                  textDecoration:
-                                    evt.status === 'cancelled' ? 'line-through' : 'none',
-                                },
-                              },
-                              evt.title
-                            )
-                          )
-                        : React.createElement(EventCard, {
-                            event: evt,
-                            variant: 'week',
-                            showTime: true,
-                            onClick: onEventClick,
-                          })
-                  );
-                })
-                .filter(Boolean)
+              {
+                key: dateStr,
+                style: {
+                  flex: '1',
+                  position: 'relative',
+                  borderRight: `1px solid ${TOKENS.border}`,
+                  minWidth: '0',
+                  ...(colBg ? { background: colBg } : {}),
+                },
+              },
+              React.createElement(DayColumnCore, {
+                date: dateStr,
+                events: dayEvents,
+                timeSlots,
+                slotDuration,
+                slotHeight,
+                gridStartMin,
+                gridEndMin,
+                isToday,
+                nowInRange,
+                nowTop,
+                maxColumns: maxColumns ?? (isMobile ? 2 : 3),
+                defaultVariant: 'week',
+                sidePadding: 3,
+                slotBorder: `1px solid color-mix(in srgb, ${TOKENS.border} 40%, transparent)`,
+                renderEvent: effectiveRenderEvent,
+                onEventClick,
+                onSlotClick,
+                onClusterOverflowClick,
+              })
             );
           })
         )
