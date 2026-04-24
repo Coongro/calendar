@@ -1,9 +1,11 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarEvent } from '../../types/event.js';
 
 import { EventCard } from './EventCard.js';
+import { MobileBottomSheet } from './MobileBottomSheet.js';
 
 const React = getHostReact();
 const { useState } = React;
@@ -35,6 +37,7 @@ export interface EventOverflowChipProps {
  */
 export function EventOverflowChip({ events, onEventClick, onOverride }: EventOverflowChipProps) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const count = events.length;
   if (count === 0) return null;
 
@@ -51,37 +54,61 @@ export function EventOverflowChip({ events, onEventClick, onOverride }: EventOve
     onEventClick?.(evt);
   };
 
+  const chipButton = React.createElement(
+    'button',
+    {
+      type: 'button',
+      'aria-label': `${count} ${count === 1 ? 'evento más' : 'eventos más'} en este horario`,
+      onClick: handleChipClick,
+      style: {
+        background: TOKENS.surface,
+        border: `1px solid ${TOKENS.borderMd}`,
+        borderRadius: TOKENS.rSm,
+        padding: '3px 7px',
+        fontSize: '10px',
+        fontWeight: 600,
+        color: TOKENS.ink2,
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontFamily: 'inherit',
+      },
+    },
+    ...renderDots(events),
+    `+${count}`
+  );
+
+  if (isMobile) {
+    const { title, subtitle } = clusterHeaderLabels(events);
+    return React.createElement(
+      React.Fragment,
+      null,
+      chipButton,
+      React.createElement(MobileBottomSheet, {
+        open,
+        onOpenChange: setOpen,
+        title,
+        subtitle,
+        children: sortedItems(events).map((evt) =>
+          React.createElement(EventCard, {
+            key: evt.id,
+            event: evt,
+            variant: 'list' as const,
+            showTime: true,
+            showStatus: true,
+            showLocation: true,
+            onClick: handleItemClick,
+          })
+        ),
+      })
+    );
+  }
+
   return React.createElement(
     UI.Popover,
     { open, onOpenChange: setOpen },
-    React.createElement(
-      UI.PopoverTrigger,
-      { asChild: true },
-      React.createElement(
-        'button',
-        {
-          type: 'button',
-          'aria-label': `${count} ${count === 1 ? 'evento más' : 'eventos más'} en este horario`,
-          onClick: handleChipClick,
-          style: {
-            background: TOKENS.surface,
-            border: `1px solid ${TOKENS.borderMd}`,
-            borderRadius: TOKENS.rSm,
-            padding: '3px 7px',
-            fontSize: '10px',
-            fontWeight: 600,
-            color: TOKENS.ink2,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontFamily: 'inherit',
-          },
-        },
-        ...renderDots(events),
-        `+${count}`
-      )
-    ),
+    React.createElement(UI.PopoverTrigger, { asChild: true }, chipButton),
     React.createElement(
       UI.PopoverContent,
       {
@@ -105,9 +132,7 @@ interface ClusterOverflowListProps {
 }
 
 function ClusterOverflowList({ events, onEventClick }: ClusterOverflowListProps) {
-  const sorted = [...events].sort(
-    (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-  );
+  const sorted = sortedItems(events);
 
   return React.createElement(
     'div',
@@ -127,7 +152,7 @@ function ClusterOverflowList({ events, onEventClick }: ClusterOverflowListProps)
           background: TOKENS.bg,
         },
       },
-      `${sorted.length} turnos en este horario`
+      `+${sorted.length} turno${sorted.length === 1 ? '' : 's'} más en este horario`
     ),
 
     // Lista
@@ -156,6 +181,44 @@ function ClusterOverflowList({ events, onEventClick }: ClusterOverflowListProps)
       )
     )
   );
+}
+
+function sortedItems(events: CalendarEvent[]): CalendarEvent[] {
+  return [...events].sort(
+    (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+  );
+}
+
+function clusterHeaderLabels(events: CalendarEvent[]): { title: string; subtitle: string } {
+  const sorted = sortedItems(events);
+  const first = sorted[0];
+  const startMin = formatHM(first.start_at);
+  const endMax = formatHM(maxEnd(sorted));
+  const title = `${events.length} turno${events.length === 1 ? '' : 's'} · ${startMin} – ${endMax}`;
+  const subtitle = formatDayLabel(first.start_at);
+  return { title, subtitle };
+}
+
+function maxEnd(events: CalendarEvent[]): string {
+  return events.reduce(
+    (acc, e) => (new Date(e.end_at) > new Date(acc) ? e.end_at : acc),
+    events[0].end_at
+  );
+}
+
+function formatHM(iso: string): string {
+  const d = new Date(iso);
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function formatDayLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString('es-AR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+  });
 }
 
 function renderDots(events: CalendarEvent[]): React.ReactNode[] {
