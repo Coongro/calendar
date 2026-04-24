@@ -15,10 +15,16 @@ export interface MobileBottomSheetProps {
 }
 
 /**
- * Bottom sheet anclado al borde inferior del viewport. Reusa el Root de
- * Radix Dialog (via UI.Dialog) para focus trap, ESC y open state, pero el
- * panel y backdrop se renderizan en un Portal propio con inline styles
- * porque DialogContent del host fuerza un layout modal centrado.
+ * Bottom sheet anclado al borde inferior del viewport. Pensado solo para
+ * mobile (consumer hace gating con useIsMobile). UI.Dialog (Root de Radix)
+ * solo nos sirve para tener un wrapper con `open`/`onOpenChange`; ESC y
+ * focus trap NO se cablean porque el panel se renderiza en un Portal
+ * propio fuera de Dialog.Content (DialogContent del host fuerza layout
+ * modal centrado y no podemos overridearlo). En mobile no hay teclado
+ * fisico, asi que ESC no aplica.
+ *
+ * Mientras `open`, bloqueamos el scroll del body para evitar que el
+ * contenido detras del backdrop scrollee.
  *
  * Referencia visual: design/event-overlap-exploration.html, seccion
  * "Bottom sheet — lista del cluster".
@@ -31,6 +37,15 @@ export function MobileBottomSheet({
   children,
 }: MobileBottomSheetProps) {
   const handleBackdropClick = () => onOpenChange(false);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
 
   return React.createElement(
     UI.Dialog,
@@ -56,7 +71,7 @@ export function MobileBottomSheet({
               style: {
                 position: 'absolute',
                 inset: 0,
-                background: 'rgba(26, 25, 22, 0.35)',
+                background: 'var(--cg-bg-overlay)',
               },
             }),
             // Panel

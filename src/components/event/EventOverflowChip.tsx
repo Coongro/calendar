@@ -195,7 +195,7 @@ function clusterHeaderLabels(events: CalendarEvent[]): { title: string; subtitle
   const startMin = formatHM(first.start_at);
   const endMax = formatHM(maxEnd(sorted));
   const title = `${events.length} turno${events.length === 1 ? '' : 's'} · ${startMin} – ${endMax}`;
-  const subtitle = first ? formatDayLabel(first.start_at) : '';
+  const subtitle = formatDayLabel(first.start_at);
   return { title, subtitle };
 }
 
