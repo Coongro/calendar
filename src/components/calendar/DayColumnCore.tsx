@@ -241,7 +241,9 @@ function overflowPosition(
   slotHeight: number
 ): { topOffset: number; height: number } | null {
   const start = new Date(startMs);
-  if (toDateString(start) !== date) return null;
+  // Compara solo la parte YYYY-MM-DD para tolerar consumidores que pasen
+  // un ISO string completo (ej: CalendarView dia).
+  if (toDateString(start) !== date.substring(0, 10)) return null;
   const end = new Date(endMs);
   const startMin = start.getHours() * 60 + start.getMinutes();
   const endMin = end.getHours() * 60 + end.getMinutes();

@@ -457,7 +457,7 @@ export function CalendarView({
         });
       case 'day':
         return React.createElement(DayColumn, {
-          date: nav.rangeStart.toISOString(),
+          date: toDateString(nav.rangeStart),
           events,
           startHour: settings.startHour,
           endHour: settings.endHour,
