@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day Header Hover — Exploracion de variantes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+
+    .page { padding: 32px 44px 64px; max-width: 1100px; }
+
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .ref-header {
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 12px;
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+    .ref-subtitle { font-size: 12px; color: var(--ink-3); }
+    .ref-section {
+      padding: 24px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 16px;
+    }
+    .ref-note {
+      font-size: 11px; color: var(--ink-4); margin-top: 14px;
+      padding-left: 12px; border-left: 2px solid var(--border);
+      line-height: 1.6;
+    }
+
+    /* ── Base day header ── */
+    .dh-name {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; color: var(--ink-3);
+      margin-bottom: 4px;
+    }
+    .dh-num {
+      font-family: var(--font-serif); font-size: 20px; font-weight: 700;
+      color: var(--ink-2); line-height: 1;
+    }
+
+    /* ── Strip ── */
+    .strip {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .strip-gutter {
+      width: 56px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .strip-day {
+      flex: 1;
+      padding: 14px 0 12px;
+      text-align: center;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: relative;
+      transition: all 150ms;
+    }
+    .strip-day:last-child { border-right: none; }
+
+    /* Today aprobado: Warm Glow */
+    .strip-day.today {
+      background: var(--gold-lt);
+    }
+    .strip-day.today .dh-name { color: var(--gold-hover); font-weight: 700; }
+    .strip-day.today .dh-num { color: var(--ink); font-weight: 900; font-size: 22px; }
+
+    /* Weekend */
+    .strip-day.wknd { background: var(--bg); }
+    .strip-day.wknd .dh-name { color: var(--ink-4); font-weight: 500; }
+    .strip-day.wknd .dh-num { color: var(--ink-4); font-weight: 400; font-size: 18px; }
+
+    /* ════════════════════════════════════════════════════
+       HOVER VARIANTS — cada strip muestra hover en MIE 8
+       ════════════════════════════════════════════════════ */
+
+    /* ── H1: bg (table row hover pattern) ── */
+    .strip-day.h1 { background: var(--bg); cursor: pointer; }
+
+    /* ── H2: gold-lt (mismo que today pero sin promo tipografica) ── */
+    .strip-day.h2 { background: var(--gold-lt); cursor: pointer; }
+
+    /* ── H3: border-md (solo refuerza el borde) ── */
+    .strip-day.h3 { border-color: var(--border-md); cursor: pointer; }
+    .strip-day.h3 .dh-num { color: var(--ink); }
+
+    /* ── H4: ink promotion (texto sube a ink, sin cambio de fondo) ── */
+    .strip-day.h4 { cursor: pointer; }
+    .strip-day.h4 .dh-name { color: var(--ink-2); }
+    .strip-day.h4 .dh-num { color: var(--ink); font-weight: 900; }
+
+    /* ── H5: bg + underline gold corto ── */
+    .strip-day.h5 { background: var(--bg); cursor: pointer; }
+    .strip-day.h5 .dh-num {
+      color: var(--ink);
+      position: relative;
+    }
+    .strip-day.h5 .dh-num::after {
+      content: '';
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      bottom: -3px;
+      width: 14px; height: 2px;
+      background: var(--gold);
+      border-radius: 1px;
+    }
+
+    /* ── H6: surface queda, borde inferior sutil ── */
+    .strip-day.h6 {
+      border-bottom: 2px solid var(--border-md);
+      cursor: pointer;
+    }
+    .strip-day.h6 .dh-num { color: var(--ink); }
+
+    /* ── H7: bg + nombre sube a ink-2 ── */
+    .strip-day.h7 { background: var(--bg); cursor: pointer; }
+    .strip-day.h7 .dh-name { color: var(--ink-2); }
+    .strip-day.h7 .dh-num { color: var(--ink); font-weight: 900; }
+
+    /* ── H8: teal-lt (diferencia semantica: hover ≠ today) ── */
+    .strip-day.h8 { background: var(--teal-lt); cursor: pointer; }
+    .strip-day.h8 .dh-num { color: var(--ink); }
+
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Day Header — Hover</h2>
+      <span class="ref-subtitle">Hover en MIE 8 — today (LUN 6) aprobado como Warm Glow</span>
+    </div>
+
+    <!-- H1 -->
+    <div class="ref-section">
+      <div class="ref-label">H1 — bg (patron table row hover)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h1"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Fondo --bg. Es el hover mas comun de Coongro (table rows, nav items). Sutil, consistente, seguro.</div>
+    </div>
+
+    <!-- H2 -->
+    <div class="ref-section">
+      <div class="ref-label">H2 — gold-lt (mismo tono que today)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h2"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Mismo gold-lt que today. Riesgo: confunde hover con today si no se mira la tipografia. Ventaja: unifica la familia visual.</div>
+    </div>
+
+    <!-- H3 -->
+    <div class="ref-section">
+      <div class="ref-label">H3 — Border only (borde se oscurece)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h3"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Sin cambio de fondo. Solo el borde derecho sube a --border-md y el numero a ink. Muy sutil — puede no notarse.</div>
+    </div>
+
+    <!-- H4 -->
+    <div class="ref-section">
+      <div class="ref-label">H4 — Ink Promotion (solo tipografia cambia)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h4"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Sin fondo. Nombre sube a ink-2, numero a ink weight 900. Puro contraste tipografico — el mismo principio que el today pero sin color.</div>
+    </div>
+
+    <!-- H5 -->
+    <div class="ref-section">
+      <div class="ref-label">H5 — bg + Floating Dash (fondo sutil + acento gold)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h5"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Fondo --bg + trazo gold 14px bajo el numero. Dice "podes clickear esto" con gold sin confundirse con today (que es gold-lt completo).</div>
+    </div>
+
+    <!-- H6 -->
+    <div class="ref-section">
+      <div class="ref-label">H6 — Bottom Border (linea inferior border-md)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h6"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Borde inferior 2px --border-md. Mas grueso que el borde normal pero neutro. Numero a ink. Discreto, no compite con today.</div>
+    </div>
+
+    <!-- H7 -->
+    <div class="ref-section">
+      <div class="ref-label">H7 — bg + Ink Full (fondo + promocion tipografica)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h7"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Fondo --bg + nombre sube a ink-2 + numero a ink 900. Combina H1 y H4. Hover visible sin ser agresivo. Diferencia clara con today (bg vs gold-lt).</div>
+    </div>
+
+    <!-- H8 -->
+    <div class="ref-section">
+      <div class="ref-label">H8 — Teal Light (hover frio vs today calido)</div>
+      <div class="strip">
+        <div class="strip-gutter"></div>
+        <div class="strip-day today"><div class="dh-name">LUN</div><div class="dh-num">6</div></div>
+        <div class="strip-day"><div class="dh-name">MAR</div><div class="dh-num">7</div></div>
+        <div class="strip-day h8"><div class="dh-name">MIE</div><div class="dh-num">8</div></div>
+        <div class="strip-day"><div class="dh-name">JUE</div><div class="dh-num">9</div></div>
+        <div class="strip-day"><div class="dh-name">VIE</div><div class="dh-num">10</div></div>
+        <div class="strip-day wknd"><div class="dh-name">SAB</div><div class="dh-num">11</div></div>
+        <div class="strip-day wknd"><div class="dh-name">DOM</div><div class="dh-num">12</div></div>
+      </div>
+      <div class="ref-note">Temperatura opuesta: today es calido (gold-lt), hover es frio (teal-lt). Nunca se confunden. Teal = interaccion/estado, gold = hoy.</div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

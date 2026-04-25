@@ -1,3 +1,10 @@
+import {
+  formatLocalTime,
+  localToUTC,
+  nowUTC,
+  toDateKey,
+  type UTCTimestamp,
+} from '@coongro/datetime';
 import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
 
 import { useCalendars } from '../../hooks/useCalendars.js';
@@ -5,9 +12,11 @@ import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import { useEvent } from '../../hooks/useEvent.js';
 import { useEventMutations } from '../../hooks/useEventMutations.js';
 import { useEventTypes } from '../../hooks/useEventTypes.js';
+import { useIsMobile } from '../../hooks/useIsMobile.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import type { EventFormProps } from '../../types/components.js';
 import type { EventCreateData } from '../../types/event.js';
-import { addMinutes, toDateString } from '../../utils/date.js';
+import { addMinutes } from '../../utils/date.js';
 import { STATUS_LABELS, toSelectOptions } from '../../utils/labels.js';
 import { ColorPicker } from '../internal/ColorPicker.js';
 import { DatePicker } from '../internal/DatePicker.js';
@@ -20,6 +29,13 @@ const { useState, useEffect, useCallback } = React;
 function isFieldHidden(field: string, hiddenFields?: string[]): boolean {
   return hiddenFields?.includes(field) ?? false;
 }
+
+// Estilos reutilizables para campos de formulario
+const FIELD_STYLE = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.375rem',
+} as const;
 
 export function EventForm({
   eventId,
@@ -36,6 +52,8 @@ export function EventForm({
   onCancel,
   className = '',
 }: EventFormProps) {
+  const isMobile = useIsMobile();
+  const tz = useTenantTimezone();
   const isEdit = !!eventId;
   const { event, loading: loadingEvent } = useEvent(eventId);
   const { settings } = useCalendarSettings();
@@ -54,8 +72,7 @@ export function EventForm({
 
   const isSaving = creating || updating;
 
-  const now = new Date();
-  const defaultStart = now.toISOString();
+  const defaultStart = nowUTC();
   const defaultEnd = addMinutes(defaultStart, settings.defaultDuration);
 
   const [formData, setFormData] = useState<Record<string, unknown>>({
@@ -106,33 +123,37 @@ export function EventForm({
   if (isEdit && loadingEvent) {
     return React.createElement(
       'div',
-      { className: 'flex flex-col gap-4 p-4' },
+      {
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          padding: '1rem',
+        },
+      },
       Array.from({ length: 6 }).map((_, i) =>
         React.createElement(UI.Skeleton, { key: i, className: 'h-10 rounded-lg' })
       )
     );
   }
 
-  // Extraer fecha y hora del ISO string usando tiempo local (no UTC)
-  const startDate = formData.start_at ? toDateString(new Date(formData.start_at as string)) : '';
-  const startTime = (formData.start_at as string)
-    ? new Date(formData.start_at as string).toLocaleTimeString('es', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : '';
-  const endTime = (formData.end_at as string)
-    ? new Date(formData.end_at as string).toLocaleTimeString('es', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    : '';
+  const startAt = formData.start_at as UTCTimestamp | undefined;
+  const endAt = formData.end_at as UTCTimestamp | undefined;
+  const startDate = startAt ? toDateKey(startAt, tz) : '';
+  const startTime = startAt ? formatLocalTime(startAt, tz) : '';
+  const endTime = endAt ? formatLocalTime(endAt, tz) : '';
 
   return React.createElement(
     'form',
-    { onSubmit: handleSubmit, className: `flex flex-col gap-5 ${className}` },
+    {
+      onSubmit: handleSubmit,
+      className,
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.25rem',
+      },
+    },
 
     // Contribuciones before
     ...(beforeSections.length > 0
@@ -143,10 +164,10 @@ export function EventForm({
         ? [renderBeforeFields()]
         : []),
 
-    // Título
+    // Titulo
     React.createElement(
       'div',
-      { className: 'flex flex-col gap-1.5' },
+      { style: FIELD_STYLE },
       React.createElement(UI.Label, null, 'Título *'),
       React.createElement(UI.Input, {
         value: (formData.title as string) ?? '',
@@ -159,15 +180,21 @@ export function EventForm({
     // Fecha y hora
     React.createElement(
       'div',
-      { className: 'grid grid-cols-3 gap-3' },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: '0.75rem',
+        },
+      },
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Fecha *'),
         React.createElement(DatePicker, {
           value: startDate,
           onChange: (date: string) => {
-            const st = new Date(`${date}T${startTime || '09:00'}:00`).toISOString();
+            const st = localToUTC(date, startTime || '09:00', tz);
             handleChange('start_at', st);
             handleChange('end_at', addMinutes(st, settings.defaultDuration));
           },
@@ -176,15 +203,15 @@ export function EventForm({
       !(formData.all_day as boolean) &&
         React.createElement(
           'div',
-          { className: 'flex flex-col gap-1.5' },
+          { style: FIELD_STYLE },
           React.createElement(UI.Label, null, 'Inicio'),
           React.createElement(TimePicker, {
             value: startTime,
             step: settings.slotDuration,
-            minTime: `${String(settings.startHour).padStart(2, '0')}:00`,
-            maxTime: `${String(settings.endHour).padStart(2, '0')}:00`,
+            minuteStep: settings.minuteStep,
+            use24Hour: settings.use24Hour,
             onChange: (time: string) => {
-              const st = new Date(`${startDate}T${time}:00`).toISOString();
+              const st = localToUTC(startDate, time, tz);
               handleChange('start_at', st);
               handleChange('end_at', addMinutes(st, settings.defaultDuration));
             },
@@ -193,22 +220,30 @@ export function EventForm({
       !(formData.all_day as boolean) &&
         React.createElement(
           'div',
-          { className: 'flex flex-col gap-1.5' },
+          { style: FIELD_STYLE },
           React.createElement(UI.Label, null, 'Fin'),
           React.createElement(TimePicker, {
             value: endTime,
             step: settings.slotDuration,
+            minuteStep: settings.minuteStep,
+            use24Hour: settings.use24Hour,
             onChange: (time: string) => {
-              handleChange('end_at', new Date(`${startDate}T${time}:00`).toISOString());
+              handleChange('end_at', localToUTC(startDate, time, tz));
             },
           })
         )
     ),
 
-    // Todo el día
+    // Todo el dia
     React.createElement(
       'div',
-      { className: 'flex items-center gap-2' },
+      {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        },
+      },
       React.createElement(UI.Switch, {
         checked: (formData.all_day as boolean) ?? false,
         onCheckedChange: (checked: boolean) => handleChange('all_day', checked),
@@ -219,10 +254,16 @@ export function EventForm({
     // Calendario + Tipo
     React.createElement(
       'div',
-      { className: 'grid grid-cols-2 gap-3' },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+          gap: '0.75rem',
+        },
+      },
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Calendario'),
         React.createElement(
           UI.Select,
@@ -238,7 +279,7 @@ export function EventForm({
       ),
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, `Tipo${settings.requireType ? ' *' : ''}`),
         React.createElement(
           UI.Select,
@@ -257,7 +298,7 @@ export function EventForm({
     // Status
     React.createElement(
       'div',
-      { className: 'flex flex-col gap-1.5' },
+      { style: FIELD_STYLE },
       React.createElement(UI.Label, null, 'Estado'),
       React.createElement(
         UI.Select,
@@ -280,11 +321,11 @@ export function EventForm({
         ? [renderEntitySection()]
         : []),
 
-    // Descripción
+    // Descripcion
     !isFieldHidden('description', hiddenFields) &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(
           UI.Label,
           null,
@@ -299,11 +340,11 @@ export function EventForm({
         })
       ),
 
-    // Ubicación
+    // Ubicacion
     !isFieldHidden('location', hiddenFields) &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Ubicación'),
         React.createElement(UI.Input, {
           value: (formData.location as string) ?? '',
@@ -317,7 +358,7 @@ export function EventForm({
       settings.showNotes &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Notas'),
         React.createElement(UI.Textarea, {
           value: (formData.notes as string) ?? '',
@@ -332,7 +373,7 @@ export function EventForm({
       settings.showColorPicker &&
       React.createElement(
         'div',
-        { className: 'flex flex-col gap-1.5' },
+        { style: FIELD_STYLE },
         React.createElement(UI.Label, null, 'Color'),
         React.createElement(ColorPicker, {
           value: (formData.color as string) ?? '',
@@ -354,7 +395,14 @@ export function EventForm({
       ? renderFooter()
       : React.createElement(
           'div',
-          { className: 'flex gap-3 pt-2' },
+          {
+            style: {
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: '0.75rem',
+              paddingTop: '0.5rem',
+            },
+          },
           React.createElement(
             UI.Button,
             { type: 'submit', disabled: isSaving, className: 'flex-1' },

@@ -31,7 +31,9 @@ export type {
   MiniCalendarProps,
   EventFormProps,
   FieldDef,
+  EventRenderContext,
   EventCardProps,
+  EventCardVariant,
   EventDetailProps,
   EventPickerProps,
   EventListProps,
@@ -42,6 +44,7 @@ export type {
   CalendarBadgeProps,
   UpcomingEventsProps,
   DatePickerProps,
+  DateTimePickerProps,
   TimePickerProps,
   ColorPickerProps,
 } from './types/components.js';
@@ -71,11 +74,13 @@ export { useEventsByEntity } from './hooks/useEventsByEntity.js';
 export type { UseEventsByEntityResult } from './hooks/useEventsByEntity.js';
 export { useDateNavigation } from './hooks/useDateNavigation.js';
 export type { UseDateNavigationResult } from './hooks/useDateNavigation.js';
+export { useTenantTimezone } from './hooks/useTenantTimezone.js';
 
 // Components
 export { CalendarView } from './components/calendar/CalendarView.js';
 export { MonthGrid } from './components/calendar/MonthGrid.js';
 export { WeekGrid } from './components/calendar/WeekGrid.js';
+export { ThreeDayGrid } from './components/calendar/ThreeDayGrid.js';
 export { DayColumn } from './components/calendar/DayColumn.js';
 export { AgendaList } from './components/calendar/AgendaList.js';
 export { MiniCalendar } from './components/calendar/MiniCalendar.js';
@@ -91,6 +96,7 @@ export { UpcomingEvents } from './components/event/UpcomingEvents.js';
 
 // Pickers (reutilizables por otros plugins)
 export { DatePicker } from './components/internal/DatePicker.js';
+export { DateTimePicker } from './components/internal/DateTimePicker.js';
 export { TimePicker } from './components/internal/TimePicker.js';
 export { ColorPicker } from './components/internal/ColorPicker.js';
 

@@ -1,5 +1,7 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { TOKENS } from '../../styles/tokens.js';
+
 const React = getHostReact();
 const UI = getHostUI();
 
@@ -28,35 +30,73 @@ const WEEK_GHOST_EVENTS = [
   { col: 6, top: SLOT_H * 1, h: SLOT_H * 2 },
 ];
 
+// Animacion de pulse para skeletons
+const PULSE_ANIMATION = 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite';
+
 export function MonthGridSkeleton() {
   return React.createElement(
     'div',
-    { className: 'flex flex-col animate-pulse' },
+    {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        animation: PULSE_ANIMATION,
+      },
+    },
 
-    // Header días semana
+    // Header dias semana
     React.createElement(
       'div',
-      { className: 'grid grid-cols-7 border-b border-cg-border' },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          borderBottom: `1px solid ${TOKENS.border}`,
+        },
+      },
       WEEK_DAYS.map((d) =>
         React.createElement(
           'div',
-          { key: d, className: 'text-center text-xs text-cg-text-muted py-2 font-medium' },
+          {
+            key: d,
+            style: {
+              textAlign: 'center',
+              fontSize: '0.75rem',
+              color: TOKENS.ink4,
+              padding: '0.5rem 0',
+              fontWeight: 500,
+            },
+          },
           d
         )
       )
     ),
 
-    // Grid de celdas: 5 semanas × 7 días
+    // Grid de celdas: 5 semanas x 7 dias
     React.createElement(
       'div',
-      { className: 'grid grid-cols-7 flex-1' },
+      {
+        style: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          flex: 1,
+        },
+      },
       Array.from({ length: 35 }, (_, i) =>
         React.createElement(
           'div',
-          { key: i, className: 'min-h-16 border-b border-r border-cg-border p-1.5' },
-          // Número del día
+          {
+            key: i,
+            style: {
+              minHeight: '4rem',
+              borderBottom: `1px solid ${TOKENS.border}`,
+              borderRight: `1px solid ${TOKENS.border}`,
+              padding: '0.375rem',
+            },
+          },
+          // Numero del dia
           React.createElement(UI.Skeleton, { className: 'w-5 h-4 mb-2 rounded' }),
-          // 0–2 líneas de eventos según celda
+          // 0-2 lineas de eventos segun celda
           i % 7 !== 5 && i % 7 !== 6 && i % 4 !== 0
             ? React.createElement(UI.Skeleton, { className: 'h-4 w-full rounded mb-1' })
             : null,
@@ -70,54 +110,96 @@ export function MonthGridSkeleton() {
 export function WeekGridSkeleton() {
   return React.createElement(
     'div',
-    { className: 'flex animate-pulse' },
+    {
+      style: {
+        display: 'flex',
+        animation: PULSE_ANIMATION,
+      },
+    },
 
     // Columna de horas
     React.createElement(
       'div',
-      { className: 'w-14 shrink-0 border-r border-cg-border' },
-      React.createElement('div', { className: 'h-10 border-b border-cg-border' }),
+      {
+        style: {
+          width: '3.5rem',
+          flexShrink: 0,
+          borderRight: `1px solid ${TOKENS.border}`,
+        },
+      },
+      React.createElement('div', {
+        style: {
+          height: '2.5rem',
+          borderBottom: `1px solid ${TOKENS.border}`,
+        },
+      }),
       TIME_LABELS.map((t) =>
         React.createElement(
           'div',
           {
             key: t,
-            className:
-              'text-[10px] text-cg-text-muted text-right pr-2 border-b border-cg-border/30',
-            style: { height: `${SLOT_H}px` },
+            style: {
+              height: `${SLOT_H}px`,
+              fontSize: '10px',
+              color: TOKENS.ink4,
+              textAlign: 'right',
+              paddingRight: '0.5rem',
+              borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 19%, transparent)`,
+            },
           },
           t
         )
       )
     ),
 
-    // Columnas de días
+    // Columnas de dias
     ...WEEK_DAYS.map((d, colIdx) =>
       React.createElement(
         'div',
-        { key: d, className: 'flex-1 min-w-0 border-r border-cg-border last:border-r-0' },
+        {
+          key: d,
+          style: {
+            flex: 1,
+            minWidth: 0,
+            borderRight: colIdx < WEEK_DAYS.length - 1 ? `1px solid ${TOKENS.border}` : 'none',
+          },
+        },
 
-        // Header del día
+        // Header del dia
         React.createElement(
           'div',
           {
-            className:
-              'h-10 flex flex-col items-center justify-center border-b border-cg-border gap-0.5',
+            style: {
+              height: '2.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderBottom: `1px solid ${TOKENS.border}`,
+              gap: '0.125rem',
+            },
           },
           React.createElement(UI.Skeleton, { className: 'w-6 h-2.5 rounded' }),
           React.createElement(UI.Skeleton, { className: 'w-5 h-4 rounded' })
         ),
 
-        // Área de slots con evento fantasma
+        // Area de slots con evento fantasma
         React.createElement(
           'div',
-          { className: 'relative', style: { height: `${SLOT_H * TIME_LABELS.length}px` } },
-          // Líneas de hora
+          {
+            style: {
+              position: 'relative',
+              height: `${SLOT_H * TIME_LABELS.length}px`,
+            },
+          },
+          // Lineas de hora
           TIME_LABELS.map((t) =>
             React.createElement('div', {
               key: t,
-              className: 'border-b border-cg-border/20',
-              style: { height: `${SLOT_H}px` },
+              style: {
+                height: `${SLOT_H}px`,
+                borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 13%, transparent)`,
+              },
             })
           ),
           // Evento fantasma si corresponde
@@ -135,7 +217,7 @@ export function WeekGridSkeleton() {
 }
 
 export function DayColumnSkeleton() {
-  // Eventos fantasma para la columna única
+  // Eventos fantasma para la columna unica
   const ghostEvents = [
     { top: SLOT_H * 1, h: SLOT_H * 1.5 },
     { top: SLOT_H * 3.5, h: SLOT_H * 1 },
@@ -144,19 +226,36 @@ export function DayColumnSkeleton() {
 
   return React.createElement(
     'div',
-    { className: 'flex animate-pulse' },
+    {
+      style: {
+        display: 'flex',
+        animation: PULSE_ANIMATION,
+      },
+    },
 
     // Columna de horas
     React.createElement(
       'div',
-      { className: 'w-16 shrink-0' },
+      {
+        style: {
+          width: '4rem',
+          flexShrink: 0,
+        },
+      },
       TIME_LABELS.map((t) =>
         React.createElement(
           'div',
           {
             key: t,
-            className: 'text-xs text-cg-text-muted text-right pr-3 border-b border-cg-border/30',
-            style: { height: `${SLOT_H}px`, lineHeight: `${SLOT_H}px` },
+            style: {
+              height: `${SLOT_H}px`,
+              lineHeight: `${SLOT_H}px`,
+              fontSize: '0.75rem',
+              color: TOKENS.ink4,
+              textAlign: 'right',
+              paddingRight: '0.75rem',
+              borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 19%, transparent)`,
+            },
           },
           t
         )
@@ -167,15 +266,21 @@ export function DayColumnSkeleton() {
     React.createElement(
       'div',
       {
-        className: 'flex-1 relative border-l border-cg-border',
-        style: { height: `${SLOT_H * TIME_LABELS.length}px` },
+        style: {
+          flex: 1,
+          position: 'relative',
+          borderLeft: `1px solid ${TOKENS.border}`,
+          height: `${SLOT_H * TIME_LABELS.length}px`,
+        },
       },
-      // Líneas de hora
+      // Lineas de hora
       TIME_LABELS.map((t) =>
         React.createElement('div', {
           key: t,
-          className: 'border-b border-cg-border/20',
-          style: { height: `${SLOT_H}px` },
+          style: {
+            height: `${SLOT_H}px`,
+            borderBottom: `1px solid color-mix(in srgb, ${TOKENS.border} 13%, transparent)`,
+          },
         })
       ),
       // Eventos fantasma
@@ -191,12 +296,19 @@ export function DayColumnSkeleton() {
 }
 
 export function AgendaListSkeleton() {
-  // 3 grupos de fecha con 2–3 eventos cada uno
+  // 3 grupos de fecha con 2-3 eventos cada uno
   const groups = [{ events: 3 }, { events: 2 }, { events: 3 }];
 
   return React.createElement(
     'div',
-    { className: 'flex flex-col gap-6 animate-pulse' },
+    {
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem',
+        animation: PULSE_ANIMATION,
+      },
+    },
     groups.map((g, gi) =>
       React.createElement(
         'div',
@@ -205,18 +317,41 @@ export function AgendaListSkeleton() {
         // Date header skeleton
         React.createElement(
           'div',
-          { className: 'flex items-center gap-3 mb-3' },
-          // Bloque día
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              marginBottom: '0.75rem',
+            },
+          },
+          // Bloque dia
           React.createElement(
             'div',
-            { className: 'flex flex-col items-center gap-1 w-10 shrink-0' },
+            {
+              style: {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.25rem',
+                width: '2.5rem',
+                flexShrink: 0,
+              },
+            },
             React.createElement(UI.Skeleton, { className: 'h-2.5 w-6 rounded' }),
             React.createElement(UI.Skeleton, { className: 'h-7 w-7 rounded-full' })
           ),
-          // Mes/año
+          // Mes/ano
           React.createElement(UI.Skeleton, { className: 'h-3 w-20 rounded' }),
-          // Línea separadora
-          React.createElement('div', { className: 'flex-1 h-px bg-cg-skeleton rounded' }),
+          // Linea separadora
+          React.createElement('div', {
+            style: {
+              flex: 1,
+              height: '1px',
+              backgroundColor: TOKENS.border,
+              borderRadius: '9999px',
+            },
+          }),
           // Conteo
           React.createElement(UI.Skeleton, { className: 'h-3 w-14 rounded shrink-0' })
         ),
@@ -224,19 +359,40 @@ export function AgendaListSkeleton() {
         // Filas de eventos skeleton
         React.createElement(
           'div',
-          { className: 'flex flex-col gap-1.5 pl-12' },
+          {
+            style: {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.375rem',
+              paddingLeft: '3rem',
+            },
+          },
           Array.from({ length: g.events }, (_, ei) =>
             React.createElement(
               'div',
               {
                 key: ei,
-                className: 'flex items-center gap-3 py-2.5 px-3 rounded-lg border border-cg-border',
-                style: { borderLeftWidth: '3px', borderLeftColor: 'var(--cg-skeleton, #e5e7eb)' },
+                style: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.625rem 0.75rem',
+                  borderRadius: '0.5rem',
+                  border: `1px solid ${TOKENS.border}`,
+                },
               },
+              React.createElement(UI.Skeleton, { className: 'w-2.5 h-2.5 rounded-full shrink-0' }),
               React.createElement(UI.Skeleton, { className: 'h-3 w-24 rounded shrink-0' }),
               React.createElement(
                 'div',
-                { className: 'flex-1 flex flex-col gap-1.5' },
+                {
+                  style: {
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.375rem',
+                  },
+                },
                 React.createElement(UI.Skeleton, {
                   className: `h-3.5 rounded ${ei % 2 === 0 ? 'w-2/3' : 'w-1/2'}`,
                 }),

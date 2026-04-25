@@ -1,3 +1,4 @@
+import { dbNow } from '@coongro/datetime';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import { eq, and, or, ilike, isNull } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
@@ -39,7 +40,7 @@ export class EventTypeRepository {
     return this.db.ormQuery((tx) =>
       tx
         .update(eventTypeTable)
-        .set({ ...data, updated_at: new Date().toISOString() } as Partial<EventTypeRow>)
+        .set({ ...data, updated_at: dbNow() } as Partial<EventTypeRow>)
         .where(eq(eventTypeTable.id, id))
         .returning()
     );
@@ -50,7 +51,7 @@ export class EventTypeRepository {
   }
 
   async softDelete({ id }: { id: string }): Promise<EventTypeRow[]> {
-    const now = new Date().toISOString();
+    const now = dbNow();
     return this.db.ormQuery((tx) =>
       tx
         .update(eventTypeTable)
@@ -64,7 +65,7 @@ export class EventTypeRepository {
     return this.db.ormQuery((tx) =>
       tx
         .update(eventTypeTable)
-        .set({ deleted_at: null, updated_at: new Date().toISOString() } as Partial<EventTypeRow>)
+        .set({ deleted_at: null, updated_at: dbNow() } as Partial<EventTypeRow>)
         .where(eq(eventTypeTable.id, id))
         .returning()
     );

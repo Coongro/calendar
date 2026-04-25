@@ -8,6 +8,13 @@
       "when": 1773565081295,
       "tag": "0000_typical_nekra",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776493031360,
+      "tag": "0001_lean_white_tiger",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Overlap — Exploration (COONG-92)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A; --red-lt: #FEF2F2;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --purple: #7C3AED; --purple-lt: #F3E8FF;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+      --hour-h: 80px;
+      --hour-h-mobile: 60px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    .page { padding: 32px 44px; max-width: 1280px; }
+
+    /* ── Reference card shell ───────────────────────── */
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .ref-header {
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 12px;
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+    .ref-subtitle { font-size: 12px; color: var(--ink-3); }
+    .ref-section {
+      padding: 24px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 16px;
+    }
+    .ref-row { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+    .ref-note {
+      font-size: 11px; color: var(--ink-4); margin-top: 12px;
+      padding-left: 12px; border-left: 2px solid var(--border);
+      max-width: 720px; line-height: 1.5;
+    }
+    .case-title {
+      font-size: 11px; font-weight: 600; color: var(--ink-2);
+      margin-bottom: 8px;
+    }
+
+    /* ── Time gutter (shared) ───────────────────────── */
+    .sim { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+    .sim-gutter {
+      width: 48px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .sim-gutter .time-label {
+      height: var(--hour-h);
+      display: flex; align-items: flex-start; justify-content: flex-end;
+      padding: 0 8px;
+      font-size: 10px; color: var(--ink-3); font-weight: 500;
+      transform: translateY(-6px);
+    }
+    .sim-col {
+      position: relative;
+      background: var(--surface);
+    }
+    .sim-col .hour-row {
+      height: var(--hour-h);
+      border-bottom: 1px solid var(--border);
+    }
+    .sim-col .hour-row:last-child { border-bottom: none; }
+
+    /* Widths for different sim contexts */
+    .sim.desktop-day  .sim-col { width: 520px; }
+    .sim.desktop-week .sim-col { width: 150px; }
+    .sim.mobile-week  .sim-col { width: 52px; }
+    .sim.mobile-day   .sim-col { width: 330px; }
+
+    /* ── EventCard base (shared with event-card-desktop) ─ */
+    .ev {
+      position: absolute;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer; overflow: hidden;
+      z-index: 2;
+      transition: border-color 150ms, transform 150ms;
+    }
+    .ev:hover { border-color: var(--border-md); }
+    .ev-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dot-gold    { background: var(--gold); }
+    .dot-teal    { background: var(--teal-dk); }
+    .dot-green   { background: var(--green); }
+    .dot-red     { background: var(--red); }
+    .dot-purple  { background: var(--purple); }
+    .dot-neutral { background: var(--ink-4); }
+
+    .ev-timebar {
+      padding: 4px 8px;
+      display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .ev-time { font-size: 10px; font-weight: 700; color: var(--ink-3); flex: 1;
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ev-body { padding: 5px 8px 6px; background: var(--surface); }
+    .ev-title {
+      font-size: 12px; font-weight: 500; color: var(--ink-2);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ev-sub {
+      font-size: 10px; color: var(--ink-3); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* Compact variant (30min, one line) */
+    .ev-compact { display: flex; align-items: center; gap: 6px; padding: 5px 8px; }
+    .ev-compact .ev-title { font-size: 11px; font-weight: 500; }
+    .ev-compact .ev-time { font-size: 10px; font-weight: 600; flex: none; }
+
+    /* When inside narrow cluster col, hide subtitle */
+    .ev.cluster-narrow .ev-sub { display: none; }
+    .ev.cluster-narrow .ev-timebar { padding: 3px 6px; }
+    .ev.cluster-narrow .ev-body { padding: 3px 6px 4px; }
+    .ev.cluster-narrow .ev-time { font-size: 9px; }
+    .ev.cluster-narrow .ev-title { font-size: 11px; }
+
+    /* ── Cluster "+N" chip ──────────────────────────── */
+    .ev-more {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+      border-radius: var(--r-sm);
+      padding: 4px 8px;
+      display: flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 600; color: var(--ink-2);
+      cursor: pointer; z-index: 3;
+      transition: border-color 150ms, background 150ms;
+    }
+    .ev-more:hover { border-color: var(--ink-2); background: var(--bg); }
+    .ev-more-dots { display: inline-flex; gap: 2px; margin-right: 2px; }
+    .ev-more-dot { width: 4px; height: 4px; border-radius: 50%; }
+
+    /* ── Long-containing-shorts: tinted background band ─ */
+    .ev-band {
+      position: absolute;
+      border-radius: var(--r-sm);
+      border: 1px dashed transparent;
+      z-index: 1;
+      pointer-events: none;
+      display: flex; flex-direction: column; justify-content: flex-start;
+      padding: 6px 10px;
+    }
+    .band-teal   { background: var(--teal-lt); }
+    .band-gold   { background: var(--gold-lt); }
+    .band-green  { background: var(--green-lt); }
+    .ev-band-label {
+      font-size: 10px; font-weight: 600; color: var(--teal-dk);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ev-band-label.gold  { color: var(--gold-hover); }
+    .ev-band-label.green { color: var(--green); }
+
+    /* ── Mobile: narrow column cluster (primary + badge) ─ */
+    .ev-mw {
+      position: absolute; left: 2px; right: 2px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 3px 4px;
+      overflow: hidden;
+      display: flex; flex-direction: column; gap: 2px;
+      z-index: 2;
+    }
+    .ev-mw-row { display: flex; align-items: center; gap: 3px; }
+    .ev-mw-time { font-size: 8px; font-weight: 700; color: var(--ink-3); }
+    .ev-mw-title { font-size: 9px; font-weight: 500; color: var(--ink-2);
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ev-mw-badge {
+      position: absolute; top: 2px; right: 2px;
+      background: var(--ink-2); color: var(--surface);
+      font-size: 8px; font-weight: 700;
+      min-width: 14px; height: 14px; border-radius: 7px;
+      padding: 0 4px;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 4;
+    }
+
+    /* ── Bottom sheet ───────────────────────────────── */
+    .sheet-frame {
+      width: 375px;
+      height: 480px;
+      background: rgba(26,25,22,0.35);
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid var(--border);
+    }
+    .sheet {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      background: var(--surface);
+      border-top-left-radius: var(--r-xl);
+      border-top-right-radius: var(--r-xl);
+      padding: 10px 0 16px;
+      max-height: 75%;
+      display: flex; flex-direction: column;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: var(--border-md);
+      border-radius: 2px; margin: 0 auto 12px;
+    }
+    .sheet-header {
+      padding: 0 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 8px;
+    }
+    .sheet-title { font-family: var(--font-serif); font-weight: 700; font-size: 16px; }
+    .sheet-sub { font-size: 11px; color: var(--ink-3); }
+    .sheet-list { padding: 12px 18px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+    .sheet-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px; border: 1px solid var(--border);
+      border-radius: var(--r-sm); cursor: pointer;
+      transition: border-color 150ms;
+    }
+    .sheet-item:hover { border-color: var(--border-md); }
+    .sheet-item-body { flex: 1; min-width: 0; }
+    .sheet-item-time { font-size: 10px; font-weight: 700; color: var(--ink-3); }
+    .sheet-item-title { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-top: 2px; }
+    .sheet-item-sub { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+
+    /* ── Mobile frame wrapper ───────────────────────── */
+    .mobile-frame {
+      width: 375px;
+      border: 1px solid var(--border-md);
+      border-radius: 24px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    /* ── Misc ───────────────────────────────────────── */
+    .legend {
+      display: flex; gap: 14px; flex-wrap: wrap;
+      font-size: 11px; color: var(--ink-3); margin-top: 12px;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+    /* ── Agenda view ────────────────────────────────── */
+    .agenda {
+      width: 520px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .agenda.mobile { width: 343px; }
+    .agenda-day-header {
+      padding: 10px 16px;
+      font-family: var(--font-serif); font-weight: 700; font-size: 13px;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      color: var(--ink-2);
+    }
+    .agenda-group {
+      display: grid; grid-template-columns: 64px 1fr;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .agenda-group:last-child { border-bottom: none; }
+    .agenda-group-time {
+      font-size: 11px; font-weight: 700; color: var(--ink-3);
+      padding-top: 10px;
+      letter-spacing: 0.3px;
+    }
+    .agenda-group-items {
+      display: flex; flex-direction: column; gap: 6px;
+      border-left: 2px solid var(--border);
+      padding-left: 12px;
+    }
+    .agenda-group-items.cluster { border-left-color: var(--gold-lt); }
+    .agenda-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      transition: border-color 150ms;
+    }
+    .agenda-item:hover { border-color: var(--border-md); }
+    .agenda-item .ev-dot { margin-top: 5px; }
+    .agenda-item-body { flex: 1; min-width: 0; }
+    .agenda-item-title { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+    .agenda-item-sub { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+    .agenda.mobile .agenda-group { grid-template-columns: 52px 1fr; padding: 10px 12px; gap: 8px; }
+    .agenda.mobile .agenda-item-title { font-size: 12px; }
+    .agenda.mobile .agenda-item-sub { font-size: 10px; }
+
+    /* ── Month view ─────────────────────────────────── */
+    .month-cell {
+      width: 150px; height: 110px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--r-sm);
+      padding: 6px 8px;
+      display: flex; flex-direction: column;
+      cursor: pointer; transition: background 150ms;
+    }
+    .month-cell:hover { background: var(--bg); }
+    .month-cell.mobile { width: 48px; height: 56px; padding: 4px 3px; }
+    .month-day-num { font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 4px; }
+    .month-cell.mobile .month-day-num { font-size: 11px; text-align: center; margin-bottom: 3px; }
+    .month-events { display: flex; flex-direction: column; gap: 2px; flex: 1; min-height: 0; }
+    .month-ev {
+      display: flex; align-items: center; gap: 5px;
+      padding: 2px 4px;
+      font-size: 11px; color: var(--ink-2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .month-ev .ev-dot { width: 5px; height: 5px; }
+    .month-ev-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .month-more {
+      font-size: 10px; color: var(--ink-3);
+      padding: 1px 4px; font-weight: 600;
+      cursor: pointer;
+    }
+    .month-more:hover { color: var(--ink-2); }
+    .month-dots {
+      display: flex; gap: 2px; justify-content: center; flex-wrap: wrap;
+      margin-top: auto; padding-bottom: 2px;
+    }
+    .month-dots .month-dot { width: 4px; height: 4px; border-radius: 50%; }
+
+    /* ── Interaction table ──────────────────────────── */
+    .ixn-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 12px;
+    }
+    .ixn-table th, .ixn-table td {
+      padding: 10px 14px; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .ixn-table th {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3);
+      background: var(--bg);
+    }
+    .ixn-table td { color: var(--ink-2); }
+    .ixn-table td code {
+      font-size: 11px; background: var(--bg);
+      padding: 1px 5px; border-radius: 3px;
+      color: var(--ink-2);
+    }
+    .ixn-table tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ═════════════════════════════════════════════════ -->
+  <!-- DESKTOP                                            -->
+  <!-- ═════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Overlap — Desktop</h2>
+      <span class="ref-subtitle">Day view + Week view (columnas anchas)</span>
+    </div>
+
+    <!-- ── Case 1: 2 overlapping ───────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Caso 1 — 2 eventos solapados (50% / 50%)</div>
+      <div class="case-title">Day view — 520px</div>
+      <div class="sim desktop-day">
+        <div class="sim-gutter">
+          <div class="time-label">09:00</div>
+          <div class="time-label">10:00</div>
+          <div class="time-label">11:00</div>
+        </div>
+        <div class="sim-col" style="height: 240px;">
+          <div class="hour-row"></div><div class="hour-row"></div><div class="hour-row"></div>
+          <!-- 09:00–10:30 -->
+          <div class="ev cluster-narrow" style="top: 4px; height: 116px; left: 2%; width: 47%;">
+            <div class="ev-timebar"><div class="ev-dot dot-teal"></div><span class="ev-time">09:00 – 10:30</span></div>
+            <div class="ev-body"><div class="ev-title">Vacunación — Mia</div></div>
+          </div>
+          <!-- 09:30–10:30 -->
+          <div class="ev cluster-narrow" style="top: 44px; height: 76px; left: 51%; width: 47%;">
+            <div class="ev-timebar"><div class="ev-dot dot-gold"></div><span class="ev-time">09:30 – 10:30</span></div>
+            <div class="ev-body"><div class="ev-title">Control post-op — Toby</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Ambos eventos reciben 50% del ancho del cluster (columna) por toda la duracion del cluster,
+        no solo la ventana de solape. Esto evita saltos visuales y es lo que hacen Google/FullCalendar/toast-ui.
+        Subtitulo oculto (cluster-narrow): si necesitas el detalle, clic abre el detail view.
+      </div>
+    </div>
+
+    <!-- ── Case 2: 3 overlapping ───────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Caso 2 — 3 eventos solapados (33% / 33% / 33%)</div>
+      <div class="sim desktop-day">
+        <div class="sim-gutter">
+          <div class="time-label">09:00</div>
+          <div class="time-label">10:00</div>
+          <div class="time-label">11:00</div>
+        </div>
+        <div class="sim-col" style="height: 240px;">
+          <div class="hour-row"></div><div class="hour-row"></div><div class="hour-row"></div>
+          <div class="ev cluster-narrow" style="top: 4px; height: 76px; left: 1%; width: 32%;">
+            <div class="ev-timebar"><div class="ev-dot dot-teal"></div><span class="ev-time">09:00</span></div>
+            <div class="ev-body"><div class="ev-title">Consulta</div></div>
+          </div>
+          <div class="ev cluster-narrow" style="top: 28px; height: 76px; left: 34%; width: 32%;">
+            <div class="ev-timebar"><div class="ev-dot dot-gold"></div><span class="ev-time">09:30</span></div>
+            <div class="ev-body"><div class="ev-title">Cirugía menor</div></div>
+          </div>
+          <div class="ev cluster-narrow" style="top: 56px; height: 76px; left: 67%; width: 32%;">
+            <div class="ev-timebar"><div class="ev-dot dot-green"></div><span class="ev-time">10:00</span></div>
+            <div class="ev-body"><div class="ev-title">Control</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Mismo algoritmo. 3 columnas equivalen a ~170px cada una en day view — suficiente para el titulo y hora.
+      </div>
+    </div>
+
+    <!-- ── Case 3: 5 overlapping — overflow ────── -->
+    <div class="ref-section">
+      <div class="ref-label">Caso 3 — 5 eventos solapados (4 visibles + "+1" chip)</div>
+      <div class="sim desktop-day">
+        <div class="sim-gutter">
+          <div class="time-label">09:00</div>
+          <div class="time-label">10:00</div>
+          <div class="time-label">11:00</div>
+        </div>
+        <div class="sim-col" style="height: 240px;">
+          <div class="hour-row"></div><div class="hour-row"></div><div class="hour-row"></div>
+          <div class="ev cluster-narrow" style="top: 4px; height: 76px; left: 1%; width: 22%;">
+            <div class="ev-timebar"><div class="ev-dot dot-teal"></div><span class="ev-time">09:00</span></div>
+            <div class="ev-body"><div class="ev-title">Vacuna · Mia</div></div>
+          </div>
+          <div class="ev cluster-narrow" style="top: 20px; height: 76px; left: 24%; width: 22%;">
+            <div class="ev-timebar"><div class="ev-dot dot-gold"></div><span class="ev-time">09:15</span></div>
+            <div class="ev-body"><div class="ev-title">Cirugía · Toby</div></div>
+          </div>
+          <div class="ev cluster-narrow" style="top: 36px; height: 76px; left: 47%; width: 22%;">
+            <div class="ev-timebar"><div class="ev-dot dot-green"></div><span class="ev-time">09:30</span></div>
+            <div class="ev-body"><div class="ev-title">Control · Luna</div></div>
+          </div>
+          <div class="ev cluster-narrow" style="top: 52px; height: 76px; left: 70%; width: 22%;">
+            <div class="ev-timebar"><div class="ev-dot dot-purple"></div><span class="ev-time">09:45</span></div>
+            <div class="ev-body"><div class="ev-title">Consulta · Rocky</div></div>
+          </div>
+          <!-- +1 chip -->
+          <div class="ev-more" style="top: 68px; left: 93%; transform: translateX(-100%);">
+            <span class="ev-more-dots">
+              <span class="ev-more-dot" style="background: var(--red);"></span>
+            </span>
+            +1
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Clamp en 4 columnas. A partir de 5+, el "+N" chip usa el patron neutral existente (border --border-md,
+        sin color llamativo — la info esta en los dots, no en el chip). Click abre popover/bottom-sheet con la lista.
+      </div>
+    </div>
+
+    <!-- ── Week view compact ──────────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Week view — 2 solapados en columna angosta (150px)</div>
+      <div class="sim desktop-week">
+        <div class="sim-gutter">
+          <div class="time-label">09:00</div>
+          <div class="time-label">10:00</div>
+        </div>
+        <div class="sim-col" style="height: 160px;">
+          <div class="hour-row"></div><div class="hour-row"></div>
+          <div class="ev cluster-narrow" style="top: 4px; height: 76px; left: 2%; width: 47%;">
+            <div class="ev-timebar"><div class="ev-dot dot-teal"></div><span class="ev-time">09:00</span></div>
+            <div class="ev-body"><div class="ev-title">Vacuna</div></div>
+          </div>
+          <div class="ev cluster-narrow" style="top: 28px; height: 76px; left: 51%; width: 47%;">
+            <div class="ev-timebar"><div class="ev-dot dot-gold"></div><span class="ev-time">09:30</span></div>
+            <div class="ev-body"><div class="ev-title">Cirugía</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        En week view (~150px) las columnas quedan de ~72px cada una. Titulo abreviado con ellipsis.
+        3+ solapados en week → "+N" chip (mismo patron que caso 3).
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════ -->
+  <!-- MOBILE                                             -->
+  <!-- ═════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Overlap — Mobile</h2>
+      <span class="ref-subtitle">Week (columnas angostas) + Day (columna ancha) + bottom-sheet</span>
+    </div>
+
+    <!-- ── Mobile week: narrow cluster ─────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Week mobile — columna 52px (cluster)</div>
+      <div class="ref-row">
+        <div>
+          <div class="case-title">1 evento (normal)</div>
+          <div class="sim mobile-week" style="--hour-h: 60px;">
+            <div class="sim-gutter">
+              <div class="time-label">09:00</div>
+              <div class="time-label">10:00</div>
+            </div>
+            <div class="sim-col" style="height: 120px;">
+              <div class="hour-row"></div><div class="hour-row"></div>
+              <div class="ev-mw" style="top: 2px; height: 56px;">
+                <div class="ev-mw-row"><div class="ev-dot dot-teal" style="width:4px;height:4px;"></div><span class="ev-mw-time">09:00</span></div>
+                <div class="ev-mw-title">Mia</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="case-title">2 eventos — primary + "+1"</div>
+          <div class="sim mobile-week" style="--hour-h: 60px;">
+            <div class="sim-gutter">
+              <div class="time-label">09:00</div>
+              <div class="time-label">10:00</div>
+            </div>
+            <div class="sim-col" style="height: 120px;">
+              <div class="hour-row"></div><div class="hour-row"></div>
+              <div class="ev-mw" style="top: 2px; height: 80px;">
+                <div class="ev-mw-row"><div class="ev-dot dot-teal" style="width:4px;height:4px;"></div><span class="ev-mw-time">09:00</span></div>
+                <div class="ev-mw-title">Mia</div>
+                <span class="ev-mw-badge">+1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="case-title">4 eventos — primary + "+3"</div>
+          <div class="sim mobile-week" style="--hour-h: 60px;">
+            <div class="sim-gutter">
+              <div class="time-label">09:00</div>
+              <div class="time-label">10:00</div>
+            </div>
+            <div class="sim-col" style="height: 120px;">
+              <div class="hour-row"></div><div class="hour-row"></div>
+              <div class="ev-mw" style="top: 2px; height: 104px;">
+                <div class="ev-mw-row">
+                  <div class="ev-dot dot-teal" style="width:4px;height:4px;"></div>
+                  <div class="ev-dot dot-gold" style="width:4px;height:4px;"></div>
+                  <div class="ev-dot dot-green" style="width:4px;height:4px;"></div>
+                </div>
+                <span class="ev-mw-time">09:00</span>
+                <div class="ev-mw-title">Mia · +3</div>
+                <span class="ev-mw-badge">+3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Week mobile: columnas de ~52px no soportan split. Mostramos UN chip cluster con el dot del evento primario
+        (el mas largo o el primero del cluster) + badge "+N" en esquina superior derecha (fondo ink, texto surface).
+        Con 3+ eventos, el chip muestra hasta 3 dots de colores representativos. Tap en cualquier parte abre el bottom-sheet.
+      </div>
+    </div>
+
+    <!-- ── Mobile day: 3 columns max ───────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Day mobile — 330px (max 3 columnas)</div>
+      <div class="ref-row">
+        <div>
+          <div class="case-title">3 eventos solapados</div>
+          <div class="sim mobile-day" style="--hour-h: 60px;">
+            <div class="sim-gutter">
+              <div class="time-label">09:00</div>
+              <div class="time-label">10:00</div>
+              <div class="time-label">11:00</div>
+            </div>
+            <div class="sim-col" style="height: 180px;">
+              <div class="hour-row"></div><div class="hour-row"></div><div class="hour-row"></div>
+              <div class="ev cluster-narrow" style="top: 2px; height: 56px; left: 1%; width: 32%;">
+                <div class="ev-timebar"><div class="ev-dot dot-teal"></div><span class="ev-time">09:00</span></div>
+                <div class="ev-body"><div class="ev-title">Mia</div></div>
+              </div>
+              <div class="ev cluster-narrow" style="top: 16px; height: 56px; left: 34%; width: 32%;">
+                <div class="ev-timebar"><div class="ev-dot dot-gold"></div><span class="ev-time">09:15</span></div>
+                <div class="ev-body"><div class="ev-title">Toby</div></div>
+              </div>
+              <div class="ev cluster-narrow" style="top: 30px; height: 56px; left: 67%; width: 32%;">
+                <div class="ev-timebar"><div class="ev-dot dot-green"></div><span class="ev-time">09:30</span></div>
+                <div class="ev-body"><div class="ev-title">Luna</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="case-title">5 eventos — 2 visibles + "+3"</div>
+          <div class="sim mobile-day" style="--hour-h: 60px;">
+            <div class="sim-gutter">
+              <div class="time-label">09:00</div>
+              <div class="time-label">10:00</div>
+              <div class="time-label">11:00</div>
+            </div>
+            <div class="sim-col" style="height: 180px;">
+              <div class="hour-row"></div><div class="hour-row"></div><div class="hour-row"></div>
+              <div class="ev cluster-narrow" style="top: 2px; height: 56px; left: 1%; width: 48%;">
+                <div class="ev-timebar"><div class="ev-dot dot-teal"></div><span class="ev-time">09:00</span></div>
+                <div class="ev-body"><div class="ev-title">Vacuna · Mia</div></div>
+              </div>
+              <div class="ev cluster-narrow" style="top: 16px; height: 56px; left: 50%; width: 48%;">
+                <div class="ev-timebar"><div class="ev-dot dot-gold"></div><span class="ev-time">09:15</span></div>
+                <div class="ev-body"><div class="ev-title">Cirugía · Toby</div></div>
+              </div>
+              <div class="ev-more" style="top: 78px; left: 50%; right: 2%;">
+                <span class="ev-more-dots">
+                  <span class="ev-more-dot" style="background: var(--green);"></span>
+                  <span class="ev-more-dot" style="background: var(--purple);"></span>
+                  <span class="ev-more-dot" style="background: var(--red);"></span>
+                </span>
+                +3 más
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Day mobile (330px): hasta 3 eventos lado a lado con ~105px cada uno. A partir de 4+ mostramos 2 columnas (~160px)
+        + "+N mas" chip debajo ocupando la mitad derecha. Chip abre el bottom-sheet.
+      </div>
+    </div>
+
+    <!-- ── Bottom sheet ────────────────────────── -->
+    <div class="ref-section">
+      <div class="ref-label">Bottom sheet — lista del cluster</div>
+      <div class="ref-row">
+        <div class="mobile-frame">
+          <div class="sheet-frame">
+            <div class="sheet">
+              <div class="sheet-handle"></div>
+              <div class="sheet-header">
+                <h3 class="sheet-title">5 turnos · 09:00 – 10:00</h3>
+                <span class="sheet-sub">Lun 07 Abr</span>
+              </div>
+              <div class="sheet-list">
+                <div class="sheet-item">
+                  <div class="ev-dot dot-teal" style="margin-top: 3px;"></div>
+                  <div class="sheet-item-body">
+                    <div class="sheet-item-time">09:00 – 09:30</div>
+                    <div class="sheet-item-title">Vacunación — Mia</div>
+                    <div class="sheet-item-sub">Dra. Martinez · Triple felina</div>
+                  </div>
+                </div>
+                <div class="sheet-item">
+                  <div class="ev-dot dot-gold" style="margin-top: 3px;"></div>
+                  <div class="sheet-item-body">
+                    <div class="sheet-item-time">09:15 – 10:00</div>
+                    <div class="sheet-item-title">Cirugía — Toby</div>
+                    <div class="sheet-item-sub">Dr. Lopez · Castración</div>
+                  </div>
+                </div>
+                <div class="sheet-item">
+                  <div class="ev-dot dot-green" style="margin-top: 3px;"></div>
+                  <div class="sheet-item-body">
+                    <div class="sheet-item-time">09:30 – 10:00</div>
+                    <div class="sheet-item-title">Control post-op — Luna</div>
+                    <div class="sheet-item-sub">Dra. Martinez</div>
+                  </div>
+                </div>
+                <div class="sheet-item">
+                  <div class="ev-dot dot-purple" style="margin-top: 3px;"></div>
+                  <div class="sheet-item-body">
+                    <div class="sheet-item-time">09:45 – 10:00</div>
+                    <div class="sheet-item-title">Consulta — Rocky</div>
+                    <div class="sheet-item-sub">Dr. Lopez</div>
+                  </div>
+                </div>
+                <div class="sheet-item">
+                  <div class="ev-dot dot-red" style="margin-top: 3px;"></div>
+                  <div class="sheet-item-body">
+                    <div class="sheet-item-time">09:50 – 10:00</div>
+                    <div class="sheet-item-title">Urgencia — Max</div>
+                    <div class="sheet-item-sub">Dra. Martinez</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="max-width: 420px;">
+          <div class="case-title" style="margin-bottom: 14px;">Detalles del patron</div>
+          <ul style="font-size: 12px; color: var(--ink-3); line-height: 1.8; padding-left: 18px;">
+            <li>Handle bar superior (36×4px, --border-md) — affordance de swipe</li>
+            <li>Header: titulo Noto Serif JP 700 + fecha subtle</li>
+            <li>Items estilo <code>EventCard</code> standard pero horizontal: dot + body (time, title, sub)</li>
+            <li>Tap en item cierra sheet y abre el detail view del evento</li>
+            <li>Backdrop con ink al 35% opacity</li>
+            <li>Radius superior --r-xl (18px) para continuidad con toolbar/cards</li>
+            <li>Scroll interno si la lista > 75% del viewport</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═════════════════════════════════════════════════ -->
+  <!-- AGENDA VIEW                                        -->
+  <!-- ═════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Agenda view</h2>
+      <span class="ref-subtitle">Lista cronológica — simultáneos agrupados bajo un time label</span>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Desktop — 3 simultáneos a las 09:00 + 1 a las 10:30</div>
+      <div class="ref-row">
+        <div class="agenda">
+          <div class="agenda-day-header">Lunes 07 Abril</div>
+          <div class="agenda-group">
+            <div class="agenda-group-time">09:00</div>
+            <div class="agenda-group-items cluster">
+              <div class="agenda-item">
+                <div class="ev-dot dot-gold"></div>
+                <div class="agenda-item-body">
+                  <div class="agenda-item-title">Cirugía — Toby</div>
+                  <div class="agenda-item-sub">09:00 – 10:00 · Dr. López · Castración</div>
+                </div>
+              </div>
+              <div class="agenda-item">
+                <div class="ev-dot dot-teal"></div>
+                <div class="agenda-item-body">
+                  <div class="agenda-item-title">Vacunación — Mia</div>
+                  <div class="agenda-item-sub">09:00 – 09:30 · Dra. Martínez</div>
+                </div>
+              </div>
+              <div class="agenda-item">
+                <div class="ev-dot dot-green"></div>
+                <div class="agenda-item-body">
+                  <div class="agenda-item-title">Control — Luna</div>
+                  <div class="agenda-item-sub">09:00 – 09:45 · Dra. Martínez</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="agenda-group">
+            <div class="agenda-group-time">10:30</div>
+            <div class="agenda-group-items">
+              <div class="agenda-item">
+                <div class="ev-dot dot-red"></div>
+                <div class="agenda-item-body">
+                  <div class="agenda-item-title">Consulta — Rocky</div>
+                  <div class="agenda-item-sub">10:30 – 11:00 · Dr. López</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Agenda no sufre del bug de "eventos encimados" — es lista. Pero sí necesita señalar visualmente los
+        simultáneos. Solución: agrupar bajo <strong>un solo time label</strong> y usar <code>border-left</code>
+        en tono <code>--gold-lt</code> cuando el grupo tiene 2+ eventos (cluster). Un solo evento usa border
+        neutral <code>--border</code>. Orden dentro del cluster: duración DESC (el más largo arriba) luego título.
+      </div>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Mobile — mismo patrón, más compacto</div>
+      <div class="ref-row">
+        <div class="mobile-frame" style="padding: 8px;">
+          <div class="agenda mobile">
+            <div class="agenda-day-header">Lun 07 Abril</div>
+            <div class="agenda-group">
+              <div class="agenda-group-time">09:00</div>
+              <div class="agenda-group-items cluster">
+                <div class="agenda-item">
+                  <div class="ev-dot dot-gold"></div>
+                  <div class="agenda-item-body">
+                    <div class="agenda-item-title">Cirugía — Toby</div>
+                    <div class="agenda-item-sub">09:00 – 10:00</div>
+                  </div>
+                </div>
+                <div class="agenda-item">
+                  <div class="ev-dot dot-teal"></div>
+                  <div class="agenda-item-body">
+                    <div class="agenda-item-title">Vacuna — Mia</div>
+                    <div class="agenda-item-sub">09:00 – 09:30</div>
+                  </div>
+                </div>
+                <div class="agenda-item">
+                  <div class="ev-dot dot-green"></div>
+                  <div class="agenda-item-body">
+                    <div class="agenda-item-title">Control — Luna</div>
+                    <div class="agenda-item-sub">09:00 – 09:45</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="agenda-group">
+              <div class="agenda-group-time">10:30</div>
+              <div class="agenda-group-items">
+                <div class="agenda-item">
+                  <div class="ev-dot dot-red"></div>
+                  <div class="agenda-item-body">
+                    <div class="agenda-item-title">Consulta — Rocky</div>
+                    <div class="agenda-item-sub">10:30 – 11:00</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Mismo layout en mobile. Time column más angosta (52px), tipografía reducida. Tap en item abre EventDetail.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════ -->
+  <!-- MONTH VIEW                                         -->
+  <!-- ═════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Month view</h2>
+      <span class="ref-subtitle">Celda de día — "overlap" aquí es densidad vertical, no temporal</span>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Desktop — celda con 5 eventos (3 visibles + "+2 más")</div>
+      <div class="ref-row">
+        <div class="month-cell">
+          <div class="month-day-num">07</div>
+          <div class="month-events">
+            <div class="month-ev"><div class="ev-dot dot-gold"></div><span class="month-ev-title">09:00 Cirugía Toby</span></div>
+            <div class="month-ev"><div class="ev-dot dot-teal"></div><span class="month-ev-title">09:00 Vacuna Mia</span></div>
+            <div class="month-ev"><div class="ev-dot dot-green"></div><span class="month-ev-title">10:30 Control Luna</span></div>
+            <div class="month-more">+2 más</div>
+          </div>
+        </div>
+
+        <div class="month-cell">
+          <div class="month-day-num" style="color: var(--gold); font-weight: 700;">08</div>
+          <div class="month-events">
+            <div class="month-ev"><div class="ev-dot dot-red"></div><span class="month-ev-title">08:30 Urgencia</span></div>
+          </div>
+        </div>
+
+        <div class="month-cell">
+          <div class="month-day-num">09</div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Month ya tiene el patrón "+N más". Heurística: mostrar hasta 3 eventos (orden cronológico); si hay 4+ mostrar
+        2 + "+N más" para balancear info vs overflow. Día "today" con <code>day-num</code> en gold bold.
+        El hover del "+N" NO es click target directo — el usuario tiene dos affordances:
+        <strong>clic en el "+N" → popover con la lista completa</strong>, <strong>clic en la celda → nav a Day view</strong>.
+      </div>
+    </div>
+
+    <div class="ref-section">
+      <div class="ref-label">Mobile — celda con solo dots (max 3, el resto cuenta)</div>
+      <div class="ref-row">
+        <div class="mobile-frame" style="padding: 16px;">
+          <div style="display: grid; grid-template-columns: repeat(7, 48px); gap: 4px;">
+            <div class="month-cell mobile">
+              <div class="month-day-num">06</div>
+              <div class="month-dots">
+                <div class="month-dot" style="background: var(--teal-dk);"></div>
+              </div>
+            </div>
+            <div class="month-cell mobile" style="background: var(--gold-lt); border-color: var(--gold);">
+              <div class="month-day-num" style="color: var(--gold-hover);">07</div>
+              <div class="month-dots">
+                <div class="month-dot" style="background: var(--gold);"></div>
+                <div class="month-dot" style="background: var(--teal-dk);"></div>
+                <div class="month-dot" style="background: var(--green);"></div>
+                <div class="month-dot" style="background: var(--ink-4);"></div>
+              </div>
+            </div>
+            <div class="month-cell mobile">
+              <div class="month-day-num">08</div>
+              <div class="month-dots">
+                <div class="month-dot" style="background: var(--red);"></div>
+              </div>
+            </div>
+            <div class="month-cell mobile">
+              <div class="month-day-num">09</div>
+            </div>
+            <div class="month-cell mobile">
+              <div class="month-day-num">10</div>
+              <div class="month-dots">
+                <div class="month-dot" style="background: var(--teal-dk);"></div>
+                <div class="month-dot" style="background: var(--gold);"></div>
+              </div>
+            </div>
+            <div class="month-cell mobile">
+              <div class="month-day-num">11</div>
+            </div>
+            <div class="month-cell mobile">
+              <div class="month-day-num">12</div>
+              <div class="month-dots">
+                <div class="month-dot" style="background: var(--green);"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Mobile no tiene espacio para texto. Solo dots (max 3 únicos por color, el 4to es neutral <code>--ink-4</code>
+        representando "hay más"). Día seleccionado con fondo <code>--gold-lt</code> + borde gold. <strong>Tap en la celda
+        abre bottom-sheet con la lista del día</strong> (reusa el bottom-sheet ya definido en la sección Mobile Overlap,
+        pero con título "N turnos · [fecha]" en lugar de "N turnos · [hora]").
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════ -->
+  <!-- THREE-DAY VIEW                                     -->
+  <!-- ═════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Three-day view</h2>
+      <span class="ref-subtitle">Compromise entre Day y Week — columnas más anchas que week</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Mismo algoritmo, distintos umbrales</div>
+      <div class="ref-note" style="max-width: 820px;">
+        Three-day usa <strong>exactamente el mismo algoritmo y componentes</strong> que Week / Day — solo cambian los
+        umbrales de clamp por ancho de columna efectivo:
+        <ul style="margin-top: 8px; padding-left: 20px; line-height: 1.7;">
+          <li><strong>Desktop three-day</strong> (cols ~300px): clamp a 4 cols (igual que day)</li>
+          <li><strong>Mobile three-day</strong> (cols ~110px): clamp a 2 cols + "+N"; similar a mobile week pero con algo más de aire para título corto. El chip <code>ev-mw</code> puede mostrar <strong>primera palabra del título</strong> en vez de solo el dot.</li>
+        </ul>
+        No dibujo casos adicionales — los casos de Week/Day del Desktop/Mobile card cubren las variantes visuales.
+        La diferencia es solo el ancho de la columna.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════ -->
+  <!-- INTERACCIONES                                      -->
+  <!-- ═════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Interacciones — click / tap</h2>
+      <span class="ref-subtitle">Comportamiento consistente en todas las vistas</span>
+    </div>
+    <div class="ref-section" style="padding: 0;">
+      <table class="ixn-table">
+        <thead>
+          <tr>
+            <th>Vista</th>
+            <th>Target</th>
+            <th>Acción</th>
+            <th>Handler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Day / Week / 3day</td>
+            <td>EventCard</td>
+            <td>Abre <code>EventDetail</code> (modal desktop, drawer mobile)</td>
+            <td><code>onEventClick(evt)</code></td>
+          </tr>
+          <tr>
+            <td>Day / Week / 3day</td>
+            <td>Slot vacío (hora)</td>
+            <td>Abre <code>EventForm</code> (create) con hora prellenada</td>
+            <td><code>onSlotClick(date, hour)</code></td>
+          </tr>
+          <tr>
+            <td>Day / Week / 3day</td>
+            <td>Chip "+N" (cluster overflow)</td>
+            <td>Desktop: popover flotante anclado al chip · Mobile: bottom-sheet</td>
+            <td><code>onClusterOverflowClick(cluster)</code> (nuevo)</td>
+          </tr>
+          <tr>
+            <td>Month</td>
+            <td>Mini chip evento</td>
+            <td>Abre <code>EventDetail</code></td>
+            <td><code>onEventClick(evt)</code></td>
+          </tr>
+          <tr>
+            <td>Month</td>
+            <td>"+N más"</td>
+            <td>Popover con lista del día (desktop) · Bottom-sheet (mobile)</td>
+            <td><code>onDayOverflowClick(date)</code> (nuevo)</td>
+          </tr>
+          <tr>
+            <td>Month</td>
+            <td>Celda vacía del día</td>
+            <td>Switch a Day view (ya existe: <code>nav.setView('day')</code>)</td>
+            <td><code>onDayClick(date)</code></td>
+          </tr>
+          <tr>
+            <td>Month mobile</td>
+            <td>Celda con dots</td>
+            <td>Bottom-sheet con lista del día (similar a "+N más")</td>
+            <td><code>onDayClick(date)</code> (comportamiento híbrido)</td>
+          </tr>
+          <tr>
+            <td>Agenda</td>
+            <td>Item de lista</td>
+            <td>Abre <code>EventDetail</code></td>
+            <td><code>onEventClick(evt)</code></td>
+          </tr>
+          <tr>
+            <td>Agenda</td>
+            <td>Cluster group (2+ simultáneos)</td>
+            <td>N/A — tap va al item específico (no al grupo)</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Bottom-sheet</td>
+            <td>Item de lista</td>
+            <td>Cierra sheet + abre <code>EventDetail</code></td>
+            <td><code>onEventClick(evt)</code></td>
+          </tr>
+          <tr>
+            <td>Bottom-sheet</td>
+            <td>Handle / backdrop</td>
+            <td>Cierra sheet (swipe down o tap backdrop)</td>
+            <td><code>onClose()</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Nuevos handlers a agregar en el plugin</div>
+      <div class="ref-note" style="max-width: 820px;">
+        Dos nuevos callbacks opcionales en <code>CalendarViewProps</code>:
+        <ul style="margin-top: 6px; padding-left: 20px; line-height: 1.7;">
+          <li><code>onClusterOverflowClick?: (events: CalendarEvent[], anchorEl?: HTMLElement) =&gt; void</code> — si no se pasa, default: abrir popover/sheet internamente.</li>
+          <li><code>onDayOverflowClick?: (date: string, events: CalendarEvent[]) =&gt; void</code> — ídem month.</li>
+        </ul>
+        Default interno: popover en desktop, bottom-sheet en mobile (via <code>useIsMobile()</code>).
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════ -->
+  <!-- NOTAS GLOBALES                                     -->
+  <!-- ═════════════════════════════════════════════════ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Notas de implementación</h2>
+      <span class="ref-subtitle">Consideraciones transversales</span>
+    </div>
+    <div class="ref-section">
+      <ul style="font-size: 12px; color: var(--ink-2); line-height: 1.8; padding-left: 18px;">
+        <li><strong>Algoritmo (shared desktop+mobile):</strong> sweep-line + column packing greedy + expand pass. Helper puro en <code>src/utils/event-layout.ts</code>, testeable sin React.</li>
+        <li><strong>Umbral de clamp:</strong> desktop day 4 cols, desktop week 3 cols, mobile day 3 cols, mobile week 1 col (siempre chip+badge).</li>
+        <li><strong>A11y:</strong> <code>role="button"</code> en cada EventCard, <code>aria-label="[hora], [titulo], N de M en este horario"</code> cuando el cluster tiene >1. Chip "+N" con <code>aria-describedby</code> anunciando "N eventos mas a las [hora]".</li>
+        <li><strong>Selected state:</strong> outline 2px gold (ya existe) — al seleccionar en cluster, los siblings del mismo cluster reciben <code>outline: 1px dashed var(--gold-lt)</code> para denotar relacion.</li>
+        <li><strong>Dark mode:</strong> usar tokens <code>cg-*</code> al pasar a React; los <code>-lt</code> (gold-lt, teal-lt, green-lt) necesitan variantes dark (typicamente el mismo color al 14% opacity sobre surface).</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

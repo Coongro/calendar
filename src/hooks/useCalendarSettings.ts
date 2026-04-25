@@ -17,6 +17,8 @@ export interface CalendarSettings {
   showTags: boolean;
   showColorPicker: boolean;
   confirmOnDrag: boolean;
+  minuteStep: number;
+  use24Hour: boolean;
   requireDescription: boolean;
   requireType: boolean;
 }
@@ -41,6 +43,8 @@ function parseSettings(raw: Record<string, unknown>): CalendarSettings {
     showTags: get(S.SHOW_TAGS),
     showColorPicker: get(S.SHOW_COLOR_PICKER),
     confirmOnDrag: get(S.CONFIRM_ON_DRAG),
+    minuteStep: Number(get(S.MINUTE_STEP)),
+    use24Hour: get(S.USE_24_HOUR),
     requireDescription: get(S.REQUIRE_DESCRIPTION),
     requireType: get(S.REQUIRE_TYPE),
   };

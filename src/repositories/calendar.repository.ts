@@ -1,3 +1,4 @@
+import { dbNow } from '@coongro/datetime';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
 import { eq, and, isNull } from 'drizzle-orm';
 
@@ -40,7 +41,7 @@ export class CalendarRepository {
     return this.db.ormQuery((tx) =>
       tx
         .update(calendarTable)
-        .set({ ...data, updated_at: new Date().toISOString() } as Partial<CalendarRow>)
+        .set({ ...data, updated_at: dbNow() } as Partial<CalendarRow>)
         .where(eq(calendarTable.id, id))
         .returning()
     );
@@ -51,7 +52,7 @@ export class CalendarRepository {
   }
 
   async softDelete({ id }: { id: string }): Promise<CalendarRow[]> {
-    const now = new Date().toISOString();
+    const now = dbNow();
     return this.db.ormQuery((tx) =>
       tx
         .update(calendarTable)
@@ -65,7 +66,7 @@ export class CalendarRepository {
     return this.db.ormQuery((tx) =>
       tx
         .update(calendarTable)
-        .set({ deleted_at: null, updated_at: new Date().toISOString() } as Partial<CalendarRow>)
+        .set({ deleted_at: null, updated_at: dbNow() } as Partial<CalendarRow>)
         .where(eq(calendarTable.id, id))
         .returning()
     );
@@ -79,7 +80,7 @@ export class CalendarRepository {
         .update(calendarTable)
         .set({
           is_visible: !existing.is_visible,
-          updated_at: new Date().toISOString(),
+          updated_at: dbNow(),
         } as Partial<CalendarRow>)
         .where(eq(calendarTable.id, id))
         .returning()

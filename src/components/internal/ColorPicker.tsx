@@ -1,5 +1,6 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
+import { TOKENS } from '../../styles/tokens.js';
 import type { ColorPickerProps } from '../../types/components.js';
 
 const React = getHostReact();
@@ -43,8 +44,14 @@ export function ColorPicker({
         UI.Button,
         { type: 'button', variant: 'outline', className: `gap-2 ${className}` },
         React.createElement('span', {
-          className: 'inline-block w-4 h-4 rounded-full border',
-          style: { backgroundColor: value || '#3B82F6' },
+          style: {
+            display: 'inline-block',
+            width: '16px',
+            height: '16px',
+            borderRadius: '9999px',
+            border: `1px solid ${TOKENS.border}`,
+            backgroundColor: value || '#3B82F6',
+          },
         }),
         'Color'
       )
@@ -54,17 +61,27 @@ export function ColorPicker({
       { className: 'w-auto p-3' },
       React.createElement(
         'div',
-        { className: 'grid grid-cols-4 gap-2' },
+        {
+          style: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '12px',
+          },
+        },
         colors.map((color) =>
           React.createElement('button', {
             key: color,
             type: 'button',
-            className: `w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${
-              value === color
-                ? 'border-cg-border-strong ring-2 ring-cg-accent'
-                : 'border-transparent'
-            }`,
-            style: { backgroundColor: color },
+            style: {
+              width: '36px',
+              height: '36px',
+              borderRadius: '9999px',
+              border: value === color ? `2px solid ${TOKENS.borderMd}` : '2px solid transparent',
+              boxShadow: value === color ? `0 0 0 2px ${TOKENS.gold}` : 'none',
+              backgroundColor: color,
+              cursor: 'pointer',
+              transition: 'transform 0.15s',
+            },
             onClick: () => {
               onChange?.(color);
               setOpen(false);

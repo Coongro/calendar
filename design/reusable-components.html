@@ -1,0 +1,1985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar — Componentes reutilizables para plugins</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #F5A800; --gold-lt: #FFFBF0; --gold-hover: #E09800;
+      --teal-dk: #4E8C78; --teal-lt: #EDF5F2; --teal-icon: #D4EDE7;
+      --ink: #1A1916; --ink-2: #3A3731; --ink-3: #6B6760; --ink-4: #9B9893;
+      --bg: #F6F5F1; --surface: #FFFFFF; --border: #E8E7E2; --border-md: #D4D3CC;
+      --red: #C8423A; --red-lt: #FEF2F2;
+      --green: #3D9A5C; --green-lt: #EEFAF3;
+      --r-xl: 18px; --r-md: 10px; --r-sm: 7px;
+      --font-serif: 'Noto Serif JP', serif; --font-body: 'Roboto', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg); color: var(--ink); }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    /* -- Page layout -- */
+    .page { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+    .page-title { font-family: var(--font-serif); font-weight: 900; font-size: 24px; margin-bottom: 4px; }
+    .page-subtitle { font-size: 13px; color: var(--ink-3); margin-bottom: 32px; }
+
+    /* -- Reference card -- */
+    .ref-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .ref-header {
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    }
+    .ref-title { font-family: var(--font-serif); font-weight: 700; font-size: 17px; }
+    .ref-subtitle { font-size: 12px; color: var(--ink-3); }
+    .ref-import {
+      font-size: 10px; font-family: monospace; color: var(--teal-dk);
+      background: var(--teal-lt); padding: 2px 8px; border-radius: 4px;
+      margin-left: auto;
+    }
+    .ref-section {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ref-section:last-child { border-bottom: none; }
+    .ref-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-3); margin-bottom: 14px;
+    }
+    .ref-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+    .ref-note {
+      font-size: 11px; color: var(--ink-4); margin-top: 12px;
+      padding-left: 12px; border-left: 2px solid var(--border);
+      line-height: 1.6;
+    }
+    .ref-compare { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+    .ref-compare-col { display: flex; flex-direction: column; gap: 6px; }
+    .ref-compare-label {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--ink-4);
+    }
+    .cell-wrap { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .state-label {
+      font-size: 8px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.4px; color: var(--ink-4); text-align: center;
+    }
+
+    /* ================================================================
+       SHARED: EventCard
+       ================================================================ */
+    .ev-card {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px 10px;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      transition: background 150ms;
+    }
+    .ev-card:hover { background: var(--bg); }
+
+    .ev-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+    .ev-dot-gold { background: var(--gold); }
+    .ev-dot-teal { background: var(--teal-dk); }
+    .ev-dot-green { background: var(--green); }
+    .ev-dot-red { background: var(--red); }
+    .ev-dot-neutral { background: var(--ink-4); }
+
+    .ev-info { flex: 1; min-width: 0; }
+    .ev-title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ev-meta { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+    .ev-location { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 3px; margin-top: 2px; }
+    .ev-location svg { width: 11px; height: 11px; color: var(--ink-4); }
+
+    /* Badge — outline con borde */
+    .ev-badge {
+      display: inline-flex; align-items: center;
+      font-size: 10px; font-weight: 500;
+      padding: 1px 7px; border-radius: 10px;
+      border: 1px solid; flex-shrink: 0; margin-top: 2px;
+    }
+    .badge-scheduled { border-color: var(--gold); color: #8A6800; }
+    .badge-confirmed { border-color: var(--green); color: var(--green); }
+    .badge-cancelled { border-color: var(--red); color: var(--red); }
+    .badge-completed { border-color: var(--teal-dk); color: var(--teal-dk); }
+    .badge-no-show { border-color: var(--ink-4); color: var(--ink-4); }
+
+    /* ================================================================
+       SHARED: UpcomingEvents
+       ================================================================ */
+    .upcoming-widget { width: 300px; }
+    .upcoming-widget-mobile { width: 340px; }
+    .upcoming-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .upcoming-title { font-family: var(--font-serif); font-weight: 700; font-size: 14px; }
+    .upcoming-see-all { font-size: 11px; color: var(--gold-hover); font-weight: 500; cursor: pointer; }
+    .upcoming-body { padding: 4px 6px; }
+    .upcoming-empty {
+      padding: 24px; text-align: center;
+      font-size: 12px; color: var(--ink-4);
+    }
+
+    /* ================================================================
+       SHARED: MiniCalendar
+       ================================================================ */
+    .mini-cal { width: 230px; }
+    .mini-cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 8px 8px;
+    }
+    .mini-cal-month { font-size: 13px; font-weight: 700; }
+    .mini-cal-nav { display: flex; gap: 4px; }
+    .mini-cal-btn {
+      width: 24px; height: 24px;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-3);
+    }
+    .mini-cal-btn svg { width: 12px; height: 12px; }
+    .mini-cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      text-align: center; padding: 0 4px 8px;
+    }
+    .mini-cal-dow {
+      font-size: 9px; font-weight: 700; color: var(--ink-4);
+      text-transform: uppercase; padding: 4px 0;
+    }
+    .mini-cal-day {
+      width: 28px; height: 28px; line-height: 28px; margin: 1px auto;
+      font-size: 12px; border-radius: 50%; cursor: pointer;
+      transition: background 150ms;
+      position: relative;
+    }
+    .mini-cal-day:hover { background: var(--bg); }
+    .mini-cal-day.today { background: var(--gold-lt); font-weight: 700; color: var(--ink); }
+    .mini-cal-day.selected { background: var(--gold); color: white; font-weight: 700; }
+    .mini-cal-day.other-month { color: var(--ink-4); }
+    .mini-cal-day.weekend { color: var(--ink-4); }
+    .mini-cal-dots {
+      position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 2px;
+    }
+    .mini-cal-dot-indicator { width: 3px; height: 3px; border-radius: 50%; }
+
+    /* ================================================================
+       SHARED: CalendarBadge
+       ================================================================ */
+    .cal-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 500;
+      padding: 2px 8px; border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .cal-badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* ================================================================
+       SHARED: Buttons
+       ================================================================ */
+    .cta-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--r-sm); border: none;
+      font-family: var(--font-body); font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: background 150ms;
+    }
+    .cta-btn-primary { background: var(--gold); color: var(--ink); }
+    .cta-btn-primary:hover { background: var(--gold-hover); }
+    .cta-btn-outline {
+      background: transparent; color: var(--ink-2);
+      border: 1px solid var(--border);
+    }
+    .cta-btn-outline:hover { background: var(--bg); }
+    .cta-btn svg { width: 14px; height: 14px; }
+
+    .cta-fab {
+      width: 52px; height: 52px; border-radius: 50%; border: none;
+      background: var(--gold); color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .cta-fab svg { width: 22px; height: 22px; }
+
+    /* ================================================================
+       SHARED: ColorPicker
+       ================================================================ */
+    .color-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+    .color-swatch {
+      width: 28px; height: 28px; border-radius: 50%;
+      cursor: pointer; border: 2px solid transparent;
+      transition: border-color 150ms, transform 150ms;
+    }
+    .color-swatch:hover { transform: scale(1.1); }
+    .color-swatch.selected { border-color: var(--ink); }
+
+    /* ================================================================
+       EventList: Table + Search + Pagination
+       ================================================================ */
+    .tbl-wrap {
+      border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden;
+    }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tbl thead th {
+      text-align: left; padding: 10px 14px;
+      font-size: 11px; font-weight: 600; color: var(--ink-3);
+      text-transform: uppercase; letter-spacing: 0.3px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg); white-space: nowrap;
+      cursor: default; user-select: none;
+    }
+    .tbl thead th.sortable { cursor: pointer; }
+    .tbl thead th.sortable:hover { color: var(--ink-2); }
+    .tbl thead th .sort-arrow { margin-left: 3px; font-size: 8px; color: var(--ink-4); }
+    .tbl thead th.sorted .sort-arrow { color: var(--gold); }
+    .tbl tbody td {
+      padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl tbody tr { cursor: pointer; transition: background 120ms; }
+    .tbl tbody tr:hover { background: var(--gold-lt); }
+    .tbl .text-right { text-align: right; }
+    .tbl .cell-title { display: flex; align-items: center; gap: 8px; }
+    .tbl .cell-title-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .tbl .cell-title-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tbl .cell-title-loc { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 3px; }
+    .tbl .cell-title-loc svg { width: 10px; height: 10px; }
+    .tbl .cell-date { color: var(--ink-2); white-space: nowrap; }
+
+    .action-btn {
+      background: none; border: none;
+      color: var(--ink-3); font-size: 12px; font-family: var(--font-body);
+      padding: 4px 8px; border-radius: 4px;
+      cursor: pointer; transition: all 120ms;
+    }
+    .action-btn:hover { background: var(--bg); color: var(--ink-2); }
+    .action-btn.danger { color: var(--red); }
+    .action-btn.danger:hover { background: var(--red-lt); }
+
+    .search-wrap { position: relative; flex: 1; }
+    .search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--ink-4);
+    }
+    .search-input {
+      width: 100%; padding: 8px 12px 8px 34px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 13px; font-family: var(--font-body);
+      color: var(--ink); background: var(--surface);
+    }
+    .search-input:focus { border-color: var(--gold); outline: none; }
+
+    .pagination-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 10px; font-size: 12px; color: var(--ink-3);
+    }
+    .page-btns { display: flex; gap: 2px; }
+    .page-btn {
+      background: none; border: none;
+      color: var(--ink-3); padding: 5px 10px;
+      border-radius: var(--r-sm); font-size: 12px; font-family: var(--font-body);
+      cursor: pointer;
+    }
+    .page-btn:hover { background: var(--bg); }
+    .page-btn.active { background: var(--gold-lt); color: var(--gold-hover); font-weight: 600; }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+    /* Mobile cards for EventList */
+    .cards-list { display: flex; flex-direction: column; gap: 10px; }
+    .el-card {
+      border: 1px solid var(--border); background: var(--surface);
+      border-radius: var(--r-md); padding: 12px 14px;
+      cursor: pointer; transition: border-color 150ms;
+    }
+    .el-card:hover { border-color: var(--border-md); }
+    .el-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .el-card-title { font-size: 14px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .el-card-meta { font-size: 12px; color: var(--ink-3); margin-bottom: 2px; }
+
+    /* ================================================================
+       EventStats
+       ================================================================ */
+    .stat-card {
+      border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px;
+    }
+    .stat-number { font-size: 26px; font-weight: 700; line-height: 1; }
+    .stat-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.4px; color: var(--ink-3); margin-top: 6px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .stat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .stat-pct { font-size: 11px; font-weight: 600; margin-left: 4px; }
+    .stat-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; gap: 1px; }
+    .stat-bar-seg { height: 100%; }
+    .stat-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--ink-3); }
+    .stat-legend-item { display: flex; align-items: center; gap: 4px; }
+
+    /* ================================================================
+       AgendaList
+       ================================================================ */
+    .agenda-group { margin-bottom: 20px; }
+    .agenda-date-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .agenda-day-block {
+      display: flex; flex-direction: column; align-items: center; width: 40px; flex-shrink: 0;
+    }
+    .agenda-day-abbr {
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--ink-4); line-height: 1;
+    }
+    .agenda-day-num { font-size: 20px; font-weight: 700; line-height: 1.2; }
+    .agenda-day-num.today {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; background: var(--gold); color: white;
+    }
+    .agenda-month { font-size: 11px; color: var(--ink-3); }
+    .agenda-today-pill {
+      font-size: 9px; font-weight: 700; color: var(--gold-hover);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .agenda-separator { flex: 1; height: 1px; background: var(--border); }
+    .agenda-separator.today { background: rgba(245,168,0,0.4); }
+    .agenda-count { font-size: 10px; color: var(--ink-4); flex-shrink: 0; }
+    .agenda-events { display: flex; flex-direction: column; gap: 6px; padding-left: 50px; }
+    .agenda-event {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: var(--r-sm);
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; transition: background 120ms;
+    }
+    .agenda-event:hover { background: var(--bg); }
+    .agenda-time { font-size: 11px; font-weight: 500; color: var(--ink-3); width: 90px; flex-shrink: 0; white-space: nowrap; }
+    .agenda-event-info { flex: 1; min-width: 0; }
+    .agenda-event-title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .agenda-event-loc { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 3px; margin-top: 1px; }
+    .agenda-event-loc svg { width: 10px; height: 10px; }
+
+    /* ================================================================
+       MonthGrid
+       ================================================================ */
+    .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .month-dow {
+      text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-3);
+      text-transform: uppercase; padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .month-cell {
+      min-height: 80px; padding: 6px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      cursor: pointer; transition: background 120ms;
+    }
+    .month-cell:nth-child(7n) { border-right: none; }
+    .month-cell:hover { background: var(--gold-lt); }
+    .month-cell.today { background: rgba(245,168,0,0.03); }
+    .month-cell.other-month { background: var(--bg); }
+    .month-cell.weekend { background: rgba(246,245,241,0.5); }
+    .month-day-num { font-size: 12px; font-weight: 500; margin-bottom: 4px; }
+    .month-day-num.today {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--gold); color: white; font-weight: 700;
+    }
+    .month-day-num.other { color: var(--ink-4); }
+    .month-event-mini {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 11px; padding: 1px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .month-event-mini .ev-dot { width: 5px; height: 5px; margin-top: 0; }
+    .month-more { font-size: 10px; color: var(--ink-3); padding-left: 9px; }
+    .month-hover-hint {
+      font-size: 9px; font-weight: 600; color: var(--teal-dk);
+      background: var(--teal-lt); border: 1px solid rgba(78,140,120,0.2);
+      padding: 0px 5px; border-radius: 3px;
+      opacity: 0; transition: opacity 120ms; float: right;
+    }
+    .month-cell:hover .month-hover-hint { opacity: 1; }
+
+    /* ================================================================
+       EventForm
+       ================================================================ */
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .form-label { font-size: 12px; font-weight: 500; color: var(--ink-2); }
+    .form-input {
+      padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 13px; font-family: var(--font-body); color: var(--ink);
+      background: var(--surface);
+    }
+    .form-input:focus { border-color: var(--gold); outline: none; }
+    .form-textarea { resize: vertical; min-height: 60px; }
+    .form-row { display: flex; gap: 12px; }
+    .form-row > * { flex: 1; }
+    .form-select {
+      padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 13px; font-family: var(--font-body); color: var(--ink);
+      background: var(--surface); appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236B6760' stroke-width='1.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .form-switch {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    }
+    .form-switch-track {
+      width: 36px; height: 20px; border-radius: 10px;
+      background: var(--border-md); position: relative; cursor: pointer;
+      transition: background 150ms;
+    }
+    .form-switch-track.on { background: var(--gold); }
+    .form-switch-thumb {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: white; position: absolute; top: 2px; left: 2px;
+      transition: transform 150ms;
+    }
+    .form-switch-track.on .form-switch-thumb { transform: translateX(16px); }
+    .form-actions { display: flex; gap: 10px; padding-top: 6px; }
+
+    /* ================================================================
+       EventDetail
+       ================================================================ */
+    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+    .detail-title { font-size: 18px; font-weight: 600; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .detail-field-label { font-size: 11px; color: var(--ink-3); margin-bottom: 2px; }
+    .detail-field-value { font-size: 13px; }
+
+    /* ================================================================
+       EventPicker
+       ================================================================ */
+    .picker-input {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);
+      font-size: 13px; color: var(--ink-3); cursor: pointer;
+      background: var(--surface); width: 280px;
+    }
+    .picker-input svg { width: 14px; height: 14px; color: var(--ink-4); flex-shrink: 0; }
+    .picker-dropdown {
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      background: var(--surface); width: 280px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .picker-search {
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+    }
+    .picker-search input {
+      width: 100%; padding: 6px 10px;
+      border: 1px solid var(--border); border-radius: 4px;
+      font-size: 12px; font-family: var(--font-body);
+    }
+    .picker-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; cursor: pointer; transition: background 120ms;
+    }
+    .picker-item:hover { background: var(--bg); }
+    .picker-item-title { font-size: 13px; font-weight: 500; }
+    .picker-item-sub { font-size: 11px; color: var(--ink-3); }
+    .picker-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px 4px 8px;
+      border: 1px solid var(--border); border-radius: 14px;
+      font-size: 12px; font-weight: 500; background: var(--surface);
+    }
+    .picker-chip-x {
+      width: 14px; height: 14px; border-radius: 50%; border: none;
+      background: var(--bg); color: var(--ink-3); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+    }
+
+    /* ================================================================
+       CalendarSkeleton
+       ================================================================ */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
+      background-size: 200% 100%;
+      border-radius: var(--r-sm);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton { animation: none; }
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <h1 class="page-title">Componentes reutilizables</h1>
+  <p class="page-subtitle">Componentes que el plugin calendar exporta para uso en otros plugins (appointments, consultations, etc.)</p>
+
+
+  <!-- ============================================================
+       0. CalendarView — Compositor
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">CalendarView</h2>
+      <span class="ref-subtitle">Compositor — ensambla toolbar + vista + sidebar</span>
+      <span class="ref-import">import { CalendarView } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Vista ensamblada — Semana (desktop)</div>
+
+      <!-- CalendarView assembled: sidebar + toolbar + week grid -->
+      <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface); max-width: 820px;">
+
+        <!-- Sidebar -->
+        <div style="width: 200px; border-right: 1px solid var(--border); padding: 12px; flex-shrink: 0; background: var(--surface);">
+          <!-- MiniCalendar dentro del sidebar -->
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 700;">Abril 2026</span>
+              <div style="display: flex; gap: 3px;">
+                <span style="width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ink-3); cursor: pointer;">&#8249;</span>
+                <span style="width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ink-3); cursor: pointer;">&#8250;</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 9px; gap: 1px;">
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">L</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">M</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">X</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">J</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">V</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">S</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">D</span>
+              <!-- Wk 1 -->
+              <span style="color: var(--ink-4); padding: 4px 0;">30</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">31</span>
+              <span style="padding: 4px 0;">1</span><span style="padding: 4px 0;">2</span><span style="padding: 4px 0;">3</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">4</span><span style="color: var(--ink-4); padding: 4px 0;">5</span>
+              <!-- Wk 2 (selected week) -->
+              <span style="padding: 4px 0; font-weight: 700; background: var(--gold-lt); border-radius: 3px;">6</span>
+              <span style="padding: 4px 0; font-weight: 700; background: var(--gold-lt); border-radius: 3px;">7</span>
+              <span style="padding: 4px 0; font-weight: 700; background: var(--gold-lt); border-radius: 3px;">8</span>
+              <span style="padding: 4px 0; font-weight: 700; background: var(--gold); color: white; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; margin: 0 auto;">9</span>
+              <span style="padding: 4px 0; font-weight: 700; background: var(--gold-lt); border-radius: 3px;">10</span>
+              <span style="color: var(--ink-4); padding: 4px 0; background: var(--gold-lt); border-radius: 3px;">11</span>
+              <span style="color: var(--ink-4); padding: 4px 0; background: var(--gold-lt); border-radius: 3px;">12</span>
+              <!-- Wk 3+ -->
+              <span style="padding: 4px 0;">13</span><span style="padding: 4px 0;">14</span><span style="padding: 4px 0;">15</span>
+              <span style="padding: 4px 0;">16</span><span style="padding: 4px 0;">17</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">18</span><span style="color: var(--ink-4); padding: 4px 0;">19</span>
+              <span style="padding: 4px 0;">20</span><span style="padding: 4px 0;">21</span><span style="padding: 4px 0;">22</span>
+              <span style="padding: 4px 0;">23</span><span style="padding: 4px 0;">24</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">25</span><span style="color: var(--ink-4); padding: 4px 0;">26</span>
+            </div>
+          </div>
+          <!-- Contribution slot -->
+          <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 8px; font-size: 9px; color: var(--ink-4); text-align: center;">
+            sidebar contributions
+          </div>
+        </div>
+
+        <!-- Main area -->
+        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+
+          <!-- Toolbar -->
+          <div style="padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-family: var(--font-serif); font-weight: 700; font-size: 16px;">Abril 2026</span>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); cursor: pointer;">&#8249;</span>
+                <span style="padding: 3px 10px; font-size: 11px; border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--ink-3); cursor: pointer;">Hoy</span>
+                <span style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); cursor: pointer;">&#8250;</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <!-- extraToolbarActions slot -->
+              <span style="font-size: 8px; color: var(--ink-4); border: 1px dashed var(--border); padding: 2px 6px; border-radius: 3px;">extra actions</span>
+              <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
+                <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer;">Dia</span>
+                <span style="padding: 4px 12px; font-size: 10px; background: var(--ink); color: white;">Sem</span>
+                <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer;">Mes</span>
+                <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer; border-left: 1px solid var(--border);">Agenda</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Week grid area -->
+          <div style="flex: 1; display: flex; overflow: auto;">
+            <!-- Time gutter -->
+            <div style="width: 48px; flex-shrink: 0; padding-top: 32px;">
+              <div style="height: 48px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 6px;">08:00</div>
+              <div style="height: 48px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 6px;">09:00</div>
+              <div style="height: 48px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 6px;">10:00</div>
+              <div style="height: 48px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 6px;">11:00</div>
+              <div style="height: 48px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 6px;">12:00</div>
+            </div>
+
+            <!-- Day columns -->
+            <div style="flex: 1; display: flex; min-width: 0;">
+              <!-- Lun -->
+              <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+                <div style="height: 32px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <span style="font-size: 9px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">Lun</span>
+                  <span style="font-family: var(--font-serif); font-weight: 700; font-size: 14px;">6</span>
+                </div>
+                <div style="position: relative;">
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px;"></div>
+                  <!-- Event: 08-09 -->
+                  <div style="position: absolute; top: 0; left: 2px; right: 2px; height: 46px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer;">
+                    <div style="padding: 3px 6px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 4px;">
+                      <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--teal-dk);"></span>
+                      <span style="font-size: 9px; font-weight: 600; color: var(--ink-3);">08:00</span>
+                    </div>
+                    <div style="padding: 2px 6px;"><span style="font-size: 10px; font-weight: 500;">Reunion</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mar -->
+              <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+                <div style="height: 32px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <span style="font-size: 9px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">Mar</span>
+                  <span style="font-family: var(--font-serif); font-weight: 700; font-size: 14px;">7</span>
+                </div>
+                <div style="position: relative;">
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px;"></div>
+                </div>
+              </div>
+
+              <!-- Mie (hoy) -->
+              <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+                <div style="height: 32px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--gold-lt);">
+                  <span style="font-size: 9px; font-weight: 600; color: var(--gold-hover); text-transform: uppercase;">Mie</span>
+                  <span style="font-family: var(--font-serif); font-weight: 900; font-size: 14px;">8</span>
+                </div>
+                <div style="position: relative; background: rgba(245,168,0,0.02);">
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px;"></div>
+                  <!-- Now line — z-index above events -->
+                  <div style="position: absolute; top: 72px; left: 0; right: 0; display: flex; align-items: center; z-index: 10; pointer-events: none;">
+                    <svg width="8" height="10" style="flex-shrink: 0; margin-left: -1px;"><polygon points="0,0 8,5 0,10" fill="var(--gold)"/></svg>
+                    <div style="flex: 1; height: 1.5px; background: var(--gold);"></div>
+                  </div>
+                  <!-- Event: 09-10 -->
+                  <div style="position: absolute; top: 48px; left: 2px; right: 2px; height: 46px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer;">
+                    <div style="padding: 3px 6px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 4px;">
+                      <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--gold);"></span>
+                      <span style="font-size: 9px; font-weight: 600; color: var(--ink-3);">09:00</span>
+                    </div>
+                    <div style="padding: 2px 6px;"><span style="font-size: 10px; font-weight: 500;">Vacunacion Mia</span></div>
+                  </div>
+                  <!-- Event: 10:30-11:00 -->
+                  <div style="position: absolute; top: 120px; left: 2px; right: 2px; height: 24px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0 6px;">
+                    <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--teal-dk);"></span>
+                    <span style="font-size: 9px; font-weight: 500;">10:30 Control Rocky</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Jue -->
+              <div style="flex: 1; border-right: 1px solid var(--border); min-width: 0;">
+                <div style="height: 32px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <span style="font-size: 9px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">Jue</span>
+                  <span style="font-family: var(--font-serif); font-weight: 700; font-size: 14px;">9</span>
+                </div>
+                <div style="position: relative;">
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px;"></div>
+                  <!-- Event: 11-12 -->
+                  <div style="position: absolute; top: 144px; left: 2px; right: 2px; height: 46px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer;">
+                    <div style="padding: 3px 6px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 4px;">
+                      <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ink-4);"></span>
+                      <span style="font-size: 9px; font-weight: 600; color: var(--ink-3);">11:00</span>
+                    </div>
+                    <div style="padding: 2px 6px;"><span style="font-size: 10px; font-weight: 500;">Llamada distrib.</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Vie -->
+              <div style="flex: 1; min-width: 0;">
+                <div style="height: 32px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <span style="font-size: 9px; font-weight: 600; color: var(--ink-3); text-transform: uppercase;">Vie</span>
+                  <span style="font-family: var(--font-serif); font-weight: 700; font-size: 14px;">10</span>
+                </div>
+                <div style="position: relative;">
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+                  <div style="height: 48px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Props:</strong> enabledViews, defaultView, showCalendarSidebar, extraToolbarActions, renderEvent, onEventClick, onSlotClick<br>
+        <strong>Today:</strong> Warm Glow (gold-lt header). <strong>Now line:</strong> Triangle Marker gold. <strong>Events:</strong> dot + timebar/body (standard) o inline (compact).<br>
+        Mobile: sidebar se oculta, toolbar 3 filas, views: Dia | 3D | Sem | Mes.
+      </div>
+    </div>
+
+    <!-- Vista Dia ensamblada -->
+    <div class="ref-section">
+      <div class="ref-label">Vista ensamblada — Día (desktop)</div>
+
+      <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface); max-width: 680px;">
+
+        <!-- Sidebar -->
+        <div style="width: 200px; border-right: 1px solid var(--border); padding: 12px; flex-shrink: 0; background: var(--surface);">
+          <!-- MiniCalendar -->
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 700;">Abril 2026</span>
+              <div style="display: flex; gap: 3px;">
+                <span style="width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ink-3); cursor: pointer;">&#8249;</span>
+                <span style="width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ink-3); cursor: pointer;">&#8250;</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 9px; gap: 1px;">
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">L</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">M</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">X</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">J</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">V</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">S</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">D</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">30</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">31</span>
+              <span style="padding: 4px 0;">1</span><span style="padding: 4px 0;">2</span><span style="padding: 4px 0;">3</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">4</span><span style="color: var(--ink-4); padding: 4px 0;">5</span>
+              <span style="padding: 4px 0;">6</span><span style="padding: 4px 0;">7</span>
+              <span style="padding: 4px 0;">8</span>
+              <span style="padding: 4px 0; font-weight: 700; background: var(--gold); color: white; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; margin: 0 auto;">9</span>
+              <span style="padding: 4px 0;">10</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">11</span><span style="color: var(--ink-4); padding: 4px 0;">12</span>
+              <span style="padding: 4px 0;">13</span><span style="padding: 4px 0;">14</span><span style="padding: 4px 0;">15</span>
+              <span style="padding: 4px 0;">16</span><span style="padding: 4px 0;">17</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">18</span><span style="color: var(--ink-4); padding: 4px 0;">19</span>
+              <span style="padding: 4px 0;">20</span><span style="padding: 4px 0;">21</span><span style="padding: 4px 0;">22</span>
+              <span style="padding: 4px 0;">23</span><span style="padding: 4px 0;">24</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">25</span><span style="color: var(--ink-4); padding: 4px 0;">26</span>
+            </div>
+          </div>
+          <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 8px; font-size: 9px; color: var(--ink-4); text-align: center;">
+            sidebar contributions
+          </div>
+        </div>
+
+        <!-- Main area -->
+        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+
+          <!-- Toolbar -->
+          <div style="padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-family: var(--font-serif); font-weight: 700; font-size: 16px;">Miércoles, 9 de Abril</span>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); cursor: pointer;">&#8249;</span>
+                <span style="padding: 3px 10px; font-size: 11px; border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--ink-3); cursor: pointer;">Hoy</span>
+                <span style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); cursor: pointer;">&#8250;</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 8px; color: var(--ink-4); border: 1px dashed var(--border); padding: 2px 6px; border-radius: 3px;">extra actions</span>
+              <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
+                <span style="padding: 4px 12px; font-size: 10px; background: var(--ink); color: white;">Dia</span>
+                <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer;">Sem</span>
+                <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer;">Mes</span>
+                <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer; border-left: 1px solid var(--border);">Agenda</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Day column area -->
+          <div style="flex: 1; display: flex; overflow: auto;">
+            <!-- Time gutter -->
+            <div style="width: 56px; flex-shrink: 0; padding-top: 8px;">
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">07:00</div>
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">08:00</div>
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">09:00</div>
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">10:00</div>
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">11:00</div>
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">12:00</div>
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">13:00</div>
+              <div style="height: 56px; font-size: 10px; color: var(--ink-3); text-align: right; padding-right: 8px;">14:00</div>
+            </div>
+
+            <!-- Single day column -->
+            <div style="flex: 1; position: relative; min-width: 0; padding-top: 8px;">
+              <!-- Hour rows -->
+              <div style="height: 56px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+              <div style="height: 56px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+              <div style="height: 56px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+              <div style="height: 56px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+              <div style="height: 56px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+              <div style="height: 56px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+              <div style="height: 56px; border-bottom: 1px solid rgba(232,231,226,0.4);"></div>
+              <div style="height: 56px;"></div>
+
+              <!-- Now line at ~09:30 (2.5 slots from top = 8 + 56*2 + 28 = 148px) -->
+              <div style="position: absolute; top: 148px; left: 0; right: 0; display: flex; align-items: center; z-index: 10; pointer-events: none;">
+                <svg width="8" height="10" style="flex-shrink: 0; margin-left: -1px;"><polygon points="0,0 8,5 0,10" fill="var(--gold)"/></svg>
+                <div style="flex: 1; height: 2px; background: var(--gold);"></div>
+              </div>
+
+              <!-- Event: 08:00–09:00 (1h = 56px) — Standard EventCard -->
+              <div style="position: absolute; top: 64px; left: 4px; right: 4px; height: 54px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer; display: flex; flex-direction: column;">
+                <div style="padding: 4px 8px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold);"></span>
+                  <span style="font-size: 10px; font-weight: 700; color: var(--ink-3); letter-spacing: 0.3px; flex: 1;">08:00 – 09:00</span>
+                </div>
+                <div style="padding: 4px 8px; flex: 1;">
+                  <div style="font-size: 12px; font-weight: 500; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Vacunación — Mia (Labrador)</div>
+                  <div style="font-size: 10px; color: var(--ink-3); margin-top: 1px;">Dra. Martínez</div>
+                </div>
+              </div>
+
+              <!-- Event: 09:30–10:00 (30min = 28px) — Compact EventCard -->
+              <div style="position: absolute; top: 148px; left: 4px; right: 4px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 0 8px;">
+                <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--teal-dk);"></span>
+                <span style="font-size: 9px; font-weight: 600; color: var(--ink-3);">09:30</span>
+                <span style="font-size: 10px; font-weight: 500; color: var(--ink-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Control Rocky (Pastor Alemán)</span>
+              </div>
+
+              <!-- Event: 11:00–12:30 (1.5h = 84px) — Standard EventCard (tall) -->
+              <div style="position: absolute; top: 232px; left: 4px; right: 4px; height: 82px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer; display: flex; flex-direction: column;">
+                <div style="padding: 4px 8px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--green);"></span>
+                  <span style="font-size: 10px; font-weight: 700; color: var(--ink-3); letter-spacing: 0.3px; flex: 1;">11:00 – 12:30</span>
+                </div>
+                <div style="padding: 4px 8px; flex: 1;">
+                  <div style="font-size: 12px; font-weight: 500; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Cirugía programada — Luna (Siamés)</div>
+                  <div style="font-size: 10px; color: var(--ink-3); margin-top: 1px;">Dra. Martínez · Esterilización</div>
+                </div>
+              </div>
+
+              <!-- Event: 14:00–14:30 (30min = 28px) — Compact -->
+              <div style="position: absolute; top: 400px; left: 4px; right: 4px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 0 8px;">
+                <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ink-4);"></span>
+                <span style="font-size: 9px; font-weight: 600; color: var(--ink-3);">14:00</span>
+                <span style="font-size: 10px; font-weight: 500; color: var(--ink-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Revisión dental — Max (Golden)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Slot height:</strong> 56px (configurable via daySlotHeight prop). Eventos se posicionan absolutamente según start/end time.<br>
+        <strong>Standard card</strong> (≥45min): timebar (dot + hora) + body (título + subtítulo). <strong>Compact card</strong> (<45min): inline dot + hora + título.<br>
+        <strong>Now line:</strong> Triangle marker gold + línea 2px gold. Visible solo en el día actual, z-index sobre eventos.<br>
+        <strong>Empty slots:</strong> hover sutil para indicar interactividad (onSlotClick).
+      </div>
+    </div>
+
+    <!-- Vista Mes ensamblada -->
+    <div class="ref-section">
+      <div class="ref-label">Vista ensamblada — Mes (desktop)</div>
+
+      <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface); max-width: 820px;">
+
+        <!-- Sidebar -->
+        <div style="width: 200px; border-right: 1px solid var(--border); padding: 12px; flex-shrink: 0;">
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 12px; font-weight: 700;">Abril 2026</span>
+              <div style="display: flex; gap: 3px;">
+                <span style="width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ink-3); cursor: pointer;">&#8249;</span>
+                <span style="width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ink-3); cursor: pointer;">&#8250;</span>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 9px; gap: 1px;">
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">L</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">M</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">X</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">J</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">V</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">S</span>
+              <span style="color: var(--ink-4); font-weight: 700; padding: 3px 0;">D</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">30</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">31</span>
+              <span style="padding: 4px 0;">1</span><span style="padding: 4px 0;">2</span><span style="padding: 4px 0;">3</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">4</span><span style="color: var(--ink-4); padding: 4px 0;">5</span>
+              <span style="padding: 4px 0;">6</span><span style="padding: 4px 0;">7</span><span style="padding: 4px 0;">8</span>
+              <span style="padding: 4px 0; font-weight: 700; background: var(--gold); color: white; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; margin: 0 auto;">9</span>
+              <span style="padding: 4px 0;">10</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">11</span><span style="color: var(--ink-4); padding: 4px 0;">12</span>
+              <span style="padding: 4px 0;">13</span><span style="padding: 4px 0;">14</span><span style="padding: 4px 0;">15</span>
+              <span style="padding: 4px 0;">16</span><span style="padding: 4px 0;">17</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">18</span><span style="color: var(--ink-4); padding: 4px 0;">19</span>
+              <span style="padding: 4px 0;">20</span><span style="padding: 4px 0;">21</span><span style="padding: 4px 0;">22</span>
+              <span style="padding: 4px 0;">23</span><span style="padding: 4px 0;">24</span>
+              <span style="color: var(--ink-4); padding: 4px 0;">25</span><span style="color: var(--ink-4); padding: 4px 0;">26</span>
+            </div>
+          </div>
+          <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 8px; font-size: 9px; color: var(--ink-4); text-align: center;">
+            sidebar contributions
+          </div>
+        </div>
+
+        <!-- Main area -->
+        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+
+          <!-- Toolbar -->
+          <div style="padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-family: var(--font-serif); font-weight: 700; font-size: 16px;">Abril 2026</span>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); cursor: pointer;">&#8249;</span>
+                <span style="padding: 3px 10px; font-size: 11px; border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--ink-3); cursor: pointer;">Hoy</span>
+                <span style="width: 26px; height: 26px; border: 1px solid var(--border); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--ink-3); cursor: pointer;">&#8250;</span>
+              </div>
+            </div>
+            <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
+              <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer;">Dia</span>
+              <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer;">Sem</span>
+              <span style="padding: 4px 12px; font-size: 10px; background: var(--ink); color: white;">Mes</span>
+              <span style="padding: 4px 12px; font-size: 10px; color: var(--ink-3); cursor: pointer; border-left: 1px solid var(--border);">Agenda</span>
+            </div>
+          </div>
+
+          <!-- Month grid -->
+          <div style="flex: 1; overflow: auto;">
+            <!-- DOW headers -->
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border);">
+              <div style="text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; padding: 8px 0;">Lun</div>
+              <div style="text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; padding: 8px 0;">Mar</div>
+              <div style="text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; padding: 8px 0;">Mie</div>
+              <div style="text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; padding: 8px 0;">Jue</div>
+              <div style="text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; padding: 8px 0;">Vie</div>
+              <div style="text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-4); text-transform: uppercase; padding: 8px 0;">Sab</div>
+              <div style="text-align: center; font-size: 10px; font-weight: 600; color: var(--ink-4); text-transform: uppercase; padding: 8px 0;">Dom</div>
+            </div>
+            <!-- Week rows -->
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr);">
+              <!-- Wk 1: Mar 30-31, Abr 1-5 -->
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--bg);">
+                <span style="font-size: 12px; color: var(--ink-4);">30</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--bg);">
+                <span style="font-size: 12px; color: var(--ink-4);">31</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">1</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">2</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">3</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: rgba(246,245,241,0.5);">
+                <span style="font-size: 12px; color: var(--ink-4);">4</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); background: rgba(246,245,241,0.5);">
+                <span style="font-size: 12px; color: var(--ink-4);">5</span>
+              </div>
+
+              <!-- Wk 2: Abr 6-12 -->
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">6</span>
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 4px;"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--teal-dk);"></span> Reunion</div>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">7</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">8</span>
+              </div>
+              <!-- Hoy: 9 -->
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: rgba(245,168,0,0.03);">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--gold); color: white; font-size: 12px; font-weight: 700;">9</span>
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 4px;"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--gold);"></span> Vacunacion</div>
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px;"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--teal-dk);"></span> Control</div>
+                <div style="font-size: 10px; color: var(--ink-3); padding-left: 9px;">+1 mas</div>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">10</span>
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; margin-top: 4px;"><span style="width: 5px; height: 5px; border-radius: 50%; background: var(--ink-4);"></span> Llamada</div>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: rgba(246,245,241,0.5);">
+                <span style="font-size: 12px; color: var(--ink-4);">11</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); background: rgba(246,245,241,0.5);">
+                <span style="font-size: 12px; color: var(--ink-4);">12</span>
+              </div>
+
+              <!-- Wk 3: Abr 13-19 -->
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">13</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">14</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">15</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">16</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);">
+                <span style="font-size: 12px; font-weight: 500;">17</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: rgba(246,245,241,0.5);">
+                <span style="font-size: 12px; color: var(--ink-4);">18</span>
+              </div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); background: rgba(246,245,241,0.5);">
+                <span style="font-size: 12px; color: var(--ink-4);">19</span>
+              </div>
+
+              <!-- Wk 4-5 abbreviated -->
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">20</span></div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">21</span></div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">22</span></div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">23</span></div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">24</span></div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: rgba(246,245,241,0.5);"><span style="font-size: 12px; color: var(--ink-4);">25</span></div>
+              <div style="min-height: 72px; padding: 6px; border-bottom: 1px solid var(--border); background: rgba(246,245,241,0.5);"><span style="font-size: 12px; color: var(--ink-4);">26</span></div>
+
+              <div style="min-height: 72px; padding: 6px; border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">27</span></div>
+              <div style="min-height: 72px; padding: 6px; border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">28</span></div>
+              <div style="min-height: 72px; padding: 6px; border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">29</span></div>
+              <div style="min-height: 72px; padding: 6px; border-right: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 500;">30</span></div>
+              <div style="min-height: 72px; padding: 6px; border-right: 1px solid var(--border); background: var(--bg);"><span style="font-size: 12px; color: var(--ink-4);">1</span></div>
+              <div style="min-height: 72px; padding: 6px; border-right: 1px solid var(--border); background: rgba(246,245,241,0.5);"><span style="font-size: 12px; color: var(--ink-4);">2</span></div>
+              <div style="min-height: 72px; padding: 6px; background: rgba(246,245,241,0.5);"><span style="font-size: 12px; color: var(--ink-4);">3</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>MonthGrid</strong> dentro de CalendarView: celdas con mini-eventos (dot + titulo). Today: gold circle. Weekend: dimmed. Otro mes: bg + ink-4.<br>
+        Click en dia: navega a vista Dia. Hover muestra "+Nuevo" hint (no mostrado aqui por limitacion de inline styles).
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       1. EventCard
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventCard</h2>
+      <span class="ref-subtitle">Tarjeta de evento en listas y widgets</span>
+      <span class="ref-import">import { EventCard } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Variantes</div>
+      <!-- Basico -->
+      <div style="margin-bottom: 14px;">
+        <div class="state-label" style="text-align:left; margin-bottom:6px;">Basico</div>
+        <div style="width: 300px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
+          <div class="ev-card">
+            <div class="ev-dot ev-dot-teal"></div>
+            <div class="ev-info"><div class="ev-title">Reunion de equipo</div><div class="ev-meta">08:00 - 09:00</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Con status -->
+      <div style="margin-bottom: 14px;">
+        <div class="state-label" style="text-align:left; margin-bottom:6px;">Con status + ubicacion</div>
+        <div style="width: 300px; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
+          <div class="ev-card">
+            <div class="ev-dot ev-dot-gold"></div>
+            <div class="ev-info">
+              <div class="ev-title">Vacunacion — Mia</div>
+              <div class="ev-meta">09:00 - 09:30</div>
+              <div class="ev-location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>Consultorio 2</span>
+              </div>
+            </div>
+            <span class="ev-badge badge-scheduled">Agendado</span>
+          </div>
+          <div class="ev-card" style="opacity: 0.6;">
+            <div class="ev-dot ev-dot-red"></div>
+            <div class="ev-info"><div class="ev-title" style="text-decoration: line-through;">Seguimiento cancelado</div><div class="ev-meta">16:30</div></div>
+            <span class="ev-badge badge-cancelled">Cancelado</span>
+          </div>
+        </div>
+      </div>
+      <!-- Skeleton -->
+      <div>
+        <div class="state-label" style="text-align:left; margin-bottom:6px;">Skeleton</div>
+        <div style="width: 300px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; gap: 8px; padding: 8px 10px;">
+            <div class="skeleton" style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;"></div>
+            <div style="flex: 1;"><div class="skeleton" style="height: 14px; width: 70%; margin-bottom: 4px;"></div><div class="skeleton" style="height: 12px; width: 45%;"></div></div>
+          </div>
+          <div style="display: flex; gap: 8px; padding: 8px 10px;">
+            <div class="skeleton" style="width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;"></div>
+            <div style="flex: 1;"><div class="skeleton" style="height: 14px; width: 60%; margin-bottom: 4px;"></div><div class="skeleton" style="height: 12px; width: 50%;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       2. EventList
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventList</h2>
+      <span class="ref-subtitle">Tabla de eventos con busqueda, sorting y paginacion (usa DataTable del core)</span>
+      <span class="ref-import">import { EventList } from '@coongro/calendar'</span>
+    </div>
+
+    <!-- Desktop -->
+    <div class="ref-section">
+      <div class="ref-label">Desktop — Tabla</div>
+      <div style="margin-bottom: 12px;">
+        <div class="search-wrap" style="max-width: 300px;">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" placeholder="Buscar eventos..." />
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th class="sortable sorted">Titulo <span class="sort-arrow">&#9650;</span></th>
+              <th class="sortable">Fecha <span class="sort-arrow">&#9650;</span></th>
+              <th class="sortable">Estado <span class="sort-arrow">&#9650;</span></th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="cell-title">
+                  <div class="ev-dot ev-dot-teal"></div>
+                  <div class="cell-title-text">
+                    <span class="cell-title-name">Reunion de equipo semanal</span>
+                    <span class="cell-title-loc">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      Sala 1
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="cell-date">Lun 7 Abr, 08:00</td>
+              <td><span class="ev-badge badge-confirmed">Confirmado</span></td>
+              <td class="text-right"><button class="action-btn">Editar</button><button class="action-btn danger">Eliminar</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="cell-title">
+                  <div class="ev-dot ev-dot-gold"></div>
+                  <div class="cell-title-text"><span class="cell-title-name">Vacunacion — Mia (Triple felina)</span></div>
+                </div>
+              </td>
+              <td class="cell-date">Lun 7 Abr, 10:30</td>
+              <td><span class="ev-badge badge-scheduled">Agendado</span></td>
+              <td class="text-right"><button class="action-btn">Editar</button><button class="action-btn danger">Eliminar</button></td>
+            </tr>
+            <tr>
+              <td>
+                <div class="cell-title">
+                  <div class="ev-dot ev-dot-red"></div>
+                  <div class="cell-title-text"><span class="cell-title-name">Capacitacion proveedores</span></div>
+                </div>
+              </td>
+              <td class="cell-date">Mie 9 Abr, 09:00</td>
+              <td><span class="ev-badge badge-cancelled">Cancelado</span></td>
+              <td class="text-right"><button class="action-btn">Editar</button><button class="action-btn danger">Eliminar</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span>1-3 de 23</span>
+        <div class="page-btns">
+          <button class="page-btn" disabled>&#8249;</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">&#8250;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile -->
+    <div class="ref-section">
+      <div class="ref-label">Mobile — Cards</div>
+      <div style="max-width: 360px;">
+        <div style="margin-bottom: 10px;">
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" placeholder="Buscar eventos..." />
+          </div>
+        </div>
+        <div class="cards-list">
+          <div class="el-card">
+            <div class="el-card-top"><div class="ev-dot ev-dot-teal"></div><span class="el-card-title">Reunion de equipo semanal</span></div>
+            <div class="el-card-meta">Lun 7 Abr, 08:00</div>
+            <div style="margin-top: 6px;"><span class="ev-badge badge-confirmed">Confirmado</span></div>
+          </div>
+          <div class="el-card">
+            <div class="el-card-top"><div class="ev-dot ev-dot-gold"></div><span class="el-card-title">Vacunacion — Mia (Triple felina)</span></div>
+            <div class="el-card-meta">Lun 7 Abr, 10:30</div>
+            <div style="margin-top: 6px;"><span class="ev-badge badge-scheduled">Agendado</span></div>
+          </div>
+        </div>
+        <div class="pagination-bar">
+          <span>1-2 de 23</span>
+          <div class="page-btns">
+            <button class="page-btn" disabled>&#8249;</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">...</button>
+            <button class="page-btn">&#8250;</button>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Props:</strong> filters, columns, extraColumns, extraActions, statusConfig, onRowClick, pageSize, emptyMessage, emptyStateAction<br>
+        Usa DataTable del core internamente. Plugin solo define columnas render y mobileRender.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       3. EventStats
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventStats</h2>
+      <span class="ref-subtitle">Dashboard cards con conteo por status + barra proporcional</span>
+      <span class="ref-import">import { EventStats } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Con datos</div>
+      <!-- Cards grid -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px;">
+        <div class="stat-card" style="background: var(--surface);">
+          <div class="stat-number" style="color: var(--teal-dk);">24</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card" style="background: var(--gold-lt);">
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <div class="stat-number">10</div>
+            <span class="stat-pct" style="color: #8A6800;">42%</span>
+          </div>
+          <div class="stat-label"><span class="stat-dot" style="background: var(--gold);"></span> Agendado</div>
+        </div>
+        <div class="stat-card" style="background: var(--green-lt);">
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <div class="stat-number">8</div>
+            <span class="stat-pct" style="color: var(--green);">33%</span>
+          </div>
+          <div class="stat-label"><span class="stat-dot" style="background: var(--green);"></span> Confirmado</div>
+        </div>
+        <div class="stat-card" style="background: var(--red-lt);">
+          <div style="display: flex; align-items: baseline; gap: 4px;">
+            <div class="stat-number">6</div>
+            <span class="stat-pct" style="color: var(--red);">25%</span>
+          </div>
+          <div class="stat-label"><span class="stat-dot" style="background: var(--red);"></span> Cancelado</div>
+        </div>
+      </div>
+      <!-- Stacked bar -->
+      <div class="stat-bar" style="margin-bottom: 8px;">
+        <div class="stat-bar-seg" style="width: 42%; background: var(--gold);"></div>
+        <div class="stat-bar-seg" style="width: 33%; background: var(--green);"></div>
+        <div class="stat-bar-seg" style="width: 25%; background: var(--red);"></div>
+      </div>
+      <div class="stat-legend">
+        <div class="stat-legend-item"><span class="stat-dot" style="background: var(--gold);"></span> Agendado: 10</div>
+        <div class="stat-legend-item"><span class="stat-dot" style="background: var(--green);"></span> Confirmado: 8</div>
+        <div class="stat-legend-item"><span class="stat-dot" style="background: var(--red);"></span> Cancelado: 6</div>
+      </div>
+      <div class="ref-note">
+        <strong>Props:</strong> from, to, className<br>
+        Cards con numero grande + porcentaje. Barra apilada proporcional. Leyenda con dot + label + count.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       4. AgendaList
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">AgendaList</h2>
+      <span class="ref-subtitle">Lista de eventos agrupados por fecha — vista agenda</span>
+      <span class="ref-import">import { AgendaList } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Desktop</div>
+
+      <!-- Grupo: Hoy -->
+      <div class="agenda-group">
+        <div class="agenda-date-header">
+          <div class="agenda-day-block">
+            <span class="agenda-day-abbr" style="color: var(--gold-hover);">MIE</span>
+            <span class="agenda-day-num today">9</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1px;">
+            <span class="agenda-month">Abril 2026</span>
+            <span class="agenda-today-pill">Hoy</span>
+          </div>
+          <div class="agenda-separator today"></div>
+          <span class="agenda-count">3 eventos</span>
+        </div>
+        <div class="agenda-events">
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-gold"></div>
+            <div class="agenda-time">09:00 - 09:30</div>
+            <div class="agenda-event-info">
+              <div class="agenda-event-title">Vacunacion — Mia</div>
+              <div class="agenda-event-loc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Consultorio 2
+              </div>
+            </div>
+            <span class="ev-badge badge-scheduled">Agendado</span>
+          </div>
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-teal"></div>
+            <div class="agenda-time">10:30 - 11:00</div>
+            <div class="agenda-event-info"><div class="agenda-event-title">Control peso — Rocky</div></div>
+            <span class="ev-badge badge-confirmed">Confirmado</span>
+          </div>
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-green"></div>
+            <div class="agenda-time">14:00 - 15:00</div>
+            <div class="agenda-event-info"><div class="agenda-event-title">Auditoria de stock</div></div>
+            <span class="ev-badge badge-completed">Completado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grupo: Manana -->
+      <div class="agenda-group">
+        <div class="agenda-date-header">
+          <div class="agenda-day-block">
+            <span class="agenda-day-abbr">JUE</span>
+            <span class="agenda-day-num">10</span>
+          </div>
+          <div><span class="agenda-month">Abril 2026</span></div>
+          <div class="agenda-separator"></div>
+          <span class="agenda-count">2 eventos</span>
+        </div>
+        <div class="agenda-events">
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-neutral"></div>
+            <div class="agenda-time">11:00 - 12:00</div>
+            <div class="agenda-event-info"><div class="agenda-event-title">Llamada con distribuidor</div></div>
+            <span class="ev-badge badge-scheduled">Agendado</span>
+          </div>
+          <div class="agenda-event">
+            <div class="ev-dot ev-dot-teal"></div>
+            <div class="agenda-time">15:00 - 16:00</div>
+            <div class="agenda-event-info"><div class="agenda-event-title">Reunion mensual</div></div>
+            <span class="ev-badge badge-confirmed">Confirmado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Props:</strong> events, onEventClick, emptyMessage, className<br>
+        Agrupa por fecha. Hoy: gold circle + pill "Hoy" + separador dorado. Dot color + hora + titulo + badge.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       5. MonthGrid
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">MonthGrid</h2>
+      <span class="ref-subtitle">Grilla mensual con mini-eventos y dots</span>
+      <span class="ref-import">import { MonthGrid } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Desktop — Semana ejemplo</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden;">
+        <!-- DOW headers -->
+        <div class="month-grid">
+          <div class="month-dow">Lun</div><div class="month-dow">Mar</div><div class="month-dow">Mie</div>
+          <div class="month-dow">Jue</div><div class="month-dow">Vie</div><div class="month-dow">Sab</div><div class="month-dow">Dom</div>
+        </div>
+        <!-- Week row -->
+        <div class="month-grid">
+          <!-- Lun 7 -->
+          <div class="month-cell">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="month-day-num">7</span>
+              <span class="month-hover-hint">+ Nuevo</span>
+            </div>
+            <div class="month-event-mini"><div class="ev-dot ev-dot-teal"></div> Reunion equipo</div>
+            <div class="month-event-mini"><div class="ev-dot ev-dot-gold"></div> Vacunacion Mia</div>
+          </div>
+          <!-- Mar 8 -->
+          <div class="month-cell">
+            <span class="month-day-num">8</span>
+            <div class="month-event-mini"><div class="ev-dot ev-dot-green"></div> Auditoria stock</div>
+          </div>
+          <!-- Mie 9 (hoy) -->
+          <div class="month-cell today">
+            <span class="month-day-num today">9</span>
+            <div class="month-event-mini"><div class="ev-dot ev-dot-gold"></div> Capacitacion</div>
+            <div class="month-event-mini"><div class="ev-dot ev-dot-teal"></div> Control Rocky</div>
+            <div class="month-event-mini"><div class="ev-dot ev-dot-green"></div> Auditoria</div>
+            <div class="month-more">+2 mas</div>
+          </div>
+          <!-- Jue 10 -->
+          <div class="month-cell">
+            <span class="month-day-num">10</span>
+            <div class="month-event-mini"><div class="ev-dot ev-dot-neutral"></div> Llamada distrib.</div>
+          </div>
+          <!-- Vie 11 -->
+          <div class="month-cell"><span class="month-day-num">11</span></div>
+          <!-- Sab 12 -->
+          <div class="month-cell weekend"><span class="month-day-num" style="color: var(--ink-4);">12</span></div>
+          <!-- Dom 13 -->
+          <div class="month-cell weekend"><span class="month-day-num" style="color: var(--ink-4);">13</span></div>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Props:</strong> year, month, events, renderEvent, onEventClick, onDayClick, showWeekends<br>
+        Today: gold circle. Weekend: dimmed. Hover: gold-lt + "Nuevo" hint. Max 3 eventos + "+N mas".
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       6. UpcomingEvents
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">UpcomingEvents</h2>
+      <span class="ref-subtitle">Widget de proximos eventos para dashboards y sidebars</span>
+      <span class="ref-import">import { UpcomingEvents } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Desktop</div>
+      <div class="ref-compare">
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Con eventos</span>
+          <div class="upcoming-widget" style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+            <div class="upcoming-header">
+              <span class="upcoming-title">Proximos eventos</span>
+              <span class="upcoming-see-all">Ver todos</span>
+            </div>
+            <div class="upcoming-body">
+              <div class="ev-card"><div class="ev-dot ev-dot-gold"></div><div class="ev-info"><div class="ev-title">Vacunacion — Mia</div><div class="ev-meta">Hoy, 09:00</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+              <div class="ev-card"><div class="ev-dot ev-dot-teal"></div><div class="ev-info"><div class="ev-title">Control peso — Rocky</div><div class="ev-meta">Hoy, 10:30</div></div><span class="ev-badge badge-confirmed">Confirmado</span></div>
+              <div class="ev-card"><div class="ev-dot ev-dot-green"></div><div class="ev-info"><div class="ev-title">Desparasitacion — Luna</div><div class="ev-meta">Manana, 08:00</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Vacio</span>
+          <div class="upcoming-widget" style="border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; background: var(--surface);">
+            <div class="upcoming-header"><span class="upcoming-title">Proximos eventos</span></div>
+            <div class="upcoming-empty">No hay proximos eventos</div>
+          </div>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Props:</strong> limit, calendarIds, onEventClick, emptyMessage<br>
+        Usa EventCard internamente. Plugin consumer solo renderiza &lt;UpcomingEvents /&gt;.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       7. MiniCalendar
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">MiniCalendar</h2>
+      <span class="ref-subtitle">Calendario compacto para sidebar y pickers</span>
+      <span class="ref-import">import { MiniCalendar } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Desktop — sidebar</div>
+      <div class="mini-cal" style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface);">
+        <div class="mini-cal-header">
+          <span class="mini-cal-month">Abril 2026</span>
+          <div class="mini-cal-nav">
+            <button class="mini-cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <button class="mini-cal-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          </div>
+        </div>
+        <div class="mini-cal-grid">
+          <span class="mini-cal-dow">L</span><span class="mini-cal-dow">M</span><span class="mini-cal-dow">X</span>
+          <span class="mini-cal-dow">J</span><span class="mini-cal-dow">V</span><span class="mini-cal-dow">S</span><span class="mini-cal-dow">D</span>
+          <span class="mini-cal-day other-month">30</span><span class="mini-cal-day other-month">31</span>
+          <span class="mini-cal-day">1</span><span class="mini-cal-day">2</span><span class="mini-cal-day">3</span>
+          <span class="mini-cal-day weekend">4</span><span class="mini-cal-day weekend">5</span>
+          <span class="mini-cal-day selected">6<div class="mini-cal-dots"><span class="mini-cal-dot-indicator" style="background:var(--teal-dk)"></span><span class="mini-cal-dot-indicator" style="background:var(--gold)"></span></div></span>
+          <span class="mini-cal-day">7<div class="mini-cal-dots"><span class="mini-cal-dot-indicator" style="background:var(--green)"></span></div></span>
+          <span class="mini-cal-day today">8</span>
+          <span class="mini-cal-day">9<div class="mini-cal-dots"><span class="mini-cal-dot-indicator" style="background:var(--teal-dk)"></span><span class="mini-cal-dot-indicator" style="background:var(--gold)"></span></div></span>
+          <span class="mini-cal-day">10</span>
+          <span class="mini-cal-day weekend">11</span><span class="mini-cal-day weekend">12</span>
+          <span class="mini-cal-day">13</span><span class="mini-cal-day">14<div class="mini-cal-dots"><span class="mini-cal-dot-indicator" style="background:var(--gold)"></span></div></span>
+          <span class="mini-cal-day">15</span><span class="mini-cal-day">16</span><span class="mini-cal-day">17</span>
+          <span class="mini-cal-day weekend">18</span><span class="mini-cal-day weekend">19</span>
+          <span class="mini-cal-day">20</span><span class="mini-cal-day">21</span><span class="mini-cal-day">22</span>
+          <span class="mini-cal-day">23</span><span class="mini-cal-day">24</span>
+          <span class="mini-cal-day weekend">25</span><span class="mini-cal-day weekend">26</span>
+          <span class="mini-cal-day">27</span><span class="mini-cal-day">28</span><span class="mini-cal-day">29</span>
+          <span class="mini-cal-day">30</span>
+          <span class="mini-cal-day other-month">1</span>
+          <span class="mini-cal-day other-month weekend">2</span><span class="mini-cal-day other-month weekend">3</span>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Props:</strong> selectedDate, onDateSelect, eventDots, className<br>
+        Today: gold-lt (Warm Glow). Selected: gold solido + texto blanco. Event dots bajo el numero.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       8. EventForm
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventForm</h2>
+      <span class="ref-subtitle">Formulario de crear/editar evento con contribution slots</span>
+      <span class="ref-import">import { EventForm } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Crear evento</div>
+      <div style="max-width: 440px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 20px;">
+
+        <!-- Contribution slot: before -->
+        <div style="border: 1px dashed var(--border-md); border-radius: 4px; padding: 6px 10px; margin-bottom: 14px; font-size: 10px; color: var(--ink-4);">
+          renderBeforeFields / contribution slot
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Titulo *</label>
+          <input class="form-input" placeholder="Titulo del evento" value="Vacunacion — Mia" />
+        </div>
+
+        <div class="form-row" style="margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Fecha *</label>
+            <input class="form-input" type="date" value="2026-04-09" />
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Inicio</label>
+            <input class="form-input" value="09:00" />
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Fin</label>
+            <input class="form-input" value="09:30" />
+          </div>
+        </div>
+
+        <div class="form-switch">
+          <div class="form-switch-track"><div class="form-switch-thumb"></div></div>
+          <span class="form-label">Todo el dia</span>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Calendario</label>
+            <select class="form-select"><option>General</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Tipo</label>
+            <select class="form-select"><option>Consulta</option></select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select"><option>Agendado</option><option>Confirmado</option><option>Completado</option><option>Cancelado</option></select>
+        </div>
+
+        <!-- Contribution slot: entity -->
+        <div style="border: 1px dashed var(--border-md); border-radius: 4px; padding: 6px 10px; margin-bottom: 14px; font-size: 10px; color: var(--ink-4);">
+          renderEntitySection / contribution slot (ej: PetPicker, StaffPicker)
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripcion</label>
+          <textarea class="form-input form-textarea" placeholder="Descripcion del evento"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ubicacion</label>
+          <input class="form-input" placeholder="Ubicacion" value="Consultorio 2" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div class="color-picker">
+            <div class="color-swatch selected" style="background: var(--gold);"></div>
+            <div class="color-swatch" style="background: var(--teal-dk);"></div>
+            <div class="color-swatch" style="background: var(--green);"></div>
+            <div class="color-swatch" style="background: var(--red);"></div>
+            <div class="color-swatch" style="background: var(--ink-4);"></div>
+          </div>
+        </div>
+
+        <!-- Contribution slot: after -->
+        <div style="border: 1px dashed var(--border-md); border-radius: 4px; padding: 6px 10px; margin-bottom: 14px; font-size: 10px; color: var(--ink-4);">
+          renderAfterFields / contribution slot
+        </div>
+
+        <div class="form-actions">
+          <button class="cta-btn cta-btn-primary" style="flex: 1;">Crear evento</button>
+          <button class="cta-btn cta-btn-outline">Cancelar</button>
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Props:</strong> eventId (edit mode), defaults, hiddenFields, hiddenSections, calendarOptions, eventTypeOptions, renderBeforeFields, renderAfterFields, renderEntitySection, renderFooter, onSuccess, onCancel<br>
+        Contribution slots permiten que otros plugins inyecten campos (ej: appointments inyecta PetPicker + StaffPicker).
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       9. EventDetail
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventDetail</h2>
+      <span class="ref-subtitle">Vista detalle de un evento con contribution slots</span>
+      <span class="ref-import">import { EventDetail } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Desktop</div>
+      <div style="max-width: 460px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 20px;">
+        <div class="detail-header">
+          <div>
+            <div class="detail-title">Vacunacion — Mia</div>
+            <span class="ev-badge badge-scheduled" style="margin-top: 6px;">Agendado</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="cta-btn cta-btn-outline" style="padding: 5px 12px; font-size: 12px;">Editar</button>
+            <button class="cta-btn" style="padding: 5px 12px; font-size: 12px; background: var(--red-lt); color: var(--red); border: 1px solid rgba(200,66,58,0.2);">Eliminar</button>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div><div class="detail-field-label">Inicio</div><div class="detail-field-value">Mie 9 Abr, 09:00</div></div>
+          <div><div class="detail-field-label">Fin</div><div class="detail-field-value">Mie 9 Abr, 09:30</div></div>
+          <div>
+            <div class="detail-field-label">Ubicacion</div>
+            <div class="detail-field-value" style="display: flex; align-items: center; gap: 4px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;color:var(--ink-3);"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Consultorio 2
+            </div>
+          </div>
+          <div><div class="detail-field-label">Calendario</div><div class="detail-field-value">General</div></div>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <div class="detail-field-label">Descripcion</div>
+          <div class="detail-field-value">Triple felina + desparasitacion interna</div>
+        </div>
+
+        <!-- Contribution slot: entity-info -->
+        <div style="border: 1px dashed var(--border-md); border-radius: 4px; padding: 8px 10px; margin-bottom: 10px; font-size: 10px; color: var(--ink-4);">
+          renderEntityInfo / contribution: entity-info (ej: datos del paciente, staff asignado)
+        </div>
+
+        <!-- Contribution slot: sections -->
+        <div style="border: 1px dashed var(--border-md); border-radius: 4px; padding: 8px 10px; font-size: 10px; color: var(--ink-4);">
+          renderSections / contribution: sections (ej: historial de cambios, notas internas)
+        </div>
+      </div>
+      <div class="ref-note">
+        <strong>Props:</strong> eventId, renderEntityInfo, renderSections, renderActions, onEdit, onDelete<br>
+        Grid 2 columnas para campos. Contribution slots para info de entidad y secciones extra.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       10. EventPicker
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">EventPicker</h2>
+      <span class="ref-subtitle">Combobox de busqueda para seleccionar un evento</span>
+      <span class="ref-import">import { EventPicker } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Estados</div>
+      <div class="ref-compare" style="gap: 20px;">
+        <!-- Vacio -->
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Sin seleccion</span>
+          <div class="picker-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Buscar evento...</span>
+          </div>
+        </div>
+        <!-- Con seleccion -->
+        <div class="ref-compare-col">
+          <span class="ref-compare-label">Evento seleccionado</span>
+          <div class="picker-chip">
+            <div class="ev-dot ev-dot-gold" style="margin-top: 0;"></div>
+            Vacunacion — Mia
+            <button class="picker-chip-x">x</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dropdown abierto -->
+      <div style="margin-top: 16px;">
+        <span class="ref-compare-label" style="display: block; margin-bottom: 6px;">Dropdown de busqueda</span>
+        <div class="picker-dropdown">
+          <div class="picker-search"><input placeholder="Buscar evento..." value="vac" /></div>
+          <div class="picker-item">
+            <div class="ev-dot ev-dot-gold" style="margin-top: 0;"></div>
+            <div><div class="picker-item-title">Vacunacion — Mia</div><div class="picker-item-sub">Mie 9 Abr, 09:00</div></div>
+          </div>
+          <div class="picker-item">
+            <div class="ev-dot ev-dot-teal" style="margin-top: 0;"></div>
+            <div><div class="picker-item-title">Vacunacion — Rocky</div><div class="picker-item-sub">Jue 10 Abr, 14:00</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ref-note">
+        <strong>Props:</strong> value, onChange, filters, placeholder, disabled<br>
+        Usa UI.Combobox del core. Debounce 200ms. Seleccionado se muestra como chip con "x".
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       11. CalendarBadge
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">CalendarBadge</h2>
+      <span class="ref-subtitle">Badge con conteo de eventos</span>
+      <span class="ref-import">import { CalendarBadge } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Variantes</div>
+      <div class="ref-row" style="gap: 12px;">
+        <div class="cell-wrap">
+          <span class="cal-badge"><span class="cal-badge-dot" style="background: var(--gold);"></span> 3 turnos</span>
+          <span class="state-label">Gold</span>
+        </div>
+        <div class="cell-wrap">
+          <span class="cal-badge">5 eventos</span>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="cell-wrap">
+          <span class="cal-badge" style="border-color: var(--teal-dk); color: var(--teal-dk);"><span class="cal-badge-dot" style="background: var(--teal-dk);"></span> 2 consultas</span>
+          <span class="state-label">Teal</span>
+        </div>
+        <div class="cell-wrap">
+          <span class="cal-badge" style="border-color: var(--red); color: var(--red);"><span class="cal-badge-dot" style="background: var(--red);"></span> 1 urgencia</span>
+          <span class="state-label">Red</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       12. ColorPicker
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">ColorPicker</h2>
+      <span class="ref-subtitle">Selector de color para eventos y calendarios</span>
+      <span class="ref-import">import { ColorPicker } from '@coongro/calendar'</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Paleta semantica Coongro</div>
+      <div class="color-picker">
+        <div class="color-swatch selected" style="background: var(--gold);"></div>
+        <div class="color-swatch" style="background: var(--teal-dk);"></div>
+        <div class="color-swatch" style="background: var(--green);"></div>
+        <div class="color-swatch" style="background: var(--red);"></div>
+        <div class="color-swatch" style="background: var(--ink-4);"></div>
+        <div class="color-swatch" style="background: #3B82F6;"></div>
+        <div class="color-swatch" style="background: #7C3AED;"></div>
+        <div class="color-swatch" style="background: #EC4899;"></div>
+      </div>
+      <div class="ref-note">
+        Selected: borde ink 2px. Primeros 5 = paleta semantica Coongro. Extras opcionales para personalizacion.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       13. CalendarSkeleton
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">CalendarSkeleton</h2>
+      <span class="ref-subtitle">Skeletons para cada vista del calendario (loading state)</span>
+    </div>
+
+    <!-- MonthGrid skeleton -->
+    <div class="ref-section">
+      <div class="ref-label">MonthGrid skeleton</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; max-width: 500px;">
+        <div class="month-grid">
+          <div class="month-dow">L</div><div class="month-dow">M</div><div class="month-dow">X</div>
+          <div class="month-dow">J</div><div class="month-dow">V</div><div class="month-dow">S</div><div class="month-dow">D</div>
+        </div>
+        <div class="month-grid">
+          <div class="month-cell" style="min-height: 50px;"><div class="skeleton" style="width: 16px; height: 12px; margin-bottom: 6px;"></div><div class="skeleton" style="height: 10px; width: 80%;"></div></div>
+          <div class="month-cell" style="min-height: 50px;"><div class="skeleton" style="width: 16px; height: 12px; margin-bottom: 6px;"></div></div>
+          <div class="month-cell" style="min-height: 50px;"><div class="skeleton" style="width: 16px; height: 12px; margin-bottom: 6px;"></div><div class="skeleton" style="height: 10px; width: 70%; margin-bottom: 3px;"></div><div class="skeleton" style="height: 10px; width: 50%;"></div></div>
+          <div class="month-cell" style="min-height: 50px;"><div class="skeleton" style="width: 16px; height: 12px; margin-bottom: 6px;"></div></div>
+          <div class="month-cell" style="min-height: 50px;"><div class="skeleton" style="width: 16px; height: 12px; margin-bottom: 6px;"></div><div class="skeleton" style="height: 10px; width: 60%;"></div></div>
+          <div class="month-cell" style="min-height: 50px;"><div class="skeleton" style="width: 16px; height: 12px;"></div></div>
+          <div class="month-cell" style="min-height: 50px;"><div class="skeleton" style="width: 16px; height: 12px;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AgendaList skeleton -->
+    <div class="ref-section">
+      <div class="ref-label">AgendaList skeleton</div>
+      <div style="max-width: 500px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; width: 40px;">
+            <div class="skeleton" style="width: 20px; height: 8px;"></div>
+            <div class="skeleton" style="width: 28px; height: 28px; border-radius: 50%;"></div>
+          </div>
+          <div class="skeleton" style="width: 60px; height: 10px;"></div>
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          <div class="skeleton" style="width: 50px; height: 10px;"></div>
+        </div>
+        <div style="padding-left: 50px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);">
+            <div class="skeleton" style="width: 8px; height: 8px; border-radius: 50%;"></div>
+            <div class="skeleton" style="width: 70px; height: 10px;"></div>
+            <div style="flex: 1;"><div class="skeleton" style="height: 12px; width: 60%;"></div></div>
+            <div class="skeleton" style="width: 50px; height: 16px; border-radius: 10px;"></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--r-sm);">
+            <div class="skeleton" style="width: 8px; height: 8px; border-radius: 50%;"></div>
+            <div class="skeleton" style="width: 70px; height: 10px;"></div>
+            <div style="flex: 1;"><div class="skeleton" style="height: 12px; width: 45%;"></div></div>
+            <div class="skeleton" style="width: 50px; height: 16px; border-radius: 10px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WeekGrid skeleton -->
+    <div class="ref-section">
+      <div class="ref-label">WeekGrid skeleton</div>
+      <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; max-width: 500px; height: 180px;">
+        <!-- Time gutter -->
+        <div style="width: 40px; border-right: 1px solid var(--border); padding-top: 30px;">
+          <div style="height: 40px; font-size: 9px; color: var(--ink-4); text-align: right; padding-right: 4px;">08:00</div>
+          <div style="height: 40px; font-size: 9px; color: var(--ink-4); text-align: right; padding-right: 4px;">09:00</div>
+          <div style="height: 40px; font-size: 9px; color: var(--ink-4); text-align: right; padding-right: 4px;">10:00</div>
+        </div>
+        <!-- Day columns -->
+        <div style="flex: 1; display: flex;">
+          <div style="flex: 1; border-right: 1px solid var(--border);">
+            <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+              <div class="skeleton" style="width: 16px; height: 6px;"></div><div class="skeleton" style="width: 12px; height: 10px;"></div>
+            </div>
+            <div style="position: relative; height: 150px;">
+              <div class="skeleton" style="position: absolute; top: 20px; left: 2px; right: 2px; height: 35px;"></div>
+            </div>
+          </div>
+          <div style="flex: 1; border-right: 1px solid var(--border);">
+            <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+              <div class="skeleton" style="width: 16px; height: 6px;"></div><div class="skeleton" style="width: 12px; height: 10px;"></div>
+            </div>
+            <div style="position: relative; height: 150px;">
+              <div class="skeleton" style="position: absolute; top: 50px; left: 2px; right: 2px; height: 60px;"></div>
+            </div>
+          </div>
+          <div style="flex: 1;">
+            <div style="height: 30px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">
+              <div class="skeleton" style="width: 16px; height: 6px;"></div><div class="skeleton" style="width: 12px; height: 10px;"></div>
+            </div>
+            <div style="position: relative; height: 150px;">
+              <div class="skeleton" style="position: absolute; top: 10px; left: 2px; right: 2px; height: 45px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       14. Uso en contexto
+       ============================================================ -->
+  <div class="ref-card">
+    <div class="ref-header">
+      <h2 class="ref-title">Uso en contexto</h2>
+      <span class="ref-subtitle">Como los plugins consumen estos componentes</span>
+    </div>
+    <div class="ref-section">
+      <div class="ref-label">Dashboard veterinaria — combinando componentes</div>
+      <div style="border: 1px solid var(--border); border-radius: var(--r-xl); background: var(--surface); overflow: hidden; width: 340px;">
+        <div style="padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-family: var(--font-serif); font-weight: 700; font-size: 15px;">Turnos de hoy</span>
+            <span class="cal-badge" style="border-color: var(--gold); color: #8A6800;"><span class="cal-badge-dot" style="background: var(--gold);"></span> 3</span>
+          </div>
+          <button class="cta-btn cta-btn-primary" style="padding: 5px 12px; font-size: 12px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px;"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo
+          </button>
+        </div>
+        <div style="padding: 4px 6px;">
+          <div class="ev-card"><div class="ev-dot ev-dot-gold"></div><div class="ev-info"><div class="ev-title">Vacunacion — Mia (Labrador)</div><div class="ev-meta">09:00 - Dra. Martinez</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+          <div class="ev-card"><div class="ev-dot ev-dot-teal"></div><div class="ev-info"><div class="ev-title">Castracion — Rocky (Golden)</div><div class="ev-meta">10:30 - Dr. Lopez</div></div><span class="ev-badge badge-confirmed">Confirmado</span></div>
+          <div class="ev-card"><div class="ev-dot ev-dot-green"></div><div class="ev-info"><div class="ev-title">Control post-op — Luna (Siames)</div><div class="ev-meta">14:00 - Dra. Martinez</div></div><span class="ev-badge badge-scheduled">Agendado</span></div>
+        </div>
+      </div>
+      <div class="ref-note">
+        Combina CalendarBadge (header) + boton custom del plugin (header) + EventCard (body).<br>
+        El plugin importa componentes de lectura del calendar y maneja su propia logica de creacion.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

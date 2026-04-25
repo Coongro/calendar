@@ -1,6 +1,6 @@
 {
   "id": "calendar",
-  "version": "0.2.0",
+  "version": "0.7.0",
   "apiVersion": "2.0",
   "assets": {
     "styles": [
@@ -26,6 +26,68 @@
         "export": "EventRepository",
         "prefix": "calendar.events"
       }
-    ]
+    ],
+    "settings": {
+      "sections": [
+        {
+          "id": "calendar.selector-de-hora",
+          "page": "calendar.general",
+          "label": "Selector de hora",
+          "order": 30,
+          "items": [
+            {
+              "key": "calendar.timePicker.minuteStep",
+              "type": "enum",
+              "label": "Intervalo de minutos",
+              "description": "Precisión del selector de minutos en hora exacta",
+              "default": "5",
+              "options": [
+                "1",
+                "5",
+                "10",
+                "15"
+              ],
+              "tags": [
+                "calendar",
+                "timepicker",
+                "minutestep",
+                "intervalo",
+                "minutos"
+              ]
+            },
+            {
+              "key": "calendar.timePicker.use24Hour",
+              "type": "boolean",
+              "label": "Formato 24 horas",
+              "description": "Usar formato 24h (14:00) en vez de 12h (2:00 PM)",
+              "default": true,
+              "tags": [
+                "calendar",
+                "timepicker",
+                "use24hour",
+                "formato",
+                "horas"
+              ]
+            }
+          ]
+        }
+      ],
+      "groups": [
+        {
+          "id": "calendar",
+          "label": "Calendario",
+          "order": 50
+        }
+      ],
+      "pages": [
+        {
+          "id": "calendar.general",
+          "group": "calendar",
+          "label": "General",
+          "icon": "assets/icons/calendar.svg",
+          "order": 10
+        }
+      ]
+    }
   }
 }

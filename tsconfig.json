@@ -30,6 +30,9 @@
       ],
       "@coongro/plugin-sdk/*": [
         "../../packages/plugin-sdk/dist/*"
+      ],
+      "@coongro/datetime": [
+        "../../packages/datetime/dist/index.d.ts"
       ]
     }
   },

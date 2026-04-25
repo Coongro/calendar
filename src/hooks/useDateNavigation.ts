@@ -1,3 +1,4 @@
+import { addDays, getDayRange } from '@coongro/datetime';
 import { getHostReact } from '@coongro/plugin-sdk';
 
 import type { CalendarViewMode } from '../types/components.js';
@@ -10,6 +11,8 @@ import {
   getMonthName,
 } from '../utils/date.js';
 
+import { useTenantTimezone } from './useTenantTimezone.js';
+
 const React = getHostReact();
 const { useState, useCallback, useMemo } = React;
 
@@ -21,85 +24,84 @@ export interface UseDateNavigationResult {
   goNext: () => void;
   goPrev: () => void;
   goToDate: (date: Date) => void;
-  rangeStart: string;
-  rangeEnd: string;
+  rangeStart: Date;
+  rangeEnd: Date;
   title: string;
 }
 
 export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDateNavigationResult {
+  const tz = useTenantTimezone();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<CalendarViewMode>(initialView);
 
   const goToToday = useCallback(() => setCurrentDate(new Date()), []);
   const goToDate = useCallback((date: Date) => setCurrentDate(date), []);
 
-  const goNext = useCallback(() => {
-    setCurrentDate((prev) => {
-      const d = new Date(prev);
-      switch (view) {
-        case 'day':
-          d.setDate(d.getDate() + 1);
-          break;
-        case 'week':
-          d.setDate(d.getDate() + 7);
-          break;
-        case 'month':
-        case 'agenda':
-          d.setMonth(d.getMonth() + 1);
-          break;
-      }
-      return d;
-    });
-  }, [view]);
+  const navigate = useCallback(
+    (direction: 1 | -1) => {
+      setCurrentDate((prev) => {
+        const d = new Date(prev);
+        switch (view) {
+          case 'day':
+            d.setDate(d.getDate() + direction);
+            break;
+          case 'three-day':
+            d.setDate(d.getDate() + 3 * direction);
+            break;
+          case 'week':
+            d.setDate(d.getDate() + 7 * direction);
+            break;
+          case 'month':
+          case 'agenda':
+            d.setMonth(d.getMonth() + direction);
+            break;
+        }
+        return d;
+      });
+    },
+    [view]
+  );
 
-  const goPrev = useCallback(() => {
-    setCurrentDate((prev) => {
-      const d = new Date(prev);
-      switch (view) {
-        case 'day':
-          d.setDate(d.getDate() - 1);
-          break;
-        case 'week':
-          d.setDate(d.getDate() - 7);
-          break;
-        case 'month':
-        case 'agenda':
-          d.setMonth(d.getMonth() - 1);
-          break;
-      }
-      return d;
-    });
-  }, [view]);
+  const goNext = useCallback(() => navigate(1), [navigate]);
+  const goPrev = useCallback(() => navigate(-1), [navigate]);
 
   const { rangeStart, rangeEnd } = useMemo(() => {
     switch (view) {
       case 'day': {
-        const dateStr = toDateString(currentDate);
+        const dk = toDateString(currentDate);
+        const r = getDayRange(dk, tz);
+        return { rangeStart: r.startUTC, rangeEnd: r.endUTC };
+      }
+      case 'three-day': {
+        const dkStart = toDateString(currentDate);
+        const dkEnd = addDays(dkStart, 2);
         return {
-          rangeStart: new Date(`${dateStr}T00:00:00`).toISOString(),
-          rangeEnd: new Date(`${dateStr}T23:59:59.999`).toISOString(),
+          rangeStart: getDayRange(dkStart, tz).startUTC,
+          rangeEnd: getDayRange(dkEnd, tz).endUTC,
         };
       }
       case 'week': {
-        const ws = getWeekStart(currentDate);
-        const we = getWeekEnd(currentDate);
+        const dkStart = toDateString(getWeekStart(currentDate));
+        const dkEnd = toDateString(getWeekEnd(currentDate));
         return {
-          rangeStart: ws.toISOString(),
-          rangeEnd: we.toISOString(),
+          rangeStart: getDayRange(dkStart, tz).startUTC,
+          rangeEnd: getDayRange(dkEnd, tz).endUTC,
         };
       }
       case 'month':
       case 'agenda':
       default: {
-        const ms = getMonthStart(currentDate.getFullYear(), currentDate.getMonth());
-        const me = getMonthEnd(currentDate.getFullYear(), currentDate.getMonth());
+        const dkStart = toDateString(
+          getMonthStart(currentDate.getFullYear(), currentDate.getMonth())
+        );
+        const dkEnd = toDateString(getMonthEnd(currentDate.getFullYear(), currentDate.getMonth()));
         return {
-          rangeStart: ms.toISOString(),
-          rangeEnd: me.toISOString(),
+          rangeStart: getDayRange(dkStart, tz).startUTC,
+          rangeEnd: getDayRange(dkEnd, tz).endUTC,
         };
       }
     }
-  }, [currentDate, view]);
+  }, [currentDate, view, tz]);
 
   const title = useMemo(() => {
     const y = currentDate.getFullYear();
@@ -107,6 +109,14 @@ export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDa
     switch (view) {
       case 'day':
         return `${currentDate.getDate()} ${m} ${y}`;
+      case 'three-day': {
+        const tdEnd = new Date(currentDate);
+        tdEnd.setDate(tdEnd.getDate() + 2);
+        if (currentDate.getMonth() === tdEnd.getMonth()) {
+          return `${currentDate.getDate()} – ${tdEnd.getDate()} ${m} ${y}`;
+        }
+        return `${currentDate.getDate()} ${getMonthName(currentDate.getMonth())} – ${tdEnd.getDate()} ${getMonthName(tdEnd.getMonth())} ${y}`;
+      }
       case 'week': {
         const ws = getWeekStart(currentDate);
         const we = getWeekEnd(currentDate);
