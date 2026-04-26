@@ -143,12 +143,14 @@ export function EventDetail({
           React.createElement(
             UI.Button,
             { variant: 'outline', size: 'sm', onClick: () => onEdit(event) },
+            React.createElement(UI.DynamicIcon, { icon: 'Pencil', size: 14 }),
             'Editar'
           ),
         onDelete &&
           React.createElement(
             UI.Button,
             { variant: 'destructive', size: 'sm', onClick: () => onDelete(event) },
+            React.createElement(UI.DynamicIcon, { icon: 'Trash2', size: 14 }),
             'Eliminar'
           ),
         ...actionSlots.map((s, i) =>
@@ -227,6 +229,26 @@ export function EventDetail({
         )
       : renderSections
         ? [renderSections()]
-        : [])
+        : []),
+
+    // Metadata
+    React.createElement(
+      UI.Card,
+      { className: 'p-4 w-fit' },
+      React.createElement(
+        'div',
+        { className: 'flex flex-col gap-1 text-xs text-cg-text-muted' },
+        React.createElement(
+          'span',
+          null,
+          `Creado: ${new Date(event.created_at).toLocaleDateString('es-AR')}`
+        ),
+        React.createElement(
+          'span',
+          null,
+          `Actualizado: ${new Date(event.updated_at).toLocaleDateString('es-AR')}`
+        )
+      )
+    )
   );
 }
