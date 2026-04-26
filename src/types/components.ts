@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 import type { CalendarGroup } from './calendar.js';
 import type { EventType } from './event-type.js';
@@ -117,6 +117,12 @@ export interface EventFormProps {
   onSuccess?: (event: CalendarEvent) => void;
   onCancel?: () => void;
   className?: string;
+  /** Ref al elemento <form>. El caller puede disparar submit con `formRef.current?.requestSubmit()` */
+  formRef?: Ref<HTMLFormElement>;
+  /** Si es true, el form no renderiza sus propios botones (los pone el caller en el footer del dialog) */
+  hideActions?: boolean;
+  /** Notifica al caller cuando cambia el estado de guardado */
+  onSavingChange?: (saving: boolean) => void;
 }
 
 export interface FieldDef {

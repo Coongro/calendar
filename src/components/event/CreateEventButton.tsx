@@ -15,26 +15,30 @@ export function CreateEventButton({
   className = '',
 }: CreateEventButtonProps) {
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   return React.createElement(
     React.Fragment,
     null,
     React.createElement(UI.Button, { onClick: () => setOpen(true), className }, label),
-    React.createElement(
-      UI.FormDialog,
-      {
-        open,
-        onOpenChange: setOpen,
-        title: 'Crear evento',
-      },
-      React.createElement(EventForm, {
-        defaults,
-        onSuccess: (event) => {
-          setOpen(false);
-          onSuccess?.(event);
-        },
-        onCancel: () => setOpen(false),
-      })
-    )
+    React.createElement(UI.FormDialogSubmit, {
+      open,
+      onOpenChange: setOpen,
+      title: 'Crear evento',
+      submitLabel: 'Crear evento',
+      onCancel: () => setOpen(false),
+      disabled: saving,
+      children: ({ formRef }: { formRef: React.RefObject<HTMLFormElement> }) =>
+        React.createElement(EventForm, {
+          defaults,
+          formRef,
+          hideActions: true,
+          onSavingChange: setSaving,
+          onSuccess: (event) => {
+            setOpen(false);
+            onSuccess?.(event);
+          },
+        }),
+    })
   );
 }
