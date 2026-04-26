@@ -29,7 +29,8 @@ export const eventTable = pgTable('module_calendar_events', {
     .default(sql`now()`),
   updated_at: timestamp('updated_at', { mode: 'date', withTimezone: true })
     .notNull()
-    .default(sql`now()`),
+    .default(sql`now()`)
+    .$onUpdate(() => new Date()),
 });
 
 export type EventRow = typeof eventTable.$inferSelect;

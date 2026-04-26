@@ -51,6 +51,9 @@ export function EventForm({
   onSuccess,
   onCancel,
   className = '',
+  formRef,
+  hideActions,
+  onSavingChange,
 }: EventFormProps) {
   const isMobile = useIsMobile();
   const tz = useTenantTimezone();
@@ -71,6 +74,10 @@ export function EventForm({
   const { sections: actionSections } = useViewContributions('calendar.event-form.actions');
 
   const isSaving = creating || updating;
+
+  useEffect(() => {
+    onSavingChange?.(isSaving);
+  }, [isSaving, onSavingChange]);
 
   const defaultStart = nowUTC();
   const defaultEnd = addMinutes(defaultStart, settings.defaultDuration);
@@ -143,31 +150,12 @@ export function EventForm({
   const startTime = startAt ? formatLocalTime(startAt, tz) : '';
   const endTime = endAt ? formatLocalTime(endAt, tz) : '';
 
-  return React.createElement(
-    'form',
-    {
-      onSubmit: handleSubmit,
-      className,
-      style: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.25rem',
-      },
-    },
+  // ── Contenido de cada FormSection (campos originales, sin Card propio) ──
 
-    // Contribuciones before
-    ...(beforeSections.length > 0
-      ? beforeSections.map((s, i) =>
-          React.createElement(React.Fragment, { key: `before-${String(i)}` }, s.render() as any)
-        )
-      : renderBeforeFields
-        ? [renderBeforeFields()]
-        : []),
-
-    // Titulo
+  const detallesContent = [
     React.createElement(
       'div',
-      { style: FIELD_STYLE },
+      { key: 'title', style: FIELD_STYLE },
       React.createElement(UI.Label, null, 'Título *'),
       React.createElement(UI.Input, {
         value: (formData.title as string) ?? '',
@@ -176,11 +164,30 @@ export function EventForm({
         required: true,
       })
     ),
+    !isFieldHidden('description', hiddenFields) &&
+      React.createElement(
+        'div',
+        { key: 'description', style: FIELD_STYLE },
+        React.createElement(
+          UI.Label,
+          null,
+          `Descripción${settings.requireDescription ? ' *' : ''}`
+        ),
+        React.createElement(UI.Textarea, {
+          value: (formData.description as string) ?? '',
+          onChange: (e: { target: { value: string } }) =>
+            handleChange('description', e.target.value),
+          placeholder: 'Descripción del evento',
+          rows: 3,
+        })
+      ),
+  ].filter(Boolean);
 
-    // Fecha y hora
+  const fechaContent = [
     React.createElement(
       'div',
       {
+        key: 'datetime-grid',
         style: {
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
@@ -233,16 +240,11 @@ export function EventForm({
           })
         )
     ),
-
-    // Todo el dia
     React.createElement(
       'div',
       {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-        },
+        key: 'all-day',
+        style: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
       },
       React.createElement(UI.Switch, {
         checked: (formData.all_day as boolean) ?? false,
@@ -250,11 +252,13 @@ export function EventForm({
       }),
       React.createElement(UI.Label, null, 'Todo el día')
     ),
+  ];
 
-    // Calendario + Tipo
+  const categorizacionContent = [
     React.createElement(
       'div',
       {
+        key: 'cal-type-grid',
         style: {
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
@@ -294,11 +298,9 @@ export function EventForm({
         )
       )
     ),
-
-    // Status
     React.createElement(
       'div',
-      { style: FIELD_STYLE },
+      { key: 'status', style: FIELD_STYLE },
       React.createElement(UI.Label, null, 'Estado'),
       React.createElement(
         UI.Select,
@@ -311,6 +313,80 @@ export function EventForm({
         )
       )
     ),
+  ];
+
+  const adicionalContent = [
+    !isFieldHidden('location', hiddenFields) &&
+      React.createElement(
+        'div',
+        { key: 'location', style: FIELD_STYLE },
+        React.createElement(UI.Label, null, 'Ubicación'),
+        React.createElement(UI.Input, {
+          value: (formData.location as string) ?? '',
+          onChange: (e: { target: { value: string } }) => handleChange('location', e.target.value),
+          placeholder: 'Ubicación',
+        })
+      ),
+    !isFieldHidden('notes', hiddenFields) &&
+      settings.showNotes &&
+      React.createElement(
+        'div',
+        { key: 'notes', style: FIELD_STYLE },
+        React.createElement(UI.Label, null, 'Notas'),
+        React.createElement(UI.Textarea, {
+          value: (formData.notes as string) ?? '',
+          onChange: (e: { target: { value: string } }) => handleChange('notes', e.target.value),
+          placeholder: 'Notas internas',
+          rows: 2,
+        })
+      ),
+    !isFieldHidden('color', hiddenFields) &&
+      settings.showColorPicker &&
+      React.createElement(
+        'div',
+        { key: 'color', style: FIELD_STYLE },
+        React.createElement(UI.Label, null, 'Color'),
+        React.createElement(ColorPicker, {
+          value: (formData.color as string) ?? '',
+          onChange: (color: string) => handleChange('color', color),
+        })
+      ),
+  ].filter(Boolean);
+
+  return React.createElement(
+    'form',
+    {
+      ref: formRef,
+      onSubmit: handleSubmit,
+      className,
+      style: { display: 'flex', flexDirection: 'column', gap: '1rem' },
+    },
+
+    // Contribuciones before
+    ...(beforeSections.length > 0
+      ? beforeSections.map((s, i) =>
+          React.createElement(React.Fragment, { key: `before-${String(i)}` }, s.render() as any)
+        )
+      : renderBeforeFields
+        ? [renderBeforeFields()]
+        : []),
+
+    // Detalles
+    React.createElement(
+      UI.FormSection,
+      { icon: 'FileText', title: 'Detalles' },
+      ...detallesContent
+    ),
+
+    // Fecha y hora
+    React.createElement(UI.FormSection, { icon: 'Clock', title: 'Fecha y hora' }, ...fechaContent),
+
+    // Categorización
+    React.createElement(
+      UI.FormSection,
+      { icon: 'Tag', title: 'Categorización' },
+      ...categorizacionContent
+    ),
 
     // Entity section (contribution slot)
     ...(entitySections.length > 0
@@ -321,64 +397,12 @@ export function EventForm({
         ? [renderEntitySection()]
         : []),
 
-    // Descripcion
-    !isFieldHidden('description', hiddenFields) &&
+    // Información adicional (solo si hay al menos un campo visible)
+    adicionalContent.length > 0 &&
       React.createElement(
-        'div',
-        { style: FIELD_STYLE },
-        React.createElement(
-          UI.Label,
-          null,
-          `Descripción${settings.requireDescription ? ' *' : ''}`
-        ),
-        React.createElement(UI.Textarea, {
-          value: (formData.description as string) ?? '',
-          onChange: (e: { target: { value: string } }) =>
-            handleChange('description', e.target.value),
-          placeholder: 'Descripción del evento',
-          rows: 3,
-        })
-      ),
-
-    // Ubicacion
-    !isFieldHidden('location', hiddenFields) &&
-      React.createElement(
-        'div',
-        { style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Ubicación'),
-        React.createElement(UI.Input, {
-          value: (formData.location as string) ?? '',
-          onChange: (e: { target: { value: string } }) => handleChange('location', e.target.value),
-          placeholder: 'Ubicación',
-        })
-      ),
-
-    // Notas
-    !isFieldHidden('notes', hiddenFields) &&
-      settings.showNotes &&
-      React.createElement(
-        'div',
-        { style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Notas'),
-        React.createElement(UI.Textarea, {
-          value: (formData.notes as string) ?? '',
-          onChange: (e: { target: { value: string } }) => handleChange('notes', e.target.value),
-          placeholder: 'Notas internas',
-          rows: 2,
-        })
-      ),
-
-    // Color
-    !isFieldHidden('color', hiddenFields) &&
-      settings.showColorPicker &&
-      React.createElement(
-        'div',
-        { style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Color'),
-        React.createElement(ColorPicker, {
-          value: (formData.color as string) ?? '',
-          onChange: (color: string) => handleChange('color', color),
-        })
+        UI.FormSection,
+        { icon: 'Settings', title: 'Información adicional' },
+        ...adicionalContent
       ),
 
     // Contribuciones after
@@ -390,34 +414,34 @@ export function EventForm({
         ? [renderAfterFields()]
         : []),
 
-    // Botones
+    // Botones (renderFooter override prioriza, sino default si !hideActions)
     renderFooter
       ? renderFooter()
-      : React.createElement(
-          'div',
-          {
-            style: {
-              display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: '0.75rem',
-              paddingTop: '0.5rem',
-            },
-          },
+      : !hideActions &&
           React.createElement(
-            UI.Button,
-            { type: 'submit', disabled: isSaving, className: 'flex-1' },
-            isSaving ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear evento'
-          ),
-          onCancel &&
+            'div',
+            {
+              style: {
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: '0.75rem',
+                paddingTop: '0.5rem',
+              },
+            },
             React.createElement(
               UI.Button,
-              { type: 'button', variant: 'outline', onClick: onCancel },
-              'Cancelar'
+              { type: 'submit', disabled: isSaving, className: 'flex-1' },
+              isSaving ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear evento'
             ),
-          // Action contributions
-          ...actionSections.map((s, i) =>
-            React.createElement(React.Fragment, { key: `action-${String(i)}` }, s.render() as any)
+            onCancel &&
+              React.createElement(
+                UI.Button,
+                { type: 'button', variant: 'outline', onClick: onCancel },
+                'Cancelar'
+              ),
+            ...actionSections.map((s, i) =>
+              React.createElement(React.Fragment, { key: `action-${String(i)}` }, s.render() as any)
+            )
           )
-        )
   );
 }
