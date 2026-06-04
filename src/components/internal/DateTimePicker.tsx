@@ -110,6 +110,7 @@ export function DateTimePicker({
         placeholder,
         className: `cursor-pointer ${className}`,
         onClick: () => setOpen(true),
+        'data-cg-control': 'date',
       })
     ),
     React.createElement(
@@ -142,9 +143,18 @@ export function DateTimePicker({
           }),
           // Time bar (clickeable)
           React.createElement(
-            'div',
+            'button',
             {
+              type: 'button',
+              'aria-label': 'Elegir hora',
               style: {
+                // Resets para que el <button> mantenga la apariencia del <div> original
+                background: 'none',
+                border: 'none',
+                font: 'inherit',
+                color: 'inherit',
+                textAlign: 'left',
+                width: '100%',
                 padding: '10px 12px',
                 display: 'flex',
                 alignItems: 'center',

@@ -17,6 +17,7 @@ import type { ReactNode } from 'react';
 import { TOKENS } from '../../styles/tokens.js';
 import type { EventRenderContext } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
+import { clickableProps } from '../../utils/a11y.js';
 import { toDateString } from '../../utils/date.js';
 import { layoutOverlappingEvents, getColumnBox } from '../../utils/event-layout.js';
 import { EVENT_Z } from '../../utils/grid-constants.js';
@@ -104,22 +105,28 @@ export function DayColumnCore({
     null,
 
     // Filas horarias (fondo + onClick de slot vacio)
-    ...timeSlots.map((slot, i) =>
-      React.createElement('div', {
+    ...timeSlots.map((slot, i) => {
+      const activateSlot = onSlotClick
+        ? () => {
+            const [h, m] = slot.split(':').map(Number);
+            onSlotClick(date, h + m / 60);
+          }
+        : undefined;
+      return React.createElement('div', {
         key: `slot-${slot}`,
         style: {
           height: `${slotHeight}px`,
           borderBottom: resolveSlotBorder(i),
           cursor: onSlotClick ? 'pointer' : 'default',
         },
-        onClick: onSlotClick
-          ? () => {
-              const [h, m] = slot.split(':').map(Number);
-              onSlotClick(date, h + m / 60);
-            }
-          : undefined,
-      })
-    ),
+        onClick: activateSlot,
+        // Solo hacemos operable por teclado el slot si efectivamente es
+        // clickeable; un slot sin handler queda inerte (no tabbable).
+        ...(activateSlot
+          ? clickableProps(`Crear evento — ${date.substring(0, 10)} ${slot}`, activateSlot)
+          : {}),
+      });
+    }),
 
     // Linea "ahora"
     isToday && nowInRange && renderNowLine(nowTop),
@@ -147,6 +154,15 @@ export function DayColumnCore({
 
         const columnStyle = computeColumnStyle(slot.columnIndex, slot.columnCount, sidePadding);
 
+        // El click real lo maneja el EventCard / renderEvent interno; sumamos
+        // operabilidad por teclado en el wrapper (Enter/Espacio) sin tocar ese
+        // onClick. Solo si hay un handler de evento que disparar.
+        const eventA11y = onEventClick
+          ? clickableProps(`Evento: ${slot.event.title} — ${eventStartTime(slot.event)}`, () =>
+              onEventClick(slot.event)
+            )
+          : {};
+
         return React.createElement(
           'div',
           {
@@ -158,6 +174,7 @@ export function DayColumnCore({
               height: `${renderedHeight}px`,
               ...columnStyle,
             },
+            ...eventA11y,
           },
           renderEvent
             ? renderEvent(slot.event, { variant, height: renderedHeight })
@@ -212,6 +229,16 @@ export function DayColumnCore({
       );
     })
   );
+}
+
+/**
+ * Hora local "HH:MM" de inicio de un evento, para etiquetar el wrapper a11y.
+ * Usa la hora local (la misma base que el posicionamiento de la grilla), sin
+ * depender del tz del tenant que esta capa no recibe.
+ */
+function eventStartTime(event: CalendarEvent): string {
+  const d = new Date(event.start_at);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 /** Posicion horizontal (left/width) dentro de la columna del dia. */

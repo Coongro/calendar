@@ -72,6 +72,12 @@ export function ColorPicker({
           React.createElement('button', {
             key: color,
             type: 'button',
+            // Expone cada swatch a lectores de pantalla / copiloto IA: cual color
+            // es y si esta seleccionado, mas un hook estable (data-color) para
+            // leer/operar el control sin depender del estilo inline.
+            'aria-label': `Color ${color}`,
+            'aria-pressed': value === color,
+            'data-color': color,
             style: {
               width: '36px',
               height: '36px',

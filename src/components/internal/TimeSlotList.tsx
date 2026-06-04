@@ -295,6 +295,8 @@ export function TimeSlotList({
               type: 'button',
               style: currentValue === slot ? STYLES.slotActive : STYLES.slot,
               onClick: () => handleSlotClick(slot),
+              'data-time': slot,
+              'aria-label': formatSlot(slot, use24Hour),
             },
             formatSlot(slot, use24Hour)
           )
@@ -392,6 +394,8 @@ export function TimeSlotList({
                 type: 'button',
                 style: selectedHour === hour ? STYLES.cellActive : STYLES.cell,
                 onClick: () => handleHourClick(hour),
+                'data-hour': pad2(hour),
+                'aria-label': `Hora ${pad2(hour)}`,
               },
               use24Hour ? pad2(hour) : formatHour(hour, false)
             )
@@ -425,6 +429,8 @@ export function TimeSlotList({
                 type: 'button',
                 style: selectedMinute === minute ? STYLES.cellActive : STYLES.cell,
                 onClick: () => handleMinuteClick(minute),
+                'data-minute': pad2(minute),
+                'aria-label': `Minuto ${pad2(minute)}`,
               },
               pad2(minute)
             )

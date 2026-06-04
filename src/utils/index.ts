@@ -21,3 +21,5 @@ export {
 } from './date.js';
 export { parseRRule, toRRule, formatRecurrence } from './recurrence.js';
 export type { RecurrenceRule } from './recurrence.js';
+export { clickableProps } from './a11y.js';
+export type { ClickableProps } from './a11y.js';
