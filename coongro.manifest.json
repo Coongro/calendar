@@ -84,7 +84,7 @@
           "id": "calendar.general",
           "group": "calendar",
           "label": "General",
-          "icon": "assets/icons/calendar.svg",
+          "icon": "CalendarDays",
           "order": 10
         }
       ]
