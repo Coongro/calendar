@@ -40,6 +40,7 @@ export function TimePicker({
         placeholder: 'HH:MM',
         className: `cursor-pointer ${className}`,
         onClick: () => setOpen(true),
+        'data-cg-control': 'date',
       })
     ),
     React.createElement(

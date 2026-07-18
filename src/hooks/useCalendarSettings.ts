@@ -11,12 +11,8 @@ export interface CalendarSettings {
   defaultDuration: number;
   defaultStatus: string;
   showWeekends: boolean;
-  showCancelled: boolean;
-  showDescription: boolean;
   showNotes: boolean;
-  showTags: boolean;
   showColorPicker: boolean;
-  confirmOnDrag: boolean;
   minuteStep: number;
   use24Hour: boolean;
   requireDescription: boolean;
@@ -37,12 +33,8 @@ function parseSettings(raw: Record<string, unknown>): CalendarSettings {
     defaultDuration: get(S.DEFAULT_DURATION),
     defaultStatus: get(S.DEFAULT_STATUS),
     showWeekends: get(S.SHOW_WEEKENDS),
-    showCancelled: get(S.SHOW_CANCELLED),
-    showDescription: get(S.SHOW_DESCRIPTION),
     showNotes: get(S.SHOW_NOTES),
-    showTags: get(S.SHOW_TAGS),
     showColorPicker: get(S.SHOW_COLOR_PICKER),
-    confirmOnDrag: get(S.CONFIRM_ON_DRAG),
     minuteStep: Number(get(S.MINUTE_STEP)),
     use24Hour: get(S.USE_24_HOUR),
     requireDescription: get(S.REQUIRE_DESCRIPTION),

@@ -14,6 +14,7 @@ import { useEventMutations } from '../../hooks/useEventMutations.js';
 import { useEventTypes } from '../../hooks/useEventTypes.js';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
+import { TOKENS } from '../../styles/tokens.js';
 import type { EventFormProps } from '../../types/components.js';
 import type { EventCreateData } from '../../types/event.js';
 import { addMinutes } from '../../utils/date.js';
@@ -35,6 +36,12 @@ const FIELD_STYLE = {
   display: 'flex',
   flexDirection: 'column',
   gap: '0.375rem',
+} as const;
+
+// Estilo del mensaje de error inline bajo un campo requerido
+const ERROR_TEXT_STYLE = {
+  fontSize: '12px',
+  color: TOKENS.red,
 } as const;
 
 export function EventForm({
@@ -91,6 +98,9 @@ export function EventForm({
     ...defaults,
   });
 
+  // Errores de validacion por campo (key del campo → mensaje)
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (isEdit && event) {
       setFormData({
@@ -115,16 +125,54 @@ export function EventForm({
 
   const handleChange = useCallback((key: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+    // Limpia el error del campo apenas el usuario lo edita
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   }, []);
 
   const handleSubmit = useCallback(
     async (e: { preventDefault: () => void }) => {
       e.preventDefault();
+
+      // Valida los campos marcados como obligatorios via settings.
+      // Hasta ahora requireDescription/requireType solo pintaban el asterisco
+      // en el label pero dejaban guardar igual; aca se bloquea el submit.
+      const validationErrors: Record<string, string> = {};
+      if (
+        settings.requireDescription &&
+        !isFieldHidden('description', hiddenFields) &&
+        !(formData.description as string | undefined)?.trim()
+      ) {
+        validationErrors.description = 'La descripción es obligatoria';
+      }
+      if (settings.requireType && !(formData.event_type_id as string | undefined)?.trim()) {
+        validationErrors.event_type_id = 'El tipo es obligatorio';
+      }
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+      setErrors({});
+
       const data = formData as unknown as EventCreateData;
       const result = isEdit ? await update(eventId, data) : await create(data);
       if (result) onSuccess?.(result);
     },
-    [formData, isEdit, eventId, create, update, onSuccess]
+    [
+      formData,
+      isEdit,
+      eventId,
+      create,
+      update,
+      onSuccess,
+      settings.requireDescription,
+      settings.requireType,
+      hiddenFields,
+    ]
   );
 
   if (isEdit && loadingEvent) {
@@ -179,7 +227,9 @@ export function EventForm({
             handleChange('description', e.target.value),
           placeholder: 'Descripción del evento',
           rows: 3,
-        })
+        }),
+        errors.description &&
+          React.createElement('span', { style: ERROR_TEXT_STYLE }, errors.description)
       ),
   ].filter(Boolean);
 
@@ -295,7 +345,9 @@ export function EventForm({
           ...typeOpts.map((t) =>
             React.createElement(UI.SelectItem, { key: t.id, value: t.id }, t.name)
           )
-        )
+        ),
+        errors.event_type_id &&
+          React.createElement('span', { style: ERROR_TEXT_STYLE }, errors.event_type_id)
       )
     ),
     React.createElement(

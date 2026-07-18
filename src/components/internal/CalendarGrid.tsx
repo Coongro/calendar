@@ -177,14 +177,28 @@ export function CalendarGrid({
       },
       React.createElement(
         UI.Button,
-        { type: 'button', variant: 'ghost', size: 'sm', onClick: handlePrev },
+        {
+          type: 'button',
+          variant: 'ghost',
+          size: 'sm',
+          'aria-label': 'Mes anterior',
+          onClick: handlePrev,
+        },
         '‹'
       ),
       React.createElement(
-        'span',
+        'button',
         {
+          type: 'button',
+          'aria-label': 'Cambiar mes y año',
+          disabled: !canClickTitle,
           onClick: canClickTitle ? handleTitleClick : undefined,
           style: {
+            // Reset de estilos nativos de <button> para preservar la apariencia del <span> original
+            border: 'none',
+            background: 'transparent',
+            padding: 0,
+            font: 'inherit',
             fontSize: '12px',
             fontWeight: viewLevel !== 'days' ? '700' : '500',
             color: viewLevel !== 'days' ? TOKENS.gold : undefined,
@@ -203,7 +217,13 @@ export function CalendarGrid({
       ),
       React.createElement(
         UI.Button,
-        { type: 'button', variant: 'ghost', size: 'sm', onClick: handleNext },
+        {
+          type: 'button',
+          variant: 'ghost',
+          size: 'sm',
+          'aria-label': 'Mes siguiente',
+          onClick: handleNext,
+        },
         '›'
       )
     ),
@@ -264,12 +284,19 @@ export function CalendarGrid({
               stateStyle.opacity = '0.4';
             }
 
+            // Etiqueta legible para lectores de pantalla / copilotos: "15 de junio de 2026"
+            const ariaLabel = `${day.getDate()} de ${getMonthName(day.getMonth()).toLowerCase()} de ${day.getFullYear()}`;
+
             return React.createElement(
               'button',
               {
                 key: i,
                 type: 'button',
                 disabled,
+                'data-date': dateStr,
+                'aria-label': ariaLabel,
+                'aria-selected': isSelected,
+                'aria-disabled': disabled,
                 style: {
                   position: 'relative',
                   width: daySizePx,
@@ -324,6 +351,8 @@ export function CalendarGrid({
             {
               key: idx,
               type: 'button',
+              'data-month': idx,
+              'aria-selected': isActive,
               style: {
                 padding: '10px 0',
                 fontSize: '12px',
@@ -361,6 +390,8 @@ export function CalendarGrid({
             {
               key: year,
               type: 'button',
+              'data-year': year,
+              'aria-selected': isActive,
               style: {
                 padding: '10px 0',
                 fontSize: '12px',
