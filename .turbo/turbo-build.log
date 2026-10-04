@@ -1,10 +1,10 @@
 
-> @coongro/calendar@0.1.1 build A:\Coongro2\Coongro\plugins\calendar
+> @coongro/calendar@0.9.0 build A:\Coongro2\Coongro\plugins\calendar
 > npm run build:css && npm run copy:fontawesome && tsc
 
 npm warn config ignoring workspace config at A:\Coongro2\Coongro\plugins\calendar/.npmrc
 
-> @coongro/calendar@0.1.1 build:css
+> @coongro/calendar@0.9.0 build:css
 > tailwindcss -c tailwind.config.cjs -i ./src/styles/tailwind.css -o ./dist/assets/tailwind.css --minify
 
 Browserslist: caniuse-lite is outdated. Please run:
@@ -13,9 +13,9 @@ Browserslist: caniuse-lite is outdated. Please run:
 
 Rebuilding...
 
-Done in 864ms.
+Done in 1578ms.
 npm warn config ignoring workspace config at A:\Coongro2\Coongro\plugins\calendar/.npmrc
 
-> @coongro/calendar@0.1.1 copy:fontawesome
+> @coongro/calendar@0.9.0 copy:fontawesome
 > node scripts/copy-fontawesome.cjs
 

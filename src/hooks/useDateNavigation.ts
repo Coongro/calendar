@@ -29,9 +29,14 @@ export interface UseDateNavigationResult {
   title: string;
 }
 
-export function useDateNavigation(initialView: CalendarViewMode = 'week'): UseDateNavigationResult {
+export function useDateNavigation(
+  initialView: CalendarViewMode = 'week',
+  initialDate?: Date
+): UseDateNavigationResult {
   const tz = useTenantTimezone();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // Solo se usa en el primer render (lazy initializer); cambios posteriores de
+  // initialDate no re-posicionan el calendario — para eso está goToDate.
+  const [currentDate, setCurrentDate] = useState(() => initialDate ?? new Date());
   const [view, setView] = useState<CalendarViewMode>(initialView);
 
   const goToToday = useCallback(() => setCurrentDate(new Date()), []);
