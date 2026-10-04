@@ -10,6 +10,11 @@ import { formatStatus } from '../../utils/labels.js';
 const React = getHostReact();
 const UI = getHostUI();
 
+// Cada evento entra con fade + 6 px (solo con movimiento permitido).
+const ROW_ENTER = 'motion-safe:animate-cg-rise';
+// Fila que abre el evento: botón real (Tab, Enter y Espacio), hover, presionado y foco.
+const ROW_BUTTON = `${ROW_ENTER} w-full border-0 bg-transparent text-left cursor-pointer transition-colors duration-cg-fast ease-cg-standard hover:bg-cg-bg-hover active:bg-cg-bg-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cg-gold-deep`;
+
 function renderBadge(status: string) {
   return React.createElement('span', { style: statusBadgeStyle(status) }, formatStatus(status));
 }
@@ -58,16 +63,18 @@ export function UpcomingEvents({
     },
     data.map((evt) =>
       React.createElement(
-        'div',
+        // Con acción, la fila entera es un <button> (adentro no hay otros controles)
+        onEventClick ? 'button' : 'div',
         {
           key: evt.id,
+          type: onEventClick ? 'button' : undefined,
+          className: onEventClick ? ROW_BUTTON : ROW_ENTER,
           style: {
             display: 'flex',
             alignItems: 'flex-start',
             gap: '8px',
             padding: '8px 10px',
             borderRadius: TOKENS.rSm,
-            cursor: onEventClick ? 'pointer' : undefined,
           },
           onClick: onEventClick ? () => onEventClick(evt) : undefined,
         },
@@ -84,19 +91,19 @@ export function UpcomingEvents({
         }),
         // Info: titulo + meta
         React.createElement(
-          'div',
-          { style: { flex: 1, minWidth: 0 } },
+          'span',
+          { style: { display: 'block', flex: 1, minWidth: 0 } },
           React.createElement(
-            'div',
+            'span',
             {
-              style: { fontSize: '13px', fontWeight: 500, ...TRUNCATE },
+              style: { display: 'block', fontSize: '13px', fontWeight: 500, ...TRUNCATE },
             },
             evt.title
           ),
           React.createElement(
-            'div',
+            'span',
             {
-              style: { fontSize: '11px', color: TOKENS.ink3, marginTop: '1px' },
+              style: { display: 'block', fontSize: '11px', color: TOKENS.ink3, marginTop: '1px' },
             },
             evt.all_day
               ? formatEventDate(evt.start_at, tz)

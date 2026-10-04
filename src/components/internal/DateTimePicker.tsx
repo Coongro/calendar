@@ -13,6 +13,14 @@ import { CalendarGrid } from './CalendarGrid.js';
 import { HostPopover, HostPopoverTrigger } from './host-ui.js';
 import { TimeSlotList } from './TimeSlotList.js';
 
+// Estados por clase (DS v2.3): hover, presionado y foco con los tokens de movimiento.
+const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cg-gold-deep focus-visible:ring-offset-1 focus-visible:ring-offset-cg-surface';
+const TIME_BAR_CLASS =
+  'bg-transparent transition-colors duration-cg-fast ease-cg-standard hover:bg-cg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cg-gold-deep';
+const NOW_BUTTON_CLASS = `bg-transparent text-cg-accent transition-[background-color,transform] duration-cg-fast ease-cg-standard hover:bg-cg-bg-hover active:scale-[0.97] active:duration-cg-instant ${FOCUS_RING}`;
+const CONFIRM_BUTTON_CLASS = `bg-cg-accent transition-[background-color,transform] duration-cg-fast ease-cg-standard hover:bg-cg-accent-hover active:scale-[0.97] active:duration-cg-instant ${FOCUS_RING}`;
+
 const React = getHostReact();
 const UI = getHostUI();
 const { useState, useCallback } = React;
@@ -140,7 +148,7 @@ export function DateTimePicker({
           ),
           // Divider
           React.createElement('div', {
-            style: { height: '1px', background: 'var(--cg-border, #E8E7E2)' },
+            style: { height: '1px', background: 'var(--cg-border)' },
           }),
           // Time bar (clickeable)
           React.createElement(
@@ -148,9 +156,9 @@ export function DateTimePicker({
             {
               type: 'button',
               'aria-label': 'Elegir hora',
+              className: TIME_BAR_CLASS,
               style: {
                 // Resets para que el <button> mantenga la apariencia del <div> original
-                background: 'none',
                 border: 'none',
                 font: 'inherit',
                 color: 'inherit',
@@ -170,7 +178,7 @@ export function DateTimePicker({
                 style: {
                   fontSize: '11px',
                   fontWeight: '700',
-                  color: 'var(--cg-text-muted, #9B9893)',
+                  color: 'var(--cg-text-muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   flexShrink: '0',
@@ -185,7 +193,7 @@ export function DateTimePicker({
             ),
             React.createElement(
               'span',
-              { style: { fontSize: '12px', color: 'var(--cg-text-muted, #9B9893)' } },
+              { style: { fontSize: '12px', color: 'var(--cg-text-muted)' } },
               '▾'
             )
           )
@@ -205,7 +213,7 @@ export function DateTimePicker({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                borderBottom: '1px solid var(--cg-border, #E8E7E2)',
+                borderBottom: '1px solid var(--cg-border)',
               },
             },
             React.createElement(
@@ -234,7 +242,7 @@ export function DateTimePicker({
               {
                 style: {
                   fontSize: '11px',
-                  color: 'var(--cg-text-muted, #9B9893)',
+                  color: 'var(--cg-text-muted)',
                   fontWeight: '500',
                   marginLeft: 'auto',
                 },
@@ -263,19 +271,18 @@ export function DateTimePicker({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '8px 12px',
-            borderTop: '1px solid var(--cg-border, #E8E7E2)',
-            background: 'var(--cg-bg, #F6F5F1)',
+            borderTop: '1px solid var(--cg-border)',
+            background: 'var(--cg-bg)',
           },
         },
         React.createElement(
           'button',
           {
             type: 'button',
+            className: NOW_BUTTON_CLASS,
             style: {
               fontSize: '12px',
               fontWeight: '700',
-              color: 'var(--cg-accent, #F5A800)',
-              background: 'none',
               border: 'none',
               cursor: 'pointer',
               padding: '4px 8px',
@@ -289,11 +296,11 @@ export function DateTimePicker({
           'button',
           {
             type: 'button',
+            className: CONFIRM_BUTTON_CLASS,
             style: {
               fontSize: '12px',
               fontWeight: '700',
               color: 'white',
-              background: 'var(--cg-accent, #F5A800)',
               border: 'none',
               cursor: 'pointer',
               padding: '6px 16px',
