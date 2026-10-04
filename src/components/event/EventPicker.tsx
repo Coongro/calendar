@@ -79,7 +79,15 @@ export function EventPicker({
   if (value && selectedEvent) {
     return React.createElement(
       'div',
-      { className },
+      {
+        className,
+        // Mismo patron que el trigger del Combobox: expone el control a lectores
+        // de pantalla (y al copiloto IA) aunque ya haya un evento elegido. El Chip
+        // solo no anuncia que esto es un selector de evento.
+        role: 'combobox',
+        'aria-expanded': false,
+        'aria-label': `Evento: ${selectedEvent.title}`,
+      },
       React.createElement(
         UI.Chip,
         {

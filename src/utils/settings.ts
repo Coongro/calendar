@@ -14,12 +14,8 @@ export const CALENDAR_SETTINGS = {
 
   // Comportamiento
   SHOW_WEEKENDS: { key: 'calendar.behavior.showWeekends', default: true },
-  SHOW_CANCELLED: { key: 'calendar.behavior.showCancelled', default: false },
-  SHOW_DESCRIPTION: { key: 'calendar.behavior.showDescription', default: true },
   SHOW_NOTES: { key: 'calendar.behavior.showNotes', default: true },
-  SHOW_TAGS: { key: 'calendar.behavior.showTags', default: true },
   SHOW_COLOR_PICKER: { key: 'calendar.behavior.showColorPicker', default: true },
-  CONFIRM_ON_DRAG: { key: 'calendar.behavior.confirmOnDrag', default: false },
 
   // Selector de hora
   MINUTE_STEP: { key: 'calendar.timePicker.minuteStep', default: 5 },

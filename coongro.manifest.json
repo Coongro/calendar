@@ -1,6 +1,6 @@
 {
   "id": "calendar",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "apiVersion": "2.0",
   "assets": {
     "styles": [
@@ -14,17 +14,57 @@
       {
         "module": "./dist/repositories/calendar.repository.js",
         "export": "CalendarRepository",
-        "prefix": "calendar.calendars"
+        "prefix": "calendar.calendars",
+        "actions": [
+          "list",
+          "getById",
+          "create",
+          "update",
+          "delete",
+          "softDelete",
+          "restore",
+          "toggleVisibility",
+          "getDefault"
+        ]
       },
       {
         "module": "./dist/repositories/event-type.repository.js",
         "export": "EventTypeRepository",
-        "prefix": "calendar.types"
+        "prefix": "calendar.types",
+        "actions": [
+          "list",
+          "getById",
+          "create",
+          "update",
+          "delete",
+          "softDelete",
+          "restore",
+          "search"
+        ]
       },
       {
         "module": "./dist/repositories/event.repository.js",
         "export": "EventRepository",
-        "prefix": "calendar.events"
+        "prefix": "calendar.events",
+        "actions": [
+          "list",
+          "getById",
+          "create",
+          "update",
+          "delete",
+          "softDelete",
+          "restore",
+          "search",
+          "listByDateRange",
+          "listByDate",
+          "listByEntity",
+          "listByCalendar",
+          "listUpcoming",
+          "moveEvent",
+          "countByStatus",
+          "countByDate",
+          "countByCalendar"
+        ]
       }
     ],
     "settings": {
@@ -84,7 +124,7 @@
           "id": "calendar.general",
           "group": "calendar",
           "label": "General",
-          "icon": "assets/icons/calendar.svg",
+          "icon": "CalendarDays",
           "order": 10
         }
       ]

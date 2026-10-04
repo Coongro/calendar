@@ -34,6 +34,7 @@ export function DatePicker({
         placeholder,
         className: `cursor-pointer ${className}`,
         onClick: () => setOpen(true),
+        'data-cg-control': 'date',
       })
     ),
     React.createElement(

@@ -37,6 +37,7 @@ const VIEW_LABELS: Record<CalendarViewMode, string> = {
 export function CalendarView({
   enabledViews = ['month', 'week', 'day', 'agenda'],
   defaultView,
+  initialDate,
   title,
   events: externalEvents,
   skipInternalEvents = false,
@@ -54,7 +55,7 @@ export function CalendarView({
   const { settings } = useCalendarSettings();
   const isMobile = useIsMobile();
   const tz = useTenantTimezone();
-  const nav = useDateNavigation(defaultView ?? settings.defaultView);
+  const nav = useDateNavigation(defaultView ?? settings.defaultView, initialDate);
 
   const { data: internalEvents, loading: internalLoading } = useEvents({
     from: nav.rangeStart,

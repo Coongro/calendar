@@ -18,6 +18,8 @@ export interface EventRenderContext {
 export interface CalendarViewProps {
   enabledViews?: CalendarViewMode[];
   defaultView?: CalendarViewMode;
+  /** Fecha en la que abre el calendario en el primer render (deep-link). Default: hoy. */
+  initialDate?: Date;
   /** Titulo mostrado a la izquierda del toolbar (ej: "Agenda", "Calendario"). */
   title?: string;
   /** Eventos externos. Se mergean con los eventos internos del calendario. */

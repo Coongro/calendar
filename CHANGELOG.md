@@ -1,12 +1,32 @@
 # @coongro/calendar
 
+## 0.10.0
+
+### Minor Changes
+
+- feat(calendar): accesibilidad para navegación del copiloto + campos obligatorios en el evento
+  - **a11y + data attributes para el copiloto de IA**: el calendario expone atributos y roles de accesibilidad (`src/utils/a11y.ts`) para que el copiloto pueda leer y navegar la vista (días, slots, eventos) de forma determinística.
+  - **Form de evento**: se exigen descripción y tipo (validación en `EventForm`), evitando eventos sin datos mínimos.
+
+### Patch Changes
+
+- fix(settings): ícono de la página "Calendario → General" (COONG-248)
+
+  La página de configuración de Calendario apuntaba a `assets/icons/calendar.svg`, un archivo inexistente en el plugin, por lo que aparecía sin ícono. Se reemplaza por el ícono Lucide `CalendarDays` (mismo glifo que la Agenda del kit), sin asset binario que bundlear.
+
+- El manifest declara qué métodos del repositorio son actions.
+
+  Sin esa lista el runtime escanea la clase compilada y registra lo que encuentre,
+  así que un método interno nuevo se volvía una action publicada sin que nadie lo
+  decidiera. La lista positiva es ahora la autoridad: lo que no está declarado, no
+  se expone.
+
 ## 0.9.0
 
 ### Minor Changes
 
 - 203a492: fix(detail): EventDetail now shows compact Card with Creado/Actualizado timestamps (es-AR); buttons use size sm + Pencil/Trash2 icons; event schema updated_at uses .$onUpdate() for proper timestamp refresh (COONG-112)
 - 203a492: refactor(ui): adopt FormSection + FormDialogSubmit from `@coongro/ui-components` 0.28.0 (COONG-112)
-
   - `EventForm` ahora agrupa sus campos en 4 `UI.FormSection` (Detalles, Fecha y hora, Categorización, Información adicional) en lugar del flujo plano sin agrupación. Visualmente consistente con el resto del kit.
   - `CreateEventButton` migra a `UI.FormDialogSubmit`: footer sticky con botones Cancelar/Crear evento.
   - `EventFormProps` extendida con `formRef`, `hideActions`, `onSavingChange`. Compatible hacia atrás (todas opcionales).
