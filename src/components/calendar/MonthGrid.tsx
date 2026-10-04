@@ -325,7 +325,7 @@ export function MonthGrid({
         role: 'row',
         style: {
           display: 'grid',
-          gridTemplateColumns: `repeat(${colCount}, 1fr)`,
+          gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))`,
           borderBottom: `1px solid ${TOKENS.border}`,
         },
       },
@@ -355,7 +355,7 @@ export function MonthGrid({
         role: 'rowgroup',
         style: {
           display: 'grid',
-          gridTemplateColumns: `repeat(${colCount}, 1fr)`,
+          gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))`,
           flex: 1,
         },
       },
