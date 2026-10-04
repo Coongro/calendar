@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import type { CalendarBadgeProps } from '../../types/components.js';
 
@@ -10,7 +11,7 @@ export function CalendarBadge({
   label = 'eventos',
   color,
   className = '',
-}: CalendarBadgeProps) {
+}: CalendarBadgeProps): ReactElement | null {
   return React.createElement(
     UI.Badge,
     {

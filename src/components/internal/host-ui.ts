@@ -8,7 +8,7 @@
  * Solo cambia el tipo: el componente es el mismo.
  */
 import { getHostUI } from '@coongro/plugin-sdk';
-import type { ComponentProps, ComponentType, ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 const UI = getHostUI();
 
@@ -23,10 +23,13 @@ export const HostPopoverTrigger = UI.PopoverTrigger as unknown as ComponentType<
   children?: ReactNode;
 }>;
 
-export const HostCombobox = UI.Combobox as unknown as ComponentType<
-  Omit<ComponentProps<typeof UI.Combobox>, 'children'> & {
-    disabled?: boolean;
-    className?: string;
-    children?: ReactNode;
-  }
->;
+// Props explícitas (no `ComponentProps<typeof UI.Combobox>`): así los .d.ts no dependen
+// de poder nombrar los tipos de ui-components desde el plugin.
+export const HostCombobox = UI.Combobox as unknown as ComponentType<{
+  value?: string;
+  onValueChange?: (value: string) => void;
+  debounceMs?: number;
+  disabled?: boolean;
+  className?: string;
+  children?: ReactNode;
+}>;

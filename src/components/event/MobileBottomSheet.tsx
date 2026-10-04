@@ -1,4 +1,5 @@
 import { getHostReact, getHostReactDOM, getHostUI } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { TOKENS } from '../../styles/tokens.js';
 
@@ -35,7 +36,7 @@ export function MobileBottomSheet({
   title,
   subtitle,
   children,
-}: MobileBottomSheetProps) {
+}: MobileBottomSheetProps): ReactElement | null {
   const handleBackdropClick = () => onOpenChange(false);
 
   React.useEffect(() => {

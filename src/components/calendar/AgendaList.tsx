@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
@@ -25,7 +26,7 @@ export function AgendaList({
   onEventClick,
   emptyMessage = 'Sin eventos en este período',
   className = '',
-}: AgendaListProps) {
+}: AgendaListProps): ReactElement | null {
   const isMobile = useIsMobile();
   const tz = useTenantTimezone();
   const grouped = useMemo(() => {
