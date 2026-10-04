@@ -3,6 +3,8 @@ import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 import { TOKENS } from '../../styles/tokens.js';
 import type { ColorPickerProps } from '../../types/components.js';
 
+import { HostPopover, HostPopoverTrigger } from './host-ui.js';
+
 const React = getHostReact();
 const UI = getHostUI();
 const { useState } = React;
@@ -35,10 +37,10 @@ export function ColorPicker({
   const [open, setOpen] = useState(false);
 
   return React.createElement(
-    UI.Popover,
+    HostPopover,
     { open, onOpenChange: setOpen },
     React.createElement(
-      UI.PopoverTrigger,
+      HostPopoverTrigger,
       { asChild: true },
       React.createElement(
         UI.Button,

@@ -6,6 +6,7 @@ import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import type { EventPickerProps } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import { formatEventDateTime } from '../../utils/date.js';
+import { HostCombobox } from '../internal/host-ui.js';
 
 const React = getHostReact();
 const UI = getHostUI();
@@ -100,7 +101,7 @@ export function EventPicker({
   }
 
   return React.createElement(
-    UI.Combobox,
+    HostCombobox,
     { value: '', onValueChange: handleSelect, debounceMs: 200, disabled, className },
     React.createElement(UI.ComboboxChipTrigger, { placeholder }),
     React.createElement(EventSearchContent, { filters, onResults: handleResults })

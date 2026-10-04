@@ -202,7 +202,7 @@ export function EventList({
     rowKey: (evt: CalendarEvent) => evt.id,
     loading,
     error: error ?? undefined,
-    onRetry: refetch,
+    onRetry: () => void refetch(),
     columns: dtColumns,
     searchPlaceholder: 'Buscar eventos...',
     searchValue,

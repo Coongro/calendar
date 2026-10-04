@@ -10,6 +10,7 @@ import type { DateTimePickerProps } from '../../types/components.js';
 import { toDateString, getMonthName } from '../../utils/date.js';
 
 import { CalendarGrid } from './CalendarGrid.js';
+import { HostPopover, HostPopoverTrigger } from './host-ui.js';
 import { TimeSlotList } from './TimeSlotList.js';
 
 const React = getHostReact();
@@ -93,7 +94,7 @@ export function DateTimePicker({
     : '';
 
   return React.createElement(
-    UI.Popover,
+    HostPopover,
     {
       open,
       onOpenChange: (o: boolean) => {
@@ -102,7 +103,7 @@ export function DateTimePicker({
       },
     },
     React.createElement(
-      UI.PopoverTrigger,
+      HostPopoverTrigger,
       { asChild: true },
       React.createElement(UI.Input, {
         value: displayValue,
