@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { useEvents } from '../../hooks/useEvents.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
@@ -49,7 +50,7 @@ export function EventList({
   emptyMessage = 'No se encontraron eventos',
   emptyStateAction,
   className = '',
-}: EventListProps) {
+}: EventListProps): ReactElement | null {
   const tz = useTenantTimezone();
   const { data, loading, error, setFilters, setSort, pagination, goToPage, refetch } = useEvents({
     ...initialFilters,
@@ -202,7 +203,7 @@ export function EventList({
     rowKey: (evt: CalendarEvent) => evt.id,
     loading,
     error: error ?? undefined,
-    onRetry: refetch,
+    onRetry: () => void refetch(),
     columns: dtColumns,
     searchPlaceholder: 'Buscar eventos...',
     searchValue,

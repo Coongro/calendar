@@ -8,6 +8,8 @@ import type { EventRow, NewEventRow } from '../schema/event.js';
 import type { CalendarEvent } from '../types/event.js';
 
 /** Convierte filtros que llegan como string ISO desde el API a `Date` para Drizzle. */
+function asDate(v: string | Date): Date;
+function asDate(v: string | Date | undefined): Date | undefined;
 function asDate(v: string | Date | undefined): Date | undefined {
   return typeof v === 'string' ? new Date(v) : v;
 }
@@ -55,7 +57,8 @@ export interface EventSearchParams {
 }
 
 export interface CountResult {
-  key: string;
+  /** `null` cuando se agrupa por algo opcional (eventos sin calendario). */
+  key: string | null;
   count: number;
 }
 
@@ -156,13 +159,12 @@ export class EventRepository {
 
       if (query) {
         const pattern = `%${query}%`;
-        conditions.push(
-          or(
-            ilike(eventTable.title, pattern),
-            ilike(eventTable.description, pattern),
-            ilike(eventTable.notes, pattern)
-          )
+        const matches = or(
+          ilike(eventTable.title, pattern),
+          ilike(eventTable.description, pattern),
+          ilike(eventTable.notes, pattern)
         );
+        if (matches) conditions.push(matches);
       }
 
       if (status) conditions.push(eq(eventTable.status, status));

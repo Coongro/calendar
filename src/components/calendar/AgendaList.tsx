@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
@@ -19,13 +20,19 @@ const React = getHostReact();
 const UI = getHostUI();
 const { useMemo } = React;
 
+// Cada evento abre su detalle: botón real (Tab, Enter y Espacio) con hover, presionado y foco.
+// El fondo y el borde van por clase para que el hover pueda pisarlos.
+const EVENT_ROW_BASE =
+  'border border-solid border-cg-border bg-cg-bg-secondary transition-colors duration-cg-fast ease-cg-standard';
+const EVENT_ROW_BUTTON = `${EVENT_ROW_BASE} w-full text-left cursor-pointer hover:bg-cg-bg-hover hover:border-cg-border-md active:bg-cg-bg-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cg-gold-deep`;
+
 export function AgendaList({
   events,
   renderEvent,
   onEventClick,
   emptyMessage = 'Sin eventos en este período',
   className = '',
-}: AgendaListProps) {
+}: AgendaListProps): ReactElement | null {
   const isMobile = useIsMobile();
   const tz = useTenantTimezone();
   const grouped = useMemo(() => {
@@ -50,6 +57,10 @@ export function AgendaList({
   }
 
   const todayKey = toDateKey(new Date(), tz);
+  // Con acción, cada fila es un <button> (adentro no hay otros controles)
+  const row = onEventClick
+    ? { tag: 'button', type: 'button', className: EVENT_ROW_BUTTON }
+    : { tag: 'div', type: undefined, className: EVENT_ROW_BASE };
 
   return React.createElement(
     'div',
@@ -71,9 +82,12 @@ export function AgendaList({
 
       return React.createElement(
         'div',
-        { key: dateStr },
+        // El día nuevo entra junto con sus eventos (fade + 6 px, solo con movimiento permitido)
+        { key: dateStr, className: 'motion-safe:animate-cg-rise' },
 
-        // — Date header —
+        // — Date header — fijo arriba mientras se scrollean los eventos del día. Con fondo
+        // de superficie para tapar lo que pasa por debajo; el espacio inferior es padding
+        // (no margen) para que también lo tape. Mismo alto que antes.
         React.createElement(
           'div',
           {
@@ -81,7 +95,11 @@ export function AgendaList({
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              marginBottom: '12px',
+              paddingBottom: '12px',
+              position: 'sticky',
+              top: 0,
+              zIndex: 1,
+              background: TOKENS.surface,
             },
           },
 
@@ -221,19 +239,17 @@ export function AgendaList({
                   renderEvent(evt, { variant: 'list', height: 48 })
                 )
               : React.createElement(
-                  'div',
+                  row.tag,
                   {
                     key: evt.id,
+                    type: row.type,
+                    className: row.className,
                     style: {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
                       padding: '10px 12px',
                       borderRadius: '8px',
-                      border: `1px solid ${TOKENS.border}`,
-                      background: TOKENS.bg,
-                      cursor: 'pointer',
-                      transition: 'background-color 0.15s',
                     },
                     onClick: onEventClick ? () => onEventClick(evt) : undefined,
                   },
@@ -252,9 +268,10 @@ export function AgendaList({
                   // Horario (columna lateral en desktop, oculto en mobile)
                   !isMobile &&
                     React.createElement(
-                      'div',
+                      'span',
                       {
                         style: {
+                          display: 'block',
                           width: '96px',
                           flexShrink: 0,
                           fontSize: '12px',
@@ -270,17 +287,19 @@ export function AgendaList({
 
                   // Título + hora (mobile) / ubicación
                   React.createElement(
-                    'div',
+                    'span',
                     {
                       style: {
+                        display: 'block',
                         flex: 1,
                         minWidth: 0,
                       },
                     },
                     React.createElement(
-                      'div',
+                      'span',
                       {
                         style: {
+                          display: 'block',
                           fontSize: '14px',
                           fontWeight: 500,
                           overflow: 'hidden',
@@ -292,9 +311,10 @@ export function AgendaList({
                     ),
                     isMobile &&
                       React.createElement(
-                        'div',
+                        'span',
                         {
                           style: {
+                            display: 'block',
                             fontSize: '12px',
                             color: TOKENS.ink4,
                             marginTop: '2px',
@@ -312,7 +332,7 @@ export function AgendaList({
                     !isMobile &&
                       evt.location &&
                       React.createElement(
-                        'div',
+                        'span',
                         {
                           style: {
                             display: 'flex',

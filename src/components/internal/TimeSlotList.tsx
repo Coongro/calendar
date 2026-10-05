@@ -63,14 +63,29 @@ function formatSlot(slot: string, use24Hour: boolean): string {
   return `${hour12(h)}:${pad2(m)} ${ampm(h)}`;
 }
 
-// Estilos inline (cross-plugin compatible)
+// Layout en línea (cross-plugin compatible). Colores, bordes y estados van por clase con
+// los tokens cg-*: el estilo en línea no tiene hover, foco ni transición.
+const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cg-gold-deep focus-visible:ring-offset-1 focus-visible:ring-offset-cg-surface';
+const PRESS_TRANSITION =
+  'cursor-pointer transition-[background-color,border-color,color,transform] duration-cg-fast ease-cg-standard active:scale-[0.97] active:duration-cg-instant';
+
+const CLASSES = {
+  slot: `${PRESS_TRANSITION} ${FOCUS_RING} border border-solid border-cg-border bg-cg-surface text-cg-text-secondary font-medium hover:border-cg-border-md hover:bg-cg-bg-hover`,
+  slotActive: `${PRESS_TRANSITION} ${FOCUS_RING} border border-solid border-cg-accent bg-cg-accent-bg text-cg-accent font-bold`,
+  customBtn: `${PRESS_TRANSITION} ${FOCUS_RING} border border-dashed border-cg-border-md bg-cg-bg text-cg-text-muted hover:bg-cg-bg-hover hover:text-cg-text`,
+  // Celdas de las columnas: sin escala (son filas de una lista), foco hacia adentro
+  cell: 'cursor-pointer transition-colors duration-cg-fast ease-cg-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cg-gold-deep bg-transparent text-cg-text-secondary font-medium hover:bg-cg-bg-hover',
+  cellActive:
+    'cursor-pointer transition-colors duration-cg-fast ease-cg-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cg-gold-deep bg-cg-accent-bg text-cg-accent font-bold',
+  backBtn: `${PRESS_TRANSITION} ${FOCUS_RING} border-0 bg-transparent text-cg-text-muted hover:bg-cg-bg-hover hover:text-cg-text`,
+};
+
 const slotBase = {
   padding: '10px 4px',
   fontSize: '13px',
   textAlign: 'center',
   borderRadius: '7px',
-  cursor: 'pointer',
-  transition: 'all 0.15s',
   fontFamily: 'inherit',
 } as Record<string, string>;
 
@@ -78,16 +93,14 @@ const cellBase = {
   padding: '8px 4px',
   textAlign: 'center',
   fontSize: '14px',
-  cursor: 'pointer',
   minHeight: '38px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  transition: 'all 0.1s',
   border: 'none',
   borderBottomStyle: 'solid',
   borderBottomWidth: '1px',
-  borderBottomColor: 'var(--cg-border, #E8E7E2)',
+  borderBottomColor: 'var(--cg-border)',
   width: '100%',
   fontFamily: 'inherit',
 } as Record<string, string>;
@@ -100,20 +113,7 @@ const STYLES = {
     maxHeight: '240px',
     overflowY: 'auto',
   } as Record<string, string>,
-  slot: {
-    ...slotBase,
-    fontWeight: '500',
-    border: '1px solid var(--cg-border, #E8E7E2)',
-    background: 'var(--cg-surface, #FFFFFF)',
-    color: 'var(--cg-text-secondary, #3A3731)',
-  } as Record<string, string>,
-  slotActive: {
-    ...slotBase,
-    fontWeight: '700',
-    border: '1px solid var(--cg-accent, #F5A800)',
-    background: 'var(--cg-accent-bg, #FFFBF0)',
-    color: 'var(--cg-accent, #F5A800)',
-  } as Record<string, string>,
+  slot: slotBase,
   customBtn: {
     display: 'flex',
     alignItems: 'center',
@@ -123,25 +123,20 @@ const STYLES = {
     marginTop: '8px',
     fontSize: '12px',
     fontWeight: '500',
-    color: 'var(--cg-text-muted, #6B6760)',
-    background: 'var(--cg-bg, #F6F5F1)',
-    border: '1px dashed var(--cg-border-md, #D4D3CC)',
     borderRadius: '7px',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
     fontFamily: 'inherit',
   } as Record<string, string>,
   label: {
     fontSize: '10px',
     fontWeight: '700',
-    color: 'var(--cg-text-muted, #9B9893)',
+    color: 'var(--cg-text-muted)',
     textTransform: 'uppercase',
     letterSpacing: '0.6px',
   } as Record<string, string>,
   colScroll: {
-    border: '1px solid var(--cg-border, #E8E7E2)',
+    border: '1px solid var(--cg-border)',
     borderRadius: '7px',
-    background: 'var(--cg-bg, #F6F5F1)',
+    background: 'var(--cg-bg)',
     height: '200px',
     minHeight: '200px',
     flexShrink: '0',
@@ -149,18 +144,7 @@ const STYLES = {
     overscrollBehavior: 'contain',
     WebkitOverflowScrolling: 'touch',
   } as Record<string, string>,
-  cell: {
-    ...cellBase,
-    fontWeight: '500',
-    color: 'var(--cg-text-secondary, #3A3731)',
-    background: 'transparent',
-  } as Record<string, string>,
-  cellActive: {
-    ...cellBase,
-    fontWeight: '700',
-    color: 'var(--cg-accent, #F5A800)',
-    background: 'var(--cg-accent-bg, #FFFBF0)',
-  } as Record<string, string>,
+  cell: cellBase,
 };
 
 type ViewLevel = 'slots' | 'exact';
@@ -293,7 +277,9 @@ export function TimeSlotList({
             {
               key: slot,
               type: 'button',
-              style: currentValue === slot ? STYLES.slotActive : STYLES.slot,
+              className: currentValue === slot ? CLASSES.slotActive : CLASSES.slot,
+              style: STYLES.slot,
+              'aria-pressed': currentValue === slot,
               onClick: () => handleSlotClick(slot),
               'data-time': slot,
               'aria-label': formatSlot(slot, use24Hour),
@@ -306,6 +292,7 @@ export function TimeSlotList({
         'button',
         {
           type: 'button',
+          className: CLASSES.customBtn,
           style: STYLES.customBtn,
           onClick: () => setViewLevel('exact'),
         },
@@ -327,12 +314,9 @@ export function TimeSlotList({
         'button',
         {
           type: 'button',
+          className: CLASSES.backBtn,
           style: {
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
             fontSize: '14px',
-            color: 'var(--cg-text-muted, #9B9893)',
             padding: '4px 8px',
             borderRadius: '7px',
             fontFamily: 'inherit',
@@ -358,7 +342,7 @@ export function TimeSlotList({
           },
         },
         use24Hour ? pad2(selectedHour) : formatHour(selectedHour, false),
-        React.createElement('span', { style: { color: 'var(--cg-accent, #F5A800)' } }, ':'),
+        React.createElement('span', { style: { color: 'var(--cg-accent)' } }, ':'),
         pad2(selectedMinute)
       )
     ),
@@ -392,7 +376,9 @@ export function TimeSlotList({
               {
                 key: hour,
                 type: 'button',
-                style: selectedHour === hour ? STYLES.cellActive : STYLES.cell,
+                className: selectedHour === hour ? CLASSES.cellActive : CLASSES.cell,
+                style: STYLES.cell,
+                'aria-pressed': selectedHour === hour,
                 onClick: () => handleHourClick(hour),
                 'data-hour': pad2(hour),
                 'aria-label': `Hora ${pad2(hour)}`,
@@ -427,7 +413,9 @@ export function TimeSlotList({
               {
                 key: minute,
                 type: 'button',
-                style: selectedMinute === minute ? STYLES.cellActive : STYLES.cell,
+                className: selectedMinute === minute ? CLASSES.cellActive : CLASSES.cell,
+                style: STYLES.cell,
+                'aria-pressed': selectedMinute === minute,
                 onClick: () => handleMinuteClick(minute),
                 'data-minute': pad2(minute),
                 'aria-label': `Minuto ${pad2(minute)}`,

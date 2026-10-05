@@ -7,6 +7,7 @@ import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import type { TimePickerProps } from '../../types/components.js';
 
+import { HostPopover, HostPopoverTrigger } from './host-ui.js';
 import { TimeSlotList } from './TimeSlotList.js';
 
 const React = getHostReact();
@@ -29,10 +30,10 @@ export function TimePicker({
   const [open, setOpen] = useState(false);
 
   return React.createElement(
-    UI.Popover,
+    HostPopover,
     { open, onOpenChange: setOpen },
     React.createElement(
-      UI.PopoverTrigger,
+      HostPopoverTrigger,
       { asChild: true },
       React.createElement(UI.Input, {
         value,
