@@ -50,6 +50,13 @@ export interface MonthGridProps {
   onDayClick?: (date: string) => void;
   showWeekends?: boolean;
   className?: string;
+  /**
+   * Teclado: RePág/AvPág o una flecha en el borde llevan a un día que no está en la grilla.
+   * Si se pasa, el padre navega a esa fecha (YYYY-MM-DD); si no, el foco queda en la grilla.
+   */
+  onNavigateToDate?: (date: string) => void;
+  /** Día (YYYY-MM-DD) que recibe el foco al montar la grilla o cuando cambia (tras navegar con teclado). */
+  focusDate?: string | null;
 }
 
 export interface WeekGridProps {

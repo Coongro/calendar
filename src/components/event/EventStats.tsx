@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { useEventStats } from '../../hooks/useEventStats.js';
 import { TOKENS } from '../../styles/tokens.js';
@@ -28,7 +29,7 @@ const STATUS_CARD_STYLES: Record<string, { text: string; bg: string }> = {
   tentative: { text: TOKENS.tealDk, bg: TOKENS.tealLt },
 };
 
-export function EventStats({ from, to, className = '' }: EventStatsProps) {
+export function EventStats({ from, to, className = '' }: EventStatsProps): ReactElement | null {
   const { byStatus, loading } = useEventStats({ from, to });
 
   if (loading) {

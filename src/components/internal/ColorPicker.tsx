@@ -2,43 +2,34 @@ import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 
 import { TOKENS } from '../../styles/tokens.js';
 import type { ColorPickerProps } from '../../types/components.js';
+import { DEFAULT_EVENT_COLOR, EVENT_COLOR_PALETTE } from '../../utils/event-colors.js';
+
+import { HostPopover, HostPopoverTrigger } from './host-ui.js';
 
 const React = getHostReact();
 const UI = getHostUI();
 const { useState } = React;
 
-const DEFAULT_COLORS = [
-  '#3B82F6',
-  '#10B981',
-  '#F59E0B',
-  '#EF4444',
-  '#8B5CF6',
-  '#EC4899',
-  '#06B6D4',
-  '#84CC16',
-  '#F97316',
-  '#6366F1',
-  '#14B8A6',
-  '#A855F7',
-  '#E11D48',
-  '#0EA5E9',
-  '#22C55E',
-  '#FACC15',
-];
+// Muestra de color: crece un poco al pasar el mouse, se achica al presionar y muestra un
+// contorno dorado con el foco de teclado. La elegida lleva borde y anillo (por clase).
+const SWATCH_CLASS =
+  'cursor-pointer border-2 border-solid transition-[transform,border-color] duration-cg-fast ease-cg-standard hover:scale-110 active:scale-95 active:duration-cg-instant motion-reduce:hover:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cg-gold-deep';
+const SWATCH_SELECTED = 'border-cg-border-md shadow-[0_0_0_2px_var(--cg-accent)]';
+const SWATCH_IDLE = 'border-transparent';
 
 export function ColorPicker({
   value,
   onChange,
-  colors = DEFAULT_COLORS,
+  colors = EVENT_COLOR_PALETTE,
   className = '',
 }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
 
   return React.createElement(
-    UI.Popover,
+    HostPopover,
     { open, onOpenChange: setOpen },
     React.createElement(
-      UI.PopoverTrigger,
+      HostPopoverTrigger,
       { asChild: true },
       React.createElement(
         UI.Button,
@@ -50,7 +41,7 @@ export function ColorPicker({
             height: '16px',
             borderRadius: '9999px',
             border: `1px solid ${TOKENS.border}`,
-            backgroundColor: value || '#3B82F6',
+            backgroundColor: value || DEFAULT_EVENT_COLOR,
           },
         }),
         'Color'
@@ -78,15 +69,13 @@ export function ColorPicker({
             'aria-label': `Color ${color}`,
             'aria-pressed': value === color,
             'data-color': color,
+            className: `${SWATCH_CLASS} ${value === color ? SWATCH_SELECTED : SWATCH_IDLE}`,
             style: {
               width: '36px',
               height: '36px',
               borderRadius: '9999px',
-              border: value === color ? `2px solid ${TOKENS.borderMd}` : '2px solid transparent',
-              boxShadow: value === color ? `0 0 0 2px ${TOKENS.gold}` : 'none',
+              // El color de la muestra es dato del evento (ver utils/event-colors.ts)
               backgroundColor: color,
-              cursor: 'pointer',
-              transition: 'transform 0.15s',
             },
             onClick: () => {
               onChange?.(color);
