@@ -3,6 +3,7 @@ import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarEvent } from '../../types/event.js';
+import { HostPopover, HostPopoverTrigger } from '../internal/host-ui.js';
 
 import { EventCard } from './EventCard.js';
 import { MobileBottomSheet } from './MobileBottomSheet.js';
@@ -106,9 +107,9 @@ export function EventOverflowChip({ events, onEventClick, onOverride }: EventOve
   }
 
   return React.createElement(
-    UI.Popover,
+    HostPopover,
     { open, onOpenChange: setOpen },
-    React.createElement(UI.PopoverTrigger, { asChild: true }, chipButton),
+    React.createElement(HostPopoverTrigger, { asChild: true }, chipButton),
     React.createElement(
       UI.PopoverContent,
       {

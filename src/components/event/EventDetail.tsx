@@ -1,4 +1,5 @@
 import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { useEvent } from '../../hooks/useEvent.js';
 import { useIsMobile } from '../../hooks/useIsMobile.js';
@@ -20,7 +21,7 @@ export function EventDetail({
   onEdit,
   onDelete,
   className = '',
-}: EventDetailProps) {
+}: EventDetailProps): ReactElement | null {
   const isMobile = useIsMobile();
   const tz = useTenantTimezone();
   const { event, loading, error } = useEvent(eventId);

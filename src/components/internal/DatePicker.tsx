@@ -7,6 +7,7 @@ import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
 import type { DatePickerProps } from '../../types/components.js';
 
 import { CalendarGrid } from './CalendarGrid.js';
+import { HostPopover, HostPopoverTrigger } from './host-ui.js';
 
 const React = getHostReact();
 const UI = getHostUI();
@@ -23,10 +24,10 @@ export function DatePicker({
   const [open, setOpen] = useState(false);
 
   return React.createElement(
-    UI.Popover,
+    HostPopover,
     { open, onOpenChange: setOpen },
     React.createElement(
-      UI.PopoverTrigger,
+      HostPopoverTrigger,
       { asChild: true },
       React.createElement(UI.Input, {
         value: value ? new Date(`${value}T00:00:00`).toLocaleDateString('es') : '',

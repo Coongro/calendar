@@ -26,6 +26,28 @@ import { WeekGrid } from './WeekGrid.js';
 const React = getHostReact();
 const UI = getHostUI();
 
+// Estados de los controles del toolbar (DS v2.3): hover, presionado y foco por clase, con
+// los tokens de movimiento. El layout sigue en línea; fondo y color van acá para que el
+// hover pueda pisarlos.
+const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cg-gold-deep focus-visible:ring-offset-2 focus-visible:ring-offset-cg-surface';
+const TOOLBAR_BUTTON = `transition-[background-color,color,transform] duration-cg-fast ease-cg-standard active:scale-[0.97] active:duration-cg-instant ${FOCUS_RING}`;
+const TOOLBAR_IDLE = 'bg-transparent hover:bg-cg-bg-hover hover:text-cg-text';
+
+/** Selector de vista en celular: la activa como tarjeta sobre el fondo gris. */
+function mobileViewButtonClass(active: boolean): string {
+  const state = active
+    ? 'bg-cg-surface text-cg-text'
+    : 'bg-transparent text-cg-text-muted hover:text-cg-text';
+  return `${TOOLBAR_BUTTON} ${state}`;
+}
+
+/** Selector de vista en escritorio: la activa invertida (fondo de texto). */
+function desktopViewButtonClass(active: boolean): string {
+  const state = active ? 'bg-cg-text text-cg-surface' : `${TOOLBAR_IDLE} text-cg-text-tertiary`;
+  return `${TOOLBAR_BUTTON} ${state}`;
+}
+
 const VIEW_LABELS: Record<CalendarViewMode, string> = {
   month: 'Mes',
   week: 'Semana',
@@ -64,7 +86,7 @@ export function CalendarView({
     pageSize: 500,
   });
 
-  const { useMemo } = React;
+  const { useMemo, useState } = React;
   const events = useMemo(() => {
     const internal = skipInternalEvents ? [] : internalEvents;
     const external = externalEvents ?? [];
@@ -91,6 +113,34 @@ export function CalendarView({
       onDateRangeChange(nav.rangeStart.toISOString(), nav.rangeEnd.toISOString());
     }
   }, [nav.rangeStart, nav.rangeEnd, onDateRangeChange]);
+
+  // Mes: al navegar con el teclado (RePág/AvPág o flechas en el borde) el día pedido recibe
+  // el foco cuando la grilla del mes nuevo se monta. Se descarta cuando termina la carga.
+  const [monthFocusDate, setMonthFocusDate] = useState<string | null>(null);
+  const sawLoadingRef = useRef(false);
+  useEffect(() => {
+    if (loading) {
+      sawLoadingRef.current = true;
+    } else if (sawLoadingRef.current) {
+      sawLoadingRef.current = false;
+      setMonthFocusDate(null);
+    }
+  }, [loading]);
+
+  // Sentido del último cambio de mes, para que el mes nuevo entre desde ese lado. Al cambiar
+  // de vista se reinicia: entrar a la vista Mes no desliza.
+  const monthIndex = nav.currentDate.getFullYear() * 12 + nav.currentDate.getMonth();
+  const prevMonthIndexRef = useRef(monthIndex);
+  const prevViewRef = useRef(nav.view);
+  const monthDirectionRef = useRef<0 | 1 | -1>(0);
+  if (nav.view !== prevViewRef.current) {
+    monthDirectionRef.current = 0;
+    prevViewRef.current = nav.view;
+    prevMonthIndexRef.current = monthIndex;
+  } else if (monthIndex !== prevMonthIndexRef.current) {
+    monthDirectionRef.current = monthIndex > prevMonthIndexRef.current ? 1 : -1;
+    prevMonthIndexRef.current = monthIndex;
+  }
 
   const { sections: toolbarSections } = useViewContributions('calendar.view.toolbar');
   const { sections: sidebarSections } = useViewContributions('calendar.view.sidebar');
@@ -182,16 +232,15 @@ export function CalendarView({
               {
                 key: v,
                 type: 'button',
+                'aria-pressed': effectiveView === v,
+                className: mobileViewButtonClass(effectiveView === v),
                 style: {
                   flex: 1,
                   padding: '8px 0',
                   fontSize: '12px',
                   fontWeight: 500,
                   borderRadius: '4px',
-                  transition: 'background-color 0.15s, color 0.15s',
                   border: effectiveView === v ? `1px solid ${TOKENS.border}` : 'none',
-                  background: effectiveView === v ? TOKENS.surface : 'transparent',
-                  color: effectiveView === v ? TOKENS.ink : TOKENS.ink4,
                   cursor: 'pointer',
                 },
                 onClick: () => nav.setView(v),
@@ -256,17 +305,18 @@ export function CalendarView({
           React.createElement(
             'button',
             {
+              type: 'button',
+              'aria-label': 'Anterior',
+              className: `${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-tertiary`,
               style: {
                 width: '28px',
                 height: '28px',
                 border: `1px solid ${TOKENS.border}`,
                 borderRadius: TOKENS.rSm,
-                background: 'transparent',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: TOKENS.ink3,
               },
               onClick: nav.goPrev,
             },
@@ -287,17 +337,18 @@ export function CalendarView({
           React.createElement(
             'button',
             {
+              type: 'button',
+              'aria-label': 'Siguiente',
+              className: `${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-tertiary`,
               style: {
                 width: '28px',
                 height: '28px',
                 border: `1px solid ${TOKENS.border}`,
                 borderRadius: TOKENS.rSm,
-                background: 'transparent',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: TOKENS.ink3,
               },
               onClick: nav.goNext,
             },
@@ -311,15 +362,15 @@ export function CalendarView({
           React.createElement(
             'button',
             {
+              type: 'button',
+              className: `${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-secondary`,
               style: {
                 padding: '4px 12px',
                 fontSize: '12px',
                 fontWeight: 500,
                 border: 'none',
                 borderRadius: TOKENS.rSm,
-                background: 'transparent',
                 cursor: 'pointer',
-                color: TOKENS.ink2,
                 fontFamily: TOKENS.fontBody,
               },
               onClick: nav.goToToday,
@@ -363,14 +414,15 @@ export function CalendarView({
               'button',
               {
                 key: v,
+                type: 'button',
+                'aria-pressed': effectiveView === v,
+                className: desktopViewButtonClass(effectiveView === v),
                 style: {
                   padding: '6px 14px',
                   fontSize: '12px',
                   fontWeight: 500,
                   border: 'none',
                   borderRadius: TOKENS.rSm,
-                  background: effectiveView === v ? TOKENS.ink : 'transparent',
-                  color: effectiveView === v ? TOKENS.surface : TOKENS.ink3,
                   cursor: 'pointer',
                   fontFamily: TOKENS.fontBody,
                 },
@@ -426,6 +478,11 @@ export function CalendarView({
             nav.setView('day');
           },
           showWeekends: settings.showWeekends,
+          onNavigateToDate: (date) => {
+            setMonthFocusDate(date);
+            nav.goToDate(new Date(`${date}T00:00:00`));
+          },
+          focusDate: monthFocusDate,
         });
       case 'three-day':
         return React.createElement(ThreeDayGrid, {
@@ -485,6 +542,21 @@ export function CalendarView({
         return null;
     }
   };
+
+  // Cambio de mes: el mes nuevo entra 8 px desde el lado hacia el que se avanzó (solo con
+  // movimiento permitido). La key remonta el envoltorio solo cuando cambia el mes; el
+  // contenedor de afuera recorta el desplazamiento para que no aparezca scroll horizontal.
+  function renderMonthTransition(content: ReturnType<typeof renderActiveView>) {
+    const direction = monthDirectionRef.current;
+    let animation = '';
+    if (direction === 1) animation = 'motion-safe:animate-cg-month-next';
+    else if (direction === -1) animation = 'motion-safe:animate-cg-month-prev';
+    return React.createElement(
+      'div',
+      { style: { overflowX: 'clip' } as React.CSSProperties },
+      React.createElement('div', { key: `month-${monthIndex}`, className: animation }, content)
+    );
+  }
 
   return React.createElement(
     'div',
@@ -555,7 +627,7 @@ export function CalendarView({
               overflowY: 'auto' as const,
             },
           },
-          renderActiveView()
+          effectiveView === 'month' ? renderMonthTransition(renderActiveView()) : renderActiveView()
         )
       )
     )
