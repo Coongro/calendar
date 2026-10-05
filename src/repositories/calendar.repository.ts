@@ -21,7 +21,13 @@ export class CalendarRepository {
     return rows[0];
   }
 
-  async create({ data }: { data: NewCalendarRow }): Promise<CalendarRow[]> {
+  /** Sin `id`, visibilidad ni default, los completa acá. */
+  async create({
+    data,
+  }: {
+    data: Omit<NewCalendarRow, 'id' | 'is_visible' | 'is_default'> &
+      Partial<Pick<NewCalendarRow, 'id' | 'is_visible' | 'is_default'>>;
+  }): Promise<CalendarRow[]> {
     const row = {
       ...data,
       id: data.id ?? crypto.randomUUID(),

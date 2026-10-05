@@ -22,7 +22,12 @@ export class EventTypeRepository {
     return rows[0];
   }
 
-  async create({ data }: { data: NewEventTypeRow }): Promise<EventTypeRow[]> {
+  /** Sin `id`, lo genera acá. */
+  async create({
+    data,
+  }: {
+    data: Omit<NewEventTypeRow, 'id'> & { id?: string };
+  }): Promise<EventTypeRow[]> {
     const row = {
       ...data,
       id: data.id ?? crypto.randomUUID(),
