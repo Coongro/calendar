@@ -1,7 +1,8 @@
 {
   "id": "calendar",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "apiVersion": "2.0",
+  "engines": { "coongro": ">=0.61.0 <1.0.0" },
   "assets": {
     "styles": [
       "./dist/assets/tailwind.css"
@@ -10,10 +11,10 @@
   "contributes": {
     "menus": [],
     "views": [],
-    "repositories": [
+    "actionModules": [
       {
-        "module": "./dist/repositories/calendar.repository.js",
-        "export": "CalendarRepository",
+        "module": "./dist/actions.js",
+        "export": "calendarActions",
         "prefix": "calendar.calendars",
         "actions": [
           "list",
@@ -28,8 +29,8 @@
         ]
       },
       {
-        "module": "./dist/repositories/event-type.repository.js",
-        "export": "EventTypeRepository",
+        "module": "./dist/actions.js",
+        "export": "eventTypeActions",
         "prefix": "calendar.types",
         "actions": [
           "list",
@@ -43,8 +44,8 @@
         ]
       },
       {
-        "module": "./dist/repositories/event.repository.js",
-        "export": "EventRepository",
+        "module": "./dist/actions.js",
+        "export": "eventActions",
         "prefix": "calendar.events",
         "actions": [
           "list",
