@@ -1,6 +1,6 @@
 {
   "id": "calendar",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "apiVersion": "2.0",
   "engines": { "coongro": ">=0.61.0 <1.0.0" },
   "assets": {
@@ -26,7 +26,8 @@
           "restore",
           "toggleVisibility",
           "getDefault"
-        ]
+        ],
+        "deleteAction": "softDelete"
       },
       {
         "module": "./dist/actions.js",
@@ -41,7 +42,8 @@
           "softDelete",
           "restore",
           "search"
-        ]
+        ],
+        "deleteAction": "softDelete"
       },
       {
         "module": "./dist/actions.js",
@@ -65,7 +67,8 @@
           "countByStatus",
           "countByDate",
           "countByCalendar"
-        ]
+        ],
+        "deleteAction": "softDelete"
       }
     ],
     "settings": {

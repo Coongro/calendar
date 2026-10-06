@@ -1,5 +1,11 @@
 # @coongro/calendar
 
+## 0.12.1
+
+### Patch Changes
+
+- El manifest declara con qué acción se borra cada entidad (`deleteAction`), y las vistas regeneradas solo llaman a acciones que existen. No cambia ninguna vista.
+
 ## 0.12.0
 
 ### Minor Changes
