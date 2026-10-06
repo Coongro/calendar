@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { EventRenderContext } from '../../types/components.js';
 import type { CalendarEvent } from '../../types/event.js';
 import { clickableProps } from '../../utils/a11y.js';
-import { toDateString } from '../../utils/date.js';
 import { layoutOverlappingEvents, getColumnBox } from '../../utils/event-layout.js';
 import { EVENT_Z } from '../../utils/grid-constants.js';
 import {
@@ -13,6 +13,7 @@ import {
   computeVerticalPosition,
   renderNowLine,
 } from '../../utils/grid-helpers.js';
+import { dayKeyOf, minutesOfDay, timeOfDay } from '../../utils/zoned-day.js';
 import { EventCard } from '../event/EventCard.js';
 import { EventOverflowChip } from '../event/EventOverflowChip.js';
 
@@ -73,6 +74,7 @@ export function DayColumnCore({
   onSlotClick,
   onClusterOverflowClick,
 }: DayColumnCoreProps) {
+  const tz = useTenantTimezone();
   const layout = useMemo(
     () => layoutOverlappingEvents(events, { maxColumns }),
     [events, maxColumns]
@@ -121,7 +123,8 @@ export function DayColumnCore({
             gridStartMin,
             gridEndMin,
             slotDuration,
-            slotHeight
+            slotHeight,
+            tz
           );
           if (!pos) return null;
 
@@ -140,8 +143,9 @@ export function DayColumnCore({
           // operabilidad por teclado en el wrapper (Enter/Espacio) sin tocar ese
           // onClick. Solo si hay un handler de evento que disparar.
           const eventA11y = onEventClick
-            ? clickableProps(`Evento: ${slot.event.title} — ${eventStartTime(slot.event)}`, () =>
-                onEventClick(slot.event)
+            ? clickableProps(
+                `Evento: ${slot.event.title} — ${timeOfDay(slot.event.start_at, tz)}`,
+                () => onEventClick(slot.event)
               )
             : {};
 
@@ -182,7 +186,8 @@ export function DayColumnCore({
           gridStartMin,
           gridEndMin,
           slotDuration,
-          slotHeight
+          slotHeight,
+          tz
         );
         if (!pos) return null;
 
@@ -215,16 +220,6 @@ export function DayColumnCore({
   );
 }
 
-/**
- * Hora local "HH:MM" de inicio de un evento, para etiquetar el wrapper a11y.
- * Usa la hora local (la misma base que el posicionamiento de la grilla), sin
- * depender del tz del tenant que esta capa no recibe.
- */
-function eventStartTime(event: CalendarEvent): string {
-  const d = new Date(event.start_at);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
 /** Posicion horizontal (left/width) dentro de la columna del dia. */
 function computeColumnStyle(
   columnIndex: number,
@@ -249,15 +244,15 @@ function overflowPosition(
   gridStartMin: number,
   gridEndMin: number,
   slotDuration: number,
-  slotHeight: number
+  slotHeight: number,
+  tz: string
 ): { topOffset: number; height: number } | null {
   const start = new Date(startMs);
   // Compara solo la parte YYYY-MM-DD para tolerar consumidores que pasen
-  // un ISO string completo (ej: CalendarView dia).
-  if (toDateString(start) !== date.substring(0, 10)) return null;
-  const end = new Date(endMs);
-  const startMin = start.getHours() * 60 + start.getMinutes();
-  const endMin = end.getHours() * 60 + end.getMinutes();
+  // un ISO string completo (ej: CalendarView dia). Día y hora, en la zona del negocio.
+  if (dayKeyOf(start, tz) !== date.substring(0, 10)) return null;
+  const startMin = minutesOfDay(start, tz);
+  const endMin = minutesOfDay(new Date(endMs), tz);
   return computeVerticalPosition(
     startMin,
     endMin,

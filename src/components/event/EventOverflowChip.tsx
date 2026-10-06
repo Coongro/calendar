@@ -3,8 +3,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@coongro/ui-components'
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarEvent } from '../../types/event.js';
+import { timeOfDay } from '../../utils/zoned-day.js';
 
 import { EventCard } from './EventCard.js';
 import { MobileBottomSheet } from './MobileBottomSheet.js';
@@ -36,6 +38,7 @@ export interface EventOverflowChipProps {
 export function EventOverflowChip({ events, onEventClick, onOverride }: EventOverflowChipProps) {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile('sm');
+  const tz = useTenantTimezone();
   const count = events.length;
   if (count === 0) return null;
 
@@ -78,7 +81,7 @@ export function EventOverflowChip({ events, onEventClick, onOverride }: EventOve
   );
 
   if (isMobile) {
-    const { title, subtitle } = clusterHeaderLabels(events);
+    const { title, subtitle } = clusterHeaderLabels(events, tz);
     return (
       <>
         {chipButton}
@@ -175,13 +178,16 @@ function sortedItems(events: CalendarEvent[]): CalendarEvent[] {
   );
 }
 
-function clusterHeaderLabels(events: CalendarEvent[]): { title: string; subtitle: string } {
+function clusterHeaderLabels(
+  events: CalendarEvent[],
+  tz: string
+): { title: string; subtitle: string } {
   const sorted = sortedItems(events);
   const first = sorted[0];
-  const startMin = formatHM(first.start_at);
-  const endMax = formatHM(maxEnd(sorted));
+  const startMin = timeOfDay(first.start_at, tz);
+  const endMax = timeOfDay(maxEnd(sorted), tz);
   const title = `${events.length} turno${events.length === 1 ? '' : 's'} · ${startMin} – ${endMax}`;
-  const subtitle = formatDayLabel(first.start_at);
+  const subtitle = formatDayLabel(first.start_at, tz);
   return { title, subtitle };
 }
 
@@ -192,15 +198,9 @@ function maxEnd(events: CalendarEvent[]): string {
   );
 }
 
-function formatHM(iso: string): string {
-  const d = new Date(iso);
-  const h = String(d.getHours()).padStart(2, '0');
-  const m = String(d.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-}
-
-function formatDayLabel(iso: string): string {
+function formatDayLabel(iso: string, tz: string): string {
   return new Date(iso).toLocaleDateString('es-AR', {
+    timeZone: tz,
     weekday: 'short',
     day: '2-digit',
     month: 'short',

@@ -6,6 +6,7 @@ import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import { getMonthGridDays, getMonthName, toDateString, toDateKey } from '../../utils/date.js';
 import { getDayGridKeyTarget } from '../../utils/day-grid-keys.js';
+import { todayIn } from '../../utils/zoned-day.js';
 
 const SHORT_MONTHS = [
   'Ene',
@@ -121,10 +122,9 @@ export function CalendarGrid({
   const selectedKey = selectedDate ?? null;
   const todayKey = toDateKey(new Date(), tz);
   const selected = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null;
-  const [viewYear, setViewYear] = useState(
-    () => selected?.getFullYear() ?? new Date().getFullYear()
-  );
-  const [viewMonth, setViewMonth] = useState(() => selected?.getMonth() ?? new Date().getMonth());
+  // Sin selección arranca en el mes de «hoy» del negocio, no del navegador.
+  const [viewYear, setViewYear] = useState(() => (selected ?? todayIn(tz)).getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => (selected ?? todayIn(tz)).getMonth());
   const [viewLevel, setViewLevel] = useState<ViewLevel>('days');
   const [yearRangeStart, setYearRangeStart] = useState(() => Math.floor(viewYear / 12) * 12);
 
@@ -164,11 +164,11 @@ export function CalendarGrid({
   };
   const goToToday = () => {
     setSlideDirection(0);
-    const now = new Date();
-    setViewYear(now.getFullYear());
-    setViewMonth(now.getMonth());
+    const today = todayIn(tz);
+    setViewYear(today.getFullYear());
+    setViewMonth(today.getMonth());
     setViewLevel('days');
-    onDateSelect?.(toDateString(now));
+    onDateSelect?.(toDateString(today));
   };
 
   const handleTitleClick = () => {

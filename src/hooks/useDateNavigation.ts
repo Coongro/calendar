@@ -10,6 +10,7 @@ import {
   toDateString,
   getMonthName,
 } from '../utils/date.js';
+import { todayIn } from '../utils/zoned-day.js';
 
 import { useTenantTimezone } from './useTenantTimezone.js';
 
@@ -33,10 +34,11 @@ export function useDateNavigation(
   const tz = useTenantTimezone();
   // Solo se usa en el primer render (lazy initializer); cambios posteriores de
   // initialDate no re-posicionan el calendario — para eso está goToDate.
-  const [currentDate, setCurrentDate] = useState(() => initialDate ?? new Date());
+  // «Hoy» es el del negocio: cerca de la medianoche el del navegador puede ser otro día.
+  const [currentDate, setCurrentDate] = useState(() => initialDate ?? todayIn(tz));
   const [view, setView] = useState<CalendarViewMode>(initialView);
 
-  const goToToday = useCallback(() => setCurrentDate(new Date()), []);
+  const goToToday = useCallback(() => setCurrentDate(todayIn(tz)), [tz]);
   const goToDate = useCallback((date: Date) => setCurrentDate(date), []);
 
   const navigate = useCallback(
