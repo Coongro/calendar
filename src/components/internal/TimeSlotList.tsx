@@ -1,15 +1,7 @@
-/**
- * TimeSlotList — Selector de hora con dos niveles:
- *   Nivel 1: grilla 3-col de slots rápidos + botón "Hora exacta..."
- *   Nivel 2: columnas scrolleables hora (0-23) + minuto (configurable step)
- * Reutilizado por TimePicker (standalone) y DateTimePicker (inline).
- */
-import { getHostReact } from '@coongro/plugin-sdk';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { TouchEvent as ReactTouchEvent, WheelEvent as ReactWheelEvent } from 'react';
 
 import { generateTimeSlots } from '../../utils/date.js';
-
-const React = getHostReact();
-const { useState, useMemo, useEffect, useRef, useCallback } = React;
 
 export interface TimeSlotListProps {
   value?: string;
@@ -169,19 +161,19 @@ export function TimeSlotList({
 
   // Radix react-remove-scroll bloquea wheel/touch events cuando el target directo
   // (un button) no es scrolleable. Forzamos scroll manual en el contenedor.
-  const handleColWheel = useCallback((e: WheelEvent) => {
-    const container = e.currentTarget as HTMLDivElement;
+  const handleColWheel = useCallback((e: ReactWheelEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
     container.scrollTop += e.deltaY;
     e.preventDefault();
     e.stopPropagation();
   }, []);
 
   const touchStartY = useRef(0);
-  const handleTouchStart = useCallback((e: TouchEvent) => {
+  const handleTouchStart = useCallback((e: ReactTouchEvent<HTMLDivElement>) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    const container = e.currentTarget as HTMLDivElement;
+  const handleTouchMove = useCallback((e: ReactTouchEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
     const deltaY = touchStartY.current - e.touches[0].clientY;
     container.scrollTop += deltaY;
     touchStartY.current = e.touches[0].clientY;
@@ -255,176 +247,131 @@ export function TimeSlotList({
 
   // ── Nivel 1: Grilla de slots ──
   if (viewLevel === 'slots') {
-    return React.createElement(
-      'div',
-      { style: { padding: '12px 16px' } },
-      React.createElement(
-        'div',
-        { style: { ...STYLES.label, marginBottom: '8px' } },
-        'Seleccionar hora'
-      ),
-      React.createElement(
-        'div',
-        {
-          style: STYLES.slotGrid,
-          onWheel: handleColWheel,
-          onTouchStart: handleTouchStart,
-          onTouchMove: handleTouchMove,
-        },
-        quickSlots.map((slot) =>
-          React.createElement(
-            'button',
-            {
-              key: slot,
-              type: 'button',
-              className: currentValue === slot ? CLASSES.slotActive : CLASSES.slot,
-              style: STYLES.slot,
-              'aria-pressed': currentValue === slot,
-              onClick: () => handleSlotClick(slot),
-              'data-time': slot,
-              'aria-label': formatSlot(slot, use24Hour),
-            },
-            formatSlot(slot, use24Hour)
-          )
-        )
-      ),
-      React.createElement(
-        'button',
-        {
-          type: 'button',
-          className: CLASSES.customBtn,
-          style: STYLES.customBtn,
-          onClick: () => setViewLevel('exact'),
-        },
-        'Hora exacta...'
-      )
+    return (
+      <div style={{ padding: '12px 16px' }}>
+        <div style={{ ...STYLES.label, marginBottom: '8px' }}>Seleccionar hora</div>
+        <div
+          style={STYLES.slotGrid}
+          onWheel={handleColWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+        >
+          {quickSlots.map((slot) => (
+            <button
+              key={slot}
+              type="button"
+              className={currentValue === slot ? CLASSES.slotActive : CLASSES.slot}
+              style={STYLES.slot}
+              aria-pressed={currentValue === slot}
+              onClick={() => handleSlotClick(slot)}
+              data-time={slot}
+              aria-label={formatSlot(slot, use24Hour)}
+            >
+              {formatSlot(slot, use24Hour)}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className={CLASSES.customBtn}
+          style={STYLES.customBtn}
+          onClick={() => setViewLevel('exact')}
+        >
+          Hora exacta...
+        </button>
+      </div>
     );
   }
 
   // ── Nivel 2: Columnas hora + minuto ──
-  return React.createElement(
-    'div',
-    { style: { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '12px' } },
-
-    // Header con back
-    React.createElement(
-      'div',
-      { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      React.createElement(
-        'button',
-        {
-          type: 'button',
-          className: CLASSES.backBtn,
-          style: {
+  return (
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Header con back */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button
+          type="button"
+          className={CLASSES.backBtn}
+          style={{
             fontSize: '14px',
             padding: '4px 8px',
             borderRadius: '7px',
             fontFamily: 'inherit',
-          },
-          onClick: () => setViewLevel('slots'),
-        },
-        '‹ Volver'
-      )
-    ),
-
-    // Display grande
-    React.createElement(
-      'div',
-      { style: { textAlign: 'center', padding: '4px' } },
-      React.createElement(
-        'span',
-        {
-          style: {
+          }}
+          onClick={() => setViewLevel('slots')}
+        >
+          ‹ Volver
+        </button>
+      </div>
+      {/* Display grande */}
+      <div style={{ textAlign: 'center', padding: '4px' }}>
+        <span
+          style={{
             fontFamily: "'Noto Serif JP', serif",
             fontSize: '32px',
             fontWeight: '900',
             letterSpacing: '2px',
-          },
-        },
-        use24Hour ? pad2(selectedHour) : formatHour(selectedHour, false),
-        React.createElement('span', { style: { color: 'var(--cg-accent)' } }, ':'),
-        pad2(selectedMinute)
-      )
-    ),
-
-    // Columnas
-    React.createElement(
-      'div',
-      { style: { display: 'flex', gap: '12px' } },
-
-      // HORA
-      React.createElement(
-        'div',
-        { style: { flex: '1', display: 'flex', flexDirection: 'column' } },
-        React.createElement(
-          'div',
-          { style: { ...STYLES.label, textAlign: 'center', marginBottom: '6px' } },
-          'Hora'
-        ),
-        React.createElement(
-          'div',
-          {
-            ref: hourScrollRef,
-            style: STYLES.colScroll,
-            onWheel: handleColWheel,
-            onTouchStart: handleTouchStart,
-            onTouchMove: handleTouchMove,
-          },
-          hours.map((hour) =>
-            React.createElement(
-              'button',
-              {
-                key: hour,
-                type: 'button',
-                className: selectedHour === hour ? CLASSES.cellActive : CLASSES.cell,
-                style: STYLES.cell,
-                'aria-pressed': selectedHour === hour,
-                onClick: () => handleHourClick(hour),
-                'data-hour': pad2(hour),
-                'aria-label': `Hora ${pad2(hour)}`,
-              },
-              use24Hour ? pad2(hour) : formatHour(hour, false)
-            )
-          )
-        )
-      ),
-
-      // MINUTO
-      React.createElement(
-        'div',
-        { style: { flex: '1', display: 'flex', flexDirection: 'column' } },
-        React.createElement(
-          'div',
-          { style: { ...STYLES.label, textAlign: 'center', marginBottom: '6px' } },
-          'Minuto'
-        ),
-        React.createElement(
-          'div',
-          {
-            ref: minuteScrollRef,
-            style: STYLES.colScroll,
-            onWheel: handleColWheel,
-            onTouchStart: handleTouchStart,
-            onTouchMove: handleTouchMove,
-          },
-          minutes.map((minute) =>
-            React.createElement(
-              'button',
-              {
-                key: minute,
-                type: 'button',
-                className: selectedMinute === minute ? CLASSES.cellActive : CLASSES.cell,
-                style: STYLES.cell,
-                'aria-pressed': selectedMinute === minute,
-                onClick: () => handleMinuteClick(minute),
-                'data-minute': pad2(minute),
-                'aria-label': `Minuto ${pad2(minute)}`,
-              },
-              pad2(minute)
-            )
-          )
-        )
-      )
-    )
+          }}
+        >
+          {use24Hour ? pad2(selectedHour) : formatHour(selectedHour, false)}
+          <span style={{ color: 'var(--cg-accent)' }}>:</span>
+          {pad2(selectedMinute)}
+        </span>
+      </div>
+      {/* Columnas */}
+      <div style={{ display: 'flex', gap: '12px' }}>
+        {/* HORA */}
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ ...STYLES.label, textAlign: 'center', marginBottom: '6px' }}>Hora</div>
+          <div
+            ref={hourScrollRef}
+            style={STYLES.colScroll}
+            onWheel={handleColWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+          >
+            {hours.map((hour) => (
+              <button
+                key={hour}
+                type="button"
+                className={selectedHour === hour ? CLASSES.cellActive : CLASSES.cell}
+                style={STYLES.cell}
+                aria-pressed={selectedHour === hour}
+                onClick={() => handleHourClick(hour)}
+                data-hour={pad2(hour)}
+                aria-label={`Hora ${pad2(hour)}`}
+              >
+                {use24Hour ? pad2(hour) : formatHour(hour, false)}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* MINUTO */}
+        <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ ...STYLES.label, textAlign: 'center', marginBottom: '6px' }}>Minuto</div>
+          <div
+            ref={minuteScrollRef}
+            style={STYLES.colScroll}
+            onWheel={handleColWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+          >
+            {minutes.map((minute) => (
+              <button
+                key={minute}
+                type="button"
+                className={selectedMinute === minute ? CLASSES.cellActive : CLASSES.cell}
+                style={STYLES.cell}
+                aria-pressed={selectedMinute === minute}
+                onClick={() => handleMinuteClick(minute)}
+                data-minute={pad2(minute)}
+                aria-label={`Minuto ${pad2(minute)}`}
+              >
+                {pad2(minute)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

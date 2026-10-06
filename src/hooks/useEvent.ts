@@ -1,9 +1,7 @@
-import { getHostReact, actions } from '@coongro/plugin-sdk';
+import { actions } from '@coongro/plugin-sdk';
+import { useEffect, useRef, useState } from 'react';
 
 import type { CalendarEvent } from '../types/event.js';
-
-const React = getHostReact();
-const { useState, useEffect, useRef } = React;
 
 export interface UseEventResult {
   event: CalendarEvent | null;

@@ -5,14 +5,25 @@ import {
   toDateKey,
   type UTCTimestamp,
 } from '@coongro/datetime';
-import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
+import { useViewContributions, useIsMobile } from '@coongro/plugin-sdk';
+import {
+  Button,
+  FormSection,
+  Input,
+  Label,
+  Select,
+  SelectItem,
+  Skeleton,
+  Switch,
+  Textarea,
+} from '@coongro/ui-components';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { useCalendars } from '../../hooks/useCalendars.js';
 import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import { useEvent } from '../../hooks/useEvent.js';
 import { useEventMutations } from '../../hooks/useEventMutations.js';
 import { useEventTypes } from '../../hooks/useEventTypes.js';
-import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { EventFormProps } from '../../types/components.js';
@@ -22,10 +33,6 @@ import { STATUS_LABELS, toSelectOptions } from '../../utils/labels.js';
 import { ColorPicker } from '../internal/ColorPicker.js';
 import { DatePicker } from '../internal/DatePicker.js';
 import { TimePicker } from '../internal/TimePicker.js';
-
-const React = getHostReact();
-const UI = getHostUI();
-const { useState, useEffect, useCallback } = React;
 
 function isFieldHidden(field: string, hiddenFields?: string[]): boolean {
   return hiddenFields?.includes(field) ?? false;
@@ -62,7 +69,7 @@ export function EventForm({
   hideActions,
   onSavingChange,
 }: EventFormProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile('sm');
   const tz = useTenantTimezone();
   const isEdit = !!eventId;
   const { event, loading: loadingEvent } = useEvent(eventId);
@@ -176,19 +183,19 @@ export function EventForm({
   );
 
   if (isEdit && loadingEvent) {
-    return React.createElement(
-      'div',
-      {
-        style: {
+    return (
+      <div
+        style={{
           display: 'flex',
           flexDirection: 'column',
           gap: '1rem',
           padding: '1rem',
-        },
-      },
-      Array.from({ length: 6 }).map((_, i) =>
-        React.createElement(UI.Skeleton, { key: i, className: 'h-10 rounded-lg' })
-      )
+        }}
+      >
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 rounded-lg" />
+        ))}
+      </div>
     );
   }
 
@@ -201,299 +208,250 @@ export function EventForm({
   // ── Contenido de cada FormSection (campos originales, sin Card propio) ──
 
   const detallesContent = [
-    React.createElement(
-      'div',
-      { key: 'title', style: FIELD_STYLE },
-      React.createElement(UI.Label, null, 'Título *'),
-      React.createElement(UI.Input, {
-        value: (formData.title as string) ?? '',
-        onChange: (e: { target: { value: string } }) => handleChange('title', e.target.value),
-        placeholder: 'Título del evento',
-        required: true,
-      })
+    <div key="title" style={FIELD_STYLE}>
+      <Label>Título *</Label>
+      <Input
+        value={(formData.title as string) ?? ''}
+        onChange={(e: { target: { value: string } }) => handleChange('title', e.target.value)}
+        placeholder="Título del evento"
+        required={true}
+      />
+    </div>,
+    !isFieldHidden('description', hiddenFields) && (
+      <div key="description" style={FIELD_STYLE}>
+        <Label>{`Descripción${settings.requireDescription ? ' *' : ''}`}</Label>
+        <Textarea
+          value={(formData.description as string) ?? ''}
+          onChange={(e: { target: { value: string } }) =>
+            handleChange('description', e.target.value)
+          }
+          placeholder="Descripción del evento"
+          rows={3}
+        />
+        {errors.description && <span style={ERROR_TEXT_STYLE}>{errors.description}</span>}
+      </div>
     ),
-    !isFieldHidden('description', hiddenFields) &&
-      React.createElement(
-        'div',
-        { key: 'description', style: FIELD_STYLE },
-        React.createElement(
-          UI.Label,
-          null,
-          `Descripción${settings.requireDescription ? ' *' : ''}`
-        ),
-        React.createElement(UI.Textarea, {
-          value: (formData.description as string) ?? '',
-          onChange: (e: { target: { value: string } }) =>
-            handleChange('description', e.target.value),
-          placeholder: 'Descripción del evento',
-          rows: 3,
-        }),
-        errors.description &&
-          React.createElement('span', { style: ERROR_TEXT_STYLE }, errors.description)
-      ),
   ].filter(Boolean);
 
   const fechaContent = [
-    React.createElement(
-      'div',
-      {
-        key: 'datetime-grid',
-        style: {
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-          gap: '0.75rem',
-        },
-      },
-      React.createElement(
-        'div',
-        { style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Fecha *'),
-        React.createElement(DatePicker, {
-          value: startDate,
-          onChange: (date: string) => {
+    <div
+      key="datetime-grid"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+        gap: '0.75rem',
+      }}
+    >
+      <div style={FIELD_STYLE}>
+        <Label>Fecha *</Label>
+        <DatePicker
+          value={startDate}
+          onChange={(date: string) => {
             const st = localToUTC(date, startTime || '09:00', tz);
             handleChange('start_at', st);
             handleChange('end_at', addMinutes(st, settings.defaultDuration));
-          },
-        })
-      ),
-      !(formData.all_day as boolean) &&
-        React.createElement(
-          'div',
-          { style: FIELD_STYLE },
-          React.createElement(UI.Label, null, 'Inicio'),
-          React.createElement(TimePicker, {
-            value: startTime,
-            step: settings.slotDuration,
-            minuteStep: settings.minuteStep,
-            use24Hour: settings.use24Hour,
-            onChange: (time: string) => {
+          }}
+        />
+      </div>
+      {!(formData.all_day as boolean) && (
+        <div style={FIELD_STYLE}>
+          <Label>Inicio</Label>
+          <TimePicker
+            value={startTime}
+            step={settings.slotDuration}
+            minuteStep={settings.minuteStep}
+            use24Hour={settings.use24Hour}
+            onChange={(time: string) => {
               const st = localToUTC(startDate, time, tz);
               handleChange('start_at', st);
               handleChange('end_at', addMinutes(st, settings.defaultDuration));
-            },
-          })
-        ),
-      !(formData.all_day as boolean) &&
-        React.createElement(
-          'div',
-          { style: FIELD_STYLE },
-          React.createElement(UI.Label, null, 'Fin'),
-          React.createElement(TimePicker, {
-            value: endTime,
-            step: settings.slotDuration,
-            minuteStep: settings.minuteStep,
-            use24Hour: settings.use24Hour,
-            onChange: (time: string) => {
+            }}
+          />
+        </div>
+      )}
+      {!(formData.all_day as boolean) && (
+        <div style={FIELD_STYLE}>
+          <Label>Fin</Label>
+          <TimePicker
+            value={endTime}
+            step={settings.slotDuration}
+            minuteStep={settings.minuteStep}
+            use24Hour={settings.use24Hour}
+            onChange={(time: string) => {
               handleChange('end_at', localToUTC(startDate, time, tz));
-            },
-          })
-        )
-    ),
-    React.createElement(
-      'div',
-      {
-        key: 'all-day',
-        style: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-      },
-      React.createElement(UI.Switch, {
-        checked: (formData.all_day as boolean) ?? false,
-        onCheckedChange: (checked: boolean) => handleChange('all_day', checked),
-      }),
-      React.createElement(UI.Label, null, 'Todo el día')
-    ),
+            }}
+          />
+        </div>
+      )}
+    </div>,
+    <div key="all-day" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <Switch
+        checked={(formData.all_day as boolean) ?? false}
+        onCheckedChange={(checked: boolean) => handleChange('all_day', checked)}
+      />
+      <Label>Todo el día</Label>
+    </div>,
   ];
 
   const categorizacionContent = [
-    React.createElement(
-      'div',
-      {
-        key: 'cal-type-grid',
-        style: {
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-          gap: '0.75rem',
-        },
-      },
-      React.createElement(
-        'div',
-        { style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Calendario'),
-        React.createElement(
-          UI.Select,
-          {
-            value: (formData.calendar_id as string) ?? '',
-            onValueChange: (v: string) => handleChange('calendar_id', v),
-            placeholder: calOpts.length === 0 ? 'Sin calendarios' : 'Seleccionar',
-          },
-          ...calOpts.map((cal) =>
-            React.createElement(UI.SelectItem, { key: cal.id, value: cal.id }, cal.name)
-          )
-        )
-      ),
-      React.createElement(
-        'div',
-        { style: FIELD_STYLE },
-        React.createElement(UI.Label, null, `Tipo${settings.requireType ? ' *' : ''}`),
-        React.createElement(
-          UI.Select,
-          {
-            value: (formData.event_type_id as string) ?? '',
-            onValueChange: (v: string) => handleChange('event_type_id', v),
-            placeholder: typeOpts.length === 0 ? 'Sin tipos' : 'Seleccionar',
-          },
-          ...typeOpts.map((t) =>
-            React.createElement(UI.SelectItem, { key: t.id, value: t.id }, t.name)
-          )
-        ),
-        errors.event_type_id &&
-          React.createElement('span', { style: ERROR_TEXT_STYLE }, errors.event_type_id)
-      )
-    ),
-    React.createElement(
-      'div',
-      { key: 'status', style: FIELD_STYLE },
-      React.createElement(UI.Label, null, 'Estado'),
-      React.createElement(
-        UI.Select,
-        {
-          value: (formData.status as string) ?? 'scheduled',
-          onValueChange: (v: string) => handleChange('status', v),
-        },
-        toSelectOptions(STATUS_LABELS).map((opt) =>
-          React.createElement(UI.SelectItem, { key: opt.value, value: opt.value }, opt.label)
-        )
-      )
-    ),
+    <div
+      key="cal-type-grid"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+        gap: '0.75rem',
+      }}
+    >
+      <div style={FIELD_STYLE}>
+        <Label>Calendario</Label>
+        <Select
+          value={(formData.calendar_id as string) ?? ''}
+          onValueChange={(v: string) => handleChange('calendar_id', v)}
+          placeholder={calOpts.length === 0 ? 'Sin calendarios' : 'Seleccionar'}
+        >
+          {calOpts.map((cal) => (
+            <SelectItem key={cal.id} value={cal.id}>
+              {cal.name}
+            </SelectItem>
+          ))}
+        </Select>
+      </div>
+      <div style={FIELD_STYLE}>
+        <Label>{`Tipo${settings.requireType ? ' *' : ''}`}</Label>
+        <Select
+          value={(formData.event_type_id as string) ?? ''}
+          onValueChange={(v: string) => handleChange('event_type_id', v)}
+          placeholder={typeOpts.length === 0 ? 'Sin tipos' : 'Seleccionar'}
+        >
+          {typeOpts.map((t) => (
+            <SelectItem key={t.id} value={t.id}>
+              {t.name}
+            </SelectItem>
+          ))}
+        </Select>
+        {errors.event_type_id && <span style={ERROR_TEXT_STYLE}>{errors.event_type_id}</span>}
+      </div>
+    </div>,
+    <div key="status" style={FIELD_STYLE}>
+      <Label>Estado</Label>
+      <Select
+        value={(formData.status as string) ?? 'scheduled'}
+        onValueChange={(v: string) => handleChange('status', v)}
+      >
+        {toSelectOptions(STATUS_LABELS).map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </SelectItem>
+        ))}
+      </Select>
+    </div>,
   ];
 
   const adicionalContent = [
-    !isFieldHidden('location', hiddenFields) &&
-      React.createElement(
-        'div',
-        { key: 'location', style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Ubicación'),
-        React.createElement(UI.Input, {
-          value: (formData.location as string) ?? '',
-          onChange: (e: { target: { value: string } }) => handleChange('location', e.target.value),
-          placeholder: 'Ubicación',
-        })
-      ),
-    !isFieldHidden('notes', hiddenFields) &&
-      settings.showNotes &&
-      React.createElement(
-        'div',
-        { key: 'notes', style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Notas'),
-        React.createElement(UI.Textarea, {
-          value: (formData.notes as string) ?? '',
-          onChange: (e: { target: { value: string } }) => handleChange('notes', e.target.value),
-          placeholder: 'Notas internas',
-          rows: 2,
-        })
-      ),
-    !isFieldHidden('color', hiddenFields) &&
-      settings.showColorPicker &&
-      React.createElement(
-        'div',
-        { key: 'color', style: FIELD_STYLE },
-        React.createElement(UI.Label, null, 'Color'),
-        React.createElement(ColorPicker, {
-          value: (formData.color as string) ?? '',
-          onChange: (color: string) => handleChange('color', color),
-        })
-      ),
+    !isFieldHidden('location', hiddenFields) && (
+      <div key="location" style={FIELD_STYLE}>
+        <Label>Ubicación</Label>
+        <Input
+          value={(formData.location as string) ?? ''}
+          onChange={(e: { target: { value: string } }) => handleChange('location', e.target.value)}
+          placeholder="Ubicación"
+        />
+      </div>
+    ),
+    !isFieldHidden('notes', hiddenFields) && settings.showNotes && (
+      <div key="notes" style={FIELD_STYLE}>
+        <Label>Notas</Label>
+        <Textarea
+          value={(formData.notes as string) ?? ''}
+          onChange={(e: { target: { value: string } }) => handleChange('notes', e.target.value)}
+          placeholder="Notas internas"
+          rows={2}
+        />
+      </div>
+    ),
+    !isFieldHidden('color', hiddenFields) && settings.showColorPicker && (
+      <div key="color" style={FIELD_STYLE}>
+        <Label>Color</Label>
+        <ColorPicker
+          value={(formData.color as string) ?? ''}
+          onChange={(color: string) => handleChange('color', color)}
+        />
+      </div>
+    ),
   ].filter(Boolean);
 
-  return React.createElement(
-    'form',
-    {
-      ref: formRef,
-      onSubmit: handleSubmit,
-      className,
-      style: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-    },
-
-    // Contribuciones before
-    ...(beforeSections.length > 0
-      ? beforeSections.map((s, i) =>
-          React.createElement(React.Fragment, { key: `before-${String(i)}` }, s.render() as any)
-        )
-      : renderBeforeFields
-        ? [renderBeforeFields()]
-        : []),
-
-    // Detalles
-    React.createElement(
-      UI.FormSection,
-      { icon: 'FileText', title: 'Detalles' },
-      ...detallesContent
-    ),
-
-    // Fecha y hora
-    React.createElement(UI.FormSection, { icon: 'Clock', title: 'Fecha y hora' }, ...fechaContent),
-
-    // Categorización
-    React.createElement(
-      UI.FormSection,
-      { icon: 'Tag', title: 'Categorización' },
-      ...categorizacionContent
-    ),
-
-    // Entity section (contribution slot)
-    ...(entitySections.length > 0
-      ? entitySections.map((s, i) =>
-          React.createElement(React.Fragment, { key: `entity-${String(i)}` }, s.render() as any)
-        )
-      : renderEntitySection
-        ? [renderEntitySection()]
-        : []),
-
-    // Información adicional (solo si hay al menos un campo visible)
-    adicionalContent.length > 0 &&
-      React.createElement(
-        UI.FormSection,
-        { icon: 'Settings', title: 'Información adicional' },
-        ...adicionalContent
-      ),
-
-    // Contribuciones after
-    ...(afterSections.length > 0
-      ? afterSections.map((s, i) =>
-          React.createElement(React.Fragment, { key: `after-${String(i)}` }, s.render() as any)
-        )
-      : renderAfterFields
-        ? [renderAfterFields()]
-        : []),
-
-    // Botones (renderFooter override prioriza, sino default si !hideActions)
-    renderFooter
-      ? renderFooter()
-      : !hideActions &&
-          React.createElement(
-            'div',
-            {
-              style: {
+  return (
+    <form
+      ref={formRef}
+      onSubmit={(e) => void handleSubmit(e)}
+      className={className}
+      style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+    >
+      {/* Contribuciones before */}
+      {beforeSections.length > 0
+        ? beforeSections.map((s, i) => (
+            <Fragment key={`before-${String(i)}`}>{s.render()}</Fragment>
+          ))
+        : renderBeforeFields
+          ? renderBeforeFields()
+          : null}
+      {/* Detalles */}
+      <FormSection icon="FileText" title="Detalles">
+        {detallesContent}
+      </FormSection>
+      {/* Fecha y hora */}
+      <FormSection icon="Clock" title="Fecha y hora">
+        {fechaContent}
+      </FormSection>
+      {/* Categorización */}
+      <FormSection icon="Tag" title="Categorización">
+        {categorizacionContent}
+      </FormSection>
+      {/* Entity section (contribution slot) */}
+      {entitySections.length > 0
+        ? entitySections.map((s, i) => (
+            <Fragment key={`entity-${String(i)}`}>{s.render()}</Fragment>
+          ))
+        : renderEntitySection
+          ? renderEntitySection()
+          : null}
+      {/* Información adicional (solo si hay al menos un campo visible) */}
+      {adicionalContent.length > 0 && (
+        <FormSection icon="Settings" title="Información adicional">
+          {adicionalContent}
+        </FormSection>
+      )}
+      {/* Contribuciones after */}
+      {afterSections.length > 0
+        ? afterSections.map((s, i) => <Fragment key={`after-${String(i)}`}>{s.render()}</Fragment>)
+        : renderAfterFields
+          ? renderAfterFields()
+          : null}
+      {/* Botones (renderFooter override prioriza, sino default si !hideActions) */}
+      {renderFooter
+        ? renderFooter()
+        : !hideActions && (
+            <div
+              style={{
                 display: 'flex',
                 flexDirection: isMobile ? 'column' : 'row',
                 gap: '0.75rem',
                 paddingTop: '0.5rem',
-              },
-            },
-            React.createElement(
-              UI.Button,
-              { type: 'submit', disabled: isSaving, className: 'flex-1' },
-              isSaving ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear evento'
-            ),
-            onCancel &&
-              React.createElement(
-                UI.Button,
-                { type: 'button', variant: 'outline', onClick: onCancel },
-                'Cancelar'
-              ),
-            ...actionSections.map((s, i) =>
-              React.createElement(React.Fragment, { key: `action-${String(i)}` }, s.render() as any)
-            )
-          )
+              }}
+            >
+              <Button type="submit" disabled={isSaving} className="flex-1">
+                {isSaving ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear evento'}
+              </Button>
+              {onCancel && (
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancelar
+                </Button>
+              )}
+              {actionSections.map((s, i) => (
+                <Fragment key={`action-${String(i)}`}>{s.render()}</Fragment>
+              ))}
+            </div>
+          )}
+    </form>
   );
 }

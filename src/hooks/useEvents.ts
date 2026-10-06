@@ -1,10 +1,8 @@
-import { getHostReact, actions } from '@coongro/plugin-sdk';
+import { actions } from '@coongro/plugin-sdk';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CalendarEvent } from '../types/event.js';
 import type { EventFilters, SortDirection } from '../types/filters.js';
-
-const React = getHostReact();
-const { useState, useEffect, useCallback, useRef } = React;
 
 export interface UseEventsOptions extends EventFilters {
   pageSize?: number;

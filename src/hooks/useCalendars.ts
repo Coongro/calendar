@@ -1,9 +1,7 @@
-import { getHostReact, actions } from '@coongro/plugin-sdk';
+import { actions } from '@coongro/plugin-sdk';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CalendarGroup } from '../types/calendar.js';
-
-const React = getHostReact();
-const { useState, useEffect, useCallback, useRef } = React;
 
 export interface UseCalendarsResult {
   data: CalendarGroup[];
