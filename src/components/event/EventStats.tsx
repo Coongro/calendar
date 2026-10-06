@@ -1,13 +1,10 @@
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import { EmptyState, Skeleton } from '@coongro/ui-components';
 import type { ReactElement } from 'react';
 
 import { useEventStats } from '../../hooks/useEventStats.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { EventStatsProps } from '../../types/components.js';
 import { formatStatus } from '../../utils/labels.js';
-
-const React = getHostReact();
-const UI = getHostUI();
 
 // Colores para barras proporcionales y acento de card — usan CSS vars para dark mode
 const STATUS_COLORS_HEX: Record<string, string> = {
@@ -33,37 +30,33 @@ export function EventStats({ from, to, className = '' }: EventStatsProps): React
   const { byStatus, loading } = useEventStats({ from, to });
 
   if (loading) {
-    return React.createElement(
-      'div',
-      {
-        className,
-        style: {
+    return (
+      <div
+        className={className}
+        style={{
           display: 'flex',
           flexDirection: 'column',
           gap: '1rem',
-        },
-      },
-      React.createElement(
-        'div',
-        {
-          style: {
+        }}
+      >
+        <div
+          style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '0.75rem',
-          },
-        },
-        Array.from({ length: 4 }).map((_, i) =>
-          React.createElement(UI.Skeleton, { key: i, className: 'h-[72px] rounded-lg' })
-        )
-      ),
-      React.createElement(UI.Skeleton, { className: 'h-2.5 w-full rounded-full' }),
-      React.createElement(
-        'div',
-        { style: { display: 'flex', gap: '1rem' } },
-        Array.from({ length: 3 }).map((_, i) =>
-          React.createElement(UI.Skeleton, { key: i, className: 'h-3 w-20 rounded' })
-        )
-      )
+          }}
+        >
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[72px] rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-2.5 w-full rounded-full" />
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-3 w-20 rounded" />
+          ))}
+        </div>
+      </div>
     );
   }
 
@@ -71,229 +64,192 @@ export function EventStats({ from, to, className = '' }: EventStatsProps): React
   const activeStats = byStatus.filter((s) => s.count > 0);
 
   if (total === 0) {
-    return React.createElement(UI.EmptyState, {
-      title: 'Sin eventos en este período',
-      className,
-    });
+    return <EmptyState title="Sin eventos en este período" className={className} />;
   }
 
-  return React.createElement(
-    'div',
-    {
-      className,
-      style: {
+  return (
+    <div
+      className={className}
+      style={{
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
-      },
-    },
-
-    // — Grid de cards —
-    React.createElement(
-      'div',
-      {
-        style: {
+      }}
+    >
+      {/* — Grid de cards — */}
+      <div
+        style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
           gap: '0.75rem',
-        },
-      },
-
-      // Card Total (primaria)
-      React.createElement(
-        'div',
-        {
-          style: {
+        }}
+      >
+        {/* Card Total (primaria) */}
+        <div
+          style={{
             borderRadius: '0.5rem',
             border: `1px solid ${TOKENS.border}`,
             backgroundColor: TOKENS.bg,
             padding: '1rem',
-          },
-        },
-        React.createElement(
-          'div',
-          {
-            style: {
+          }}
+        >
+          <div
+            style={{
               fontSize: '1.875rem',
               fontWeight: 700,
               color: TOKENS.tealDk,
               lineHeight: 1,
-            },
-          },
-          total
-        ),
-        React.createElement(
-          'div',
-          {
-            style: {
+            }}
+          >
+            {total}
+          </div>
+          <div
+            style={{
               fontSize: '11px',
               fontWeight: 600,
               color: TOKENS.ink4,
               textTransform: 'uppercase' as const,
               letterSpacing: '0.05em',
               marginTop: '0.375rem',
-            },
-          },
-          'Total'
-        )
-      ),
+            }}
+          >
+            Total
+          </div>
+        </div>
+        {/* Cards por estado */}
+        {activeStats.map((stat) => {
+          const styles = STATUS_CARD_STYLES[stat.key] ?? { text: TOKENS.ink, bg: '' };
+          const color = STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)';
+          const pct = Math.round((stat.count / total) * 100);
 
-      // Cards por estado
-      ...activeStats.map((stat) => {
-        const styles = STATUS_CARD_STYLES[stat.key] ?? { text: TOKENS.ink, bg: '' };
-        const color = STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)';
-        const pct = Math.round((stat.count / total) * 100);
-
-        return React.createElement(
-          'div',
-          {
-            key: stat.key,
-            style: {
-              borderRadius: '0.5rem',
-              border: `1px solid ${TOKENS.border}`,
-              backgroundColor: styles.bg || undefined,
-              padding: '1rem',
-            },
-          },
-          // Dot de color + label (header)
-          React.createElement(
-            'div',
-            {
-              style: {
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '0.375rem',
-              },
-            },
-            React.createElement(
-              'div',
-              {
-                style: {
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  color: TOKENS.ink,
-                  lineHeight: 1,
-                },
-              },
-              stat.count
-            ),
-            React.createElement(
-              'div',
-              {
-                style: {
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: styles.text,
-                },
-              },
-              `${pct}%`
-            )
-          ),
-          // Label con dot
-          React.createElement(
-            'div',
-            {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.375rem',
-                marginTop: '0.375rem',
-              },
-            },
-            React.createElement('span', {
-              style: {
-                width: '0.5rem',
-                height: '0.5rem',
-                borderRadius: '9999px',
-                flexShrink: 0,
-                backgroundColor: color,
-              },
-            }),
-            React.createElement(
-              'span',
-              {
-                style: {
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  color: styles.text,
-                },
-              },
-              formatStatus(stat.key)
-            )
-          )
-        );
-      })
-    ),
-
-    // — Barra de proporcion apilada —
-    React.createElement(
-      'div',
-      { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem' } },
-
-      React.createElement(
-        'div',
-        {
-          style: {
+          return (
+            <div
+              key={stat.key}
+              style={{
+                borderRadius: '0.5rem',
+                border: `1px solid ${TOKENS.border}`,
+                backgroundColor: styles.bg || undefined,
+                padding: '1rem',
+              }}
+            >
+              {/* Dot de color + label (header) */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: '0.375rem',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                    color: TOKENS.ink,
+                    lineHeight: 1,
+                  }}
+                >
+                  {stat.count}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: styles.text,
+                  }}
+                >
+                  {`${pct}%`}
+                </div>
+              </div>
+              {/* Label con dot */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.375rem',
+                  marginTop: '0.375rem',
+                }}
+              >
+                <span
+                  style={{
+                    width: '0.5rem',
+                    height: '0.5rem',
+                    borderRadius: '9999px',
+                    flexShrink: 0,
+                    backgroundColor: color,
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    color: styles.text,
+                  }}
+                >
+                  {formatStatus(stat.key)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* — Barra de proporcion apilada — */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div
+          style={{
             display: 'flex',
             height: '0.5rem',
             borderRadius: '9999px',
             overflow: 'hidden',
             gap: '1px',
             backgroundColor: `color-mix(in srgb, ${TOKENS.border} 19%, transparent)`,
-          },
-        },
-        ...activeStats.map((stat) =>
-          React.createElement('div', {
-            key: stat.key,
-            style: {
-              height: '100%',
-              transition: 'all 500ms',
-              width: `${(stat.count / total) * 100}%`,
-              backgroundColor: STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)',
-            },
-          })
-        )
-      ),
-
-      // Leyenda
-      React.createElement(
-        'div',
-        {
-          style: {
+          }}
+        >
+          {activeStats.map((stat) => (
+            <div
+              key={stat.key}
+              style={{
+                height: '100%',
+                transition: 'all 500ms',
+                width: `${(stat.count / total) * 100}%`,
+                backgroundColor: STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)',
+              }}
+            />
+          ))}
+        </div>
+        {/* Leyenda */}
+        <div
+          style={{
             display: 'flex',
             flexWrap: 'wrap',
             columnGap: '1rem',
             rowGap: '0.25rem',
-          },
-        },
-        ...activeStats.map((stat) =>
-          React.createElement(
-            'div',
-            {
-              key: stat.key,
-              style: {
+          }}
+        >
+          {activeStats.map((stat) => (
+            <div
+              key={stat.key}
+              style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.375rem',
-              },
-            },
-            React.createElement('div', {
-              style: {
-                width: '0.5rem',
-                height: '0.5rem',
-                borderRadius: '9999px',
-                flexShrink: 0,
-                backgroundColor: STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)',
-              },
-            }),
-            React.createElement(
-              'span',
-              { style: { fontSize: '0.75rem', color: TOKENS.ink4 } },
-              `${formatStatus(stat.key)} · ${stat.count}`
-            )
-          )
-        )
-      )
-    )
+              }}
+            >
+              <div
+                style={{
+                  width: '0.5rem',
+                  height: '0.5rem',
+                  borderRadius: '9999px',
+                  flexShrink: 0,
+                  backgroundColor: STATUS_COLORS_HEX[stat.key] ?? 'var(--cg-text-muted)',
+                }}
+              />
+              <span style={{ fontSize: '0.75rem', color: TOKENS.ink4 }}>
+                {`${formatStatus(stat.key)} · ${stat.count}`}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

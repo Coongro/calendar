@@ -1,8 +1,4 @@
-/**
- * Helpers compartidos para las grillas de calendario.
- * Centraliza logica de now-line, posicionamiento de eventos y agrupacion por dia.
- */
-import { getHostReact } from '@coongro/plugin-sdk';
+import type { ReactElement } from 'react';
 
 import { TOKENS } from '../styles/tokens.js';
 import type { CalendarEvent } from '../types/event.js';
@@ -143,13 +139,10 @@ export function dayNumberStyles(
 // ── NowLine component ──
 
 /** Renderiza la linea gold de "ahora" (triangulo + linea horizontal). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function renderNowLine(nowTop: number): any {
-  const React = getHostReact();
-  return React.createElement(
-    'div',
-    {
-      style: {
+export function renderNowLine(nowTop: number): ReactElement {
+  return (
+    <div
+      style={{
         position: 'absolute',
         left: '0',
         right: '0',
@@ -158,27 +151,28 @@ export function renderNowLine(nowTop: number): any {
         alignItems: 'center',
         zIndex: String(NOW_LINE_Z),
         pointerEvents: 'none',
-      },
-    },
-    // Flecha triangular gold
-    React.createElement('div', {
-      style: {
-        width: '0',
-        height: '0',
-        borderTop: '5px solid transparent',
-        borderBottom: '5px solid transparent',
-        borderLeft: `8px solid ${TOKENS.gold}`,
-        marginLeft: '-2px',
-        flexShrink: '0',
-      },
-    }),
-    // Linea gold
-    React.createElement('div', {
-      style: {
-        flex: '1',
-        height: '2px',
-        background: TOKENS.gold,
-      },
-    })
+      }}
+    >
+      {/* Flecha triangular gold */}
+      <div
+        style={{
+          width: '0',
+          height: '0',
+          borderTop: '5px solid transparent',
+          borderBottom: '5px solid transparent',
+          borderLeft: `8px solid ${TOKENS.gold}`,
+          marginLeft: '-2px',
+          flexShrink: '0',
+        }}
+      />
+      {/* Linea gold */}
+      <div
+        style={{
+          flex: '1',
+          height: '2px',
+          background: TOKENS.gold,
+        }}
+      />
+    </div>
   );
 }

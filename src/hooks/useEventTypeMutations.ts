@@ -1,9 +1,7 @@
-import { getHostReact, actions, usePlugin } from '@coongro/plugin-sdk';
+import { actions, usePlugin } from '@coongro/plugin-sdk';
+import { useCallback, useState } from 'react';
 
 import type { EventType, EventTypeCreateData, EventTypeUpdateData } from '../types/event-type.js';
-
-const React = getHostReact();
-const { useState, useCallback } = React;
 
 export interface UseEventTypeMutationsResult {
   creating: boolean;

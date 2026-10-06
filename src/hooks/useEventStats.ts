@@ -1,7 +1,5 @@
-import { getHostReact, actions } from '@coongro/plugin-sdk';
-
-const React = getHostReact();
-const { useState, useEffect, useCallback, useRef } = React;
+import { actions } from '@coongro/plugin-sdk';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface CountResult {
   key: string;

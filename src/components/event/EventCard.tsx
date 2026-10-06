@@ -1,32 +1,32 @@
-import { getHostReact } from '@coongro/plugin-sdk';
+import { MapPinIcon } from 'lucide-react';
+import type { ReactElement } from 'react';
 
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS, TRUNCATE, EVENT_CARD_VARIANTS, statusBadgeStyle } from '../../styles/tokens.js';
 import type { EventCardProps } from '../../types/components.js';
 import { formatEventDate, formatEventTime } from '../../utils/date.js';
 import { formatStatus } from '../../utils/labels.js';
-import { PinIcon } from '../internal/icons.js';
-
-const React = getHostReact();
 
 // ── Helpers ──
 
 function renderStatusBadge(status: string) {
-  return React.createElement('span', { style: statusBadgeStyle(status) }, formatStatus(status));
+  return <span style={statusBadgeStyle(status)}>{formatStatus(status)}</span>;
 }
 
 function dot(color: string | null, size: string, extraStyle?: Record<string, string>) {
   if (!color) return null;
-  return React.createElement('span', {
-    style: {
-      width: size,
-      height: size,
-      borderRadius: '50%',
-      background: color,
-      flexShrink: 0,
-      ...extraStyle,
-    },
-  });
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: color,
+        flexShrink: 0,
+        ...extraStyle,
+      }}
+    />
+  );
 }
 
 function cancelledStyle(isCancelled: boolean): Record<string, string> {
@@ -56,7 +56,7 @@ export function EventCard({
 }: EventCardProps) {
   const tz = useTenantTimezone();
   if (render) {
-    return render(event) as ReturnType<typeof React.createElement>;
+    return render(event) as ReactElement;
   }
 
   const color = showCalendarColor ? (event.color ?? TOKENS.ink4) : null;
@@ -67,45 +67,42 @@ export function EventCard({
   // ── Mini: solo dot + titulo (month grid) ──
   if (v === 'mini') {
     const cfg = EVENT_CARD_VARIANTS.mini;
-    return React.createElement(
-      'div',
-      {
-        className,
-        style: {
+    return (
+      <div
+        className={className}
+        style={{
           display: 'flex',
           alignItems: 'center',
           gap: '5px',
           padding: '2px 6px',
           opacity: isCancelled ? 0.6 : 1,
           ...clickProps,
-        },
-        onClick: clickProps.onClick,
-      },
-      dot(color, cfg.dotSize),
-      React.createElement(
-        'span',
-        {
-          style: {
+        }}
+        onClick={clickProps.onClick}
+      >
+        {dot(color, cfg.dotSize)}
+        <span
+          style={{
             fontSize: cfg.titleSize,
             fontWeight: 500,
             color: TOKENS.ink2,
             ...TRUNCATE,
             ...cancelledStyle(isCancelled),
-          },
-        },
-        event.title
-      )
+          }}
+        >
+          {event.title}
+        </span>
+      </div>
     );
   }
 
   // ── List: flat row para widgets y agenda ──
   if (v === 'list') {
     const cfg = EVENT_CARD_VARIANTS.list;
-    return React.createElement(
-      'div',
-      {
-        className,
-        style: {
+    return (
+      <div
+        className={className}
+        style={{
           display: 'flex',
           alignItems: 'flex-start',
           gap: '8px',
@@ -113,70 +110,61 @@ export function EventCard({
           borderRadius: TOKENS.rSm,
           opacity: isCancelled ? 0.6 : 1,
           ...clickProps,
-        },
-        onClick: clickProps.onClick,
-      },
-      dot(color, cfg.dotSize, { marginTop: '3px' }),
-      React.createElement(
-        'div',
-        { style: { flex: 1, minWidth: 0 } },
-        React.createElement(
-          'div',
-          {
-            style: {
+        }}
+        onClick={clickProps.onClick}
+      >
+        {dot(color, cfg.dotSize, { marginTop: '3px' })}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
               fontSize: cfg.titleSize,
               fontWeight: 500,
               ...TRUNCATE,
               ...cancelledStyle(isCancelled),
-            },
-          },
-          event.title
-        ),
-        showDate &&
-          React.createElement(
-            'div',
-            { style: { fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '1px' } },
-            formatEventDate(event.start_at, tz)
-          ),
-        showTime &&
-          !event.all_day &&
-          React.createElement(
-            'div',
-            { style: { fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '1px' } },
-            `${formatEventTime(event.start_at, tz)} - ${formatEventTime(event.end_at, tz)}`
-          ),
-        showLocation &&
-          event.location &&
-          React.createElement(
-            'div',
-            {
-              style: {
+            }}
+          >
+            {event.title}
+          </div>
+          {showDate && (
+            <div style={{ fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '1px' }}>
+              {formatEventDate(event.start_at, tz)}
+            </div>
+          )}
+          {showTime && !event.all_day && (
+            <div style={{ fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '1px' }}>
+              {`${formatEventTime(event.start_at, tz)} - ${formatEventTime(event.end_at, tz)}`}
+            </div>
+          )}
+          {showLocation && event.location && (
+            <div
+              style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '3px',
                 fontSize: cfg.subSize,
                 color: TOKENS.ink3,
                 marginTop: '2px',
-              },
-            },
-            React.createElement(PinIcon, null),
-            React.createElement('span', { style: TRUNCATE }, event.location)
-          ),
-        subtitle
-      ),
-      showStatus && renderStatusBadge(event.status),
-      badge
+              }}
+            >
+              <MapPinIcon size={10} strokeWidth={2} style={{ flexShrink: 0 }} />
+              <span style={TRUNCATE}>{event.location}</span>
+            </div>
+          )}
+          {subtitle}
+        </div>
+        {showStatus && renderStatusBadge(event.status)}
+        {badge}
+      </div>
     );
   }
 
   // ── Compact: una linea — dot + hora + titulo ──
   if (v === 'compact') {
     const cfg = EVENT_CARD_VARIANTS.compact;
-    return React.createElement(
-      'div',
-      {
-        className,
-        style: {
+    return (
+      <div
+        className={className}
+        style={{
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
@@ -187,23 +175,17 @@ export function EventCard({
           overflow: 'hidden',
           opacity: isCancelled ? 0.6 : 1,
           ...clickProps,
-        },
-        onClick: clickProps.onClick,
-      },
-      dot(color, cfg.dotSize),
-      showTime &&
-        !event.all_day &&
-        React.createElement(
-          'span',
-          {
-            style: { fontSize: cfg.timeSize, fontWeight: 600, color: TOKENS.ink3 },
-          },
-          formatEventTime(event.start_at, tz)
-        ),
-      React.createElement(
-        'span',
-        {
-          style: {
+        }}
+        onClick={clickProps.onClick}
+      >
+        {dot(color, cfg.dotSize)}
+        {showTime && !event.all_day && (
+          <span style={{ fontSize: cfg.timeSize, fontWeight: 600, color: TOKENS.ink3 }}>
+            {formatEventTime(event.start_at, tz)}
+          </span>
+        )}
+        <span
+          style={{
             fontSize: cfg.titleSize,
             fontWeight: 500,
             color: TOKENS.ink2,
@@ -211,23 +193,23 @@ export function EventCard({
             minWidth: 0,
             ...TRUNCATE,
             ...cancelledStyle(isCancelled),
-          },
-        },
-        event.title
-      ),
-      showStatus && renderStatusBadge(event.status),
-      badge
+          }}
+        >
+          {event.title}
+        </span>
+        {showStatus && renderStatusBadge(event.status)}
+        {badge}
+      </div>
     );
   }
 
   // ── Standard / Week: estructura bento (timebar + body) ──
   const cfg = EVENT_CARD_VARIANTS[v === 'week' ? 'week' : 'standard'];
 
-  return React.createElement(
-    'div',
-    {
-      className,
-      style: {
+  return (
+    <div
+      className={className}
+      style={{
         borderRadius: TOKENS.rSm,
         border: `1px solid ${TOKENS.border}`,
         overflow: 'hidden',
@@ -236,15 +218,12 @@ export function EventCard({
         display: 'flex',
         flexDirection: 'column',
         ...clickProps,
-      },
-      onClick: clickProps.onClick,
-    },
-
-    // Timebar: dot + hora + badge
-    React.createElement(
-      'div',
-      {
-        style: {
+      }}
+      onClick={clickProps.onClick}
+    >
+      {/* Timebar: dot + hora + badge */}
+      <div
+        style={{
           padding: cfg.timebarPad,
           display: 'flex',
           alignItems: 'center',
@@ -252,71 +231,62 @@ export function EventCard({
           borderBottom: `1px solid ${TOKENS.border}`,
           background: TOKENS.bg,
           flexShrink: 0,
-        },
-      },
-      dot(color, cfg.dotSize),
-      showTime && !event.all_day
-        ? React.createElement(
-            'span',
-            {
-              style: {
-                fontSize: cfg.timeSize,
-                fontWeight: 700,
-                color: TOKENS.ink3,
-                letterSpacing: '0.3px',
-                flex: 1,
-              },
-            },
-            `${formatEventTime(event.start_at, tz)} – ${formatEventTime(event.end_at, tz)}`
-          )
-        : React.createElement('span', { style: { flex: 1 } }),
-      showStatus && renderStatusBadge(event.status),
-      badge
-    ),
-
-    // Body: titulo + subtitulo/ubicacion
-    React.createElement(
-      'div',
-      { style: { padding: cfg.bodyPad, background: TOKENS.surface, flex: 1, minHeight: 0 } },
-      React.createElement(
-        'div',
-        {
-          style: {
+        }}
+      >
+        {dot(color, cfg.dotSize)}
+        {showTime && !event.all_day ? (
+          <span
+            style={{
+              fontSize: cfg.timeSize,
+              fontWeight: 700,
+              color: TOKENS.ink3,
+              letterSpacing: '0.3px',
+              flex: 1,
+            }}
+          >
+            {`${formatEventTime(event.start_at, tz)} – ${formatEventTime(event.end_at, tz)}`}
+          </span>
+        ) : (
+          <span style={{ flex: 1 }} />
+        )}
+        {showStatus && renderStatusBadge(event.status)}
+        {badge}
+      </div>
+      {/* Body: titulo + subtitulo/ubicacion */}
+      <div style={{ padding: cfg.bodyPad, background: TOKENS.surface, flex: 1, minHeight: 0 }}>
+        <div
+          style={{
             fontSize: cfg.titleSize,
             fontWeight: 500,
             color: TOKENS.ink2,
             ...TRUNCATE,
             ...cancelledStyle(isCancelled),
-          },
-        },
-        event.title
-      ),
-      showLocation &&
-        event.location &&
-        React.createElement(
-          'div',
-          {
-            style: {
+          }}
+        >
+          {event.title}
+        </div>
+        {showLocation && event.location && (
+          <div
+            style={{
               display: 'flex',
               alignItems: 'center',
               gap: '3px',
               fontSize: cfg.subSize,
               color: TOKENS.ink3,
               marginTop: '2px',
-            },
-          },
-          React.createElement(PinIcon, null),
-          React.createElement('span', { style: TRUNCATE }, event.location)
-        ),
-      showDate &&
-        React.createElement(
-          'div',
-          {
-            style: { fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '2px' },
-          },
-          formatEventDate(event.start_at, tz)
-        ),
-      subtitle
-    )
+            }}
+          >
+            <MapPinIcon size={10} strokeWidth={2} style={{ flexShrink: 0 }} />
+            <span style={TRUNCATE}>{event.location}</span>
+          </div>
+        )}
+        {showDate && (
+          <div style={{ fontSize: cfg.subSize, color: TOKENS.ink3, marginTop: '2px' }}>
+            {formatEventDate(event.start_at, tz)}
+          </div>
+        )}
+        {subtitle}
+      </div>
+    </div>
   );
 }

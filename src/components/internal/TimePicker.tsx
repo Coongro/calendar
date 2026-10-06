@@ -1,18 +1,10 @@
-/**
- * TimePicker — Input con popover de selector de hora.
- * Delega la UI al TimeSlotList interno.
- */
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import { Input, Popover, PopoverContent, PopoverTrigger } from '@coongro/ui-components';
+import { useState } from 'react';
 
 import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import type { TimePickerProps } from '../../types/components.js';
 
-import { HostPopover, HostPopoverTrigger } from './host-ui.js';
 import { TimeSlotList } from './TimeSlotList.js';
-
-const React = getHostReact();
-const UI = getHostUI();
-const { useState } = React;
 
 export function TimePicker({
   value = '',
@@ -29,33 +21,29 @@ export function TimePicker({
   const use24Hour = use24HourProp ?? settings.use24Hour;
   const [open, setOpen] = useState(false);
 
-  return React.createElement(
-    HostPopover,
-    { open, onOpenChange: setOpen },
-    React.createElement(
-      HostPopoverTrigger,
-      { asChild: true },
-      React.createElement(UI.Input, {
-        value,
-        readOnly: true,
-        placeholder: 'HH:MM',
-        className: `cursor-pointer ${className}`,
-        onClick: () => setOpen(true),
-        'data-cg-control': 'date',
-      })
-    ),
-    React.createElement(
-      UI.PopoverContent,
-      { className: 'w-auto p-0' },
-      React.createElement(TimeSlotList, {
-        value,
-        onChange,
-        step,
-        minTime,
-        maxTime,
-        minuteStep,
-        use24Hour,
-      })
-    )
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger>
+        <Input
+          value={value}
+          readOnly={true}
+          placeholder="HH:MM"
+          className={`cursor-pointer ${className}`}
+          onClick={() => setOpen(true)}
+          data-cg-control="date"
+        />
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0">
+        <TimeSlotList
+          value={value}
+          onChange={onChange}
+          step={step}
+          minTime={minTime}
+          maxTime={maxTime}
+          minuteStep={minuteStep}
+          use24Hour={use24Hour}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

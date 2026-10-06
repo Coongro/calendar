@@ -1,6 +1,7 @@
-import { getHostReact } from '@coongro/plugin-sdk';
+import { useIsMobile } from '@coongro/plugin-sdk';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties, KeyboardEvent } from 'react';
 
-import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { MonthGridProps } from '../../types/components.js';
@@ -16,15 +17,12 @@ import { getDayGridKeyTarget, isActivationKey } from '../../utils/day-grid-keys.
 import { groupEventsByDay } from '../../utils/grid-helpers.js';
 import { EventCard } from '../event/EventCard.js';
 
-const React = getHostReact();
-const { useMemo, useState, useRef, useEffect } = React;
-
 // Nombres de 1 letra para mobile
 function getDayNumberStyle(
   isToday: boolean,
   isMobile: boolean,
   isCurrentMonth: boolean
-): React.CSSProperties {
+): CSSProperties {
   const size = isMobile ? 32 : 24;
   const fontSize = isMobile ? '14px' : '12px';
 
@@ -89,85 +87,80 @@ function renderDayContent(
   renderEvent: MonthGridProps['renderEvent'],
   onEventClick: MonthGridProps['onEventClick']
 ) {
-  return React.createElement(
-    React.Fragment,
-    null,
-    // Número del día
-    React.createElement(
-      'div',
-      {
-        style: {
+  return (
+    <>
+      {/* Número del día */}
+      <div
+        style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: isMobile ? 'center' : 'space-between',
           marginBottom: isMobile ? 0 : '4px',
-        },
-      },
-      React.createElement(
-        'div',
-        { style: getDayNumberStyle(isToday, isMobile, isCurrentMonth) },
-        day.getDate()
-      )
-    ),
-
-    // Eventos: dots en mobile, cards en desktop
-    isMobile
-      ? dayEvents.length > 0 &&
-          React.createElement(
-            'div',
-            {
-              style: {
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '2px',
-                marginTop: '4px',
-              },
-            },
-            dayEvents.slice(0, 3).map((evt) =>
-              React.createElement('span', {
-                key: evt.id,
-                style: {
+        }}
+      >
+        <div style={getDayNumberStyle(isToday, isMobile, isCurrentMonth)}>{day.getDate()}</div>
+      </div>
+      {/* Eventos: dots en mobile, cards en desktop */}
+      {isMobile ? (
+        dayEvents.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '2px',
+              marginTop: '4px',
+            }}
+          >
+            {dayEvents.slice(0, 3).map((evt) => (
+              <span
+                key={evt.id}
+                style={{
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
                   background: evt.color ?? 'var(--cg-accent)',
-                },
-              })
-            )
-          )
-      : React.createElement(
-          'div',
-          {
-            style: {
-              display: 'flex',
-              flexDirection: 'column' as const,
-              gap: '2px',
-            },
-          },
-          dayEvents.slice(0, 3).map((evt) =>
-            renderEvent
-              ? React.createElement(React.Fragment, { key: evt.id }, renderEvent(evt))
-              : React.createElement(EventCard, {
-                  key: evt.id,
-                  event: evt,
-                  variant: 'mini',
-                  showTime: false,
-                  onClick: onEventClick,
-                })
-          ),
-          dayEvents.length > 3 &&
-            React.createElement(
-              'div',
-              {
-                style: {
-                  fontSize: '10px',
-                  color: TOKENS.ink4,
-                  paddingLeft: '4px',
-                },
-              },
-              `+${dayEvents.length - 3} más`
-            )
+                }}
+              />
+            ))}
+          </div>
         )
+      ) : (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column' as const,
+            gap: '2px',
+          }}
+        >
+          {dayEvents
+            .slice(0, 3)
+            .map((evt) =>
+              renderEvent ? (
+                <Fragment key={evt.id}>{renderEvent(evt)}</Fragment>
+              ) : (
+                <EventCard
+                  key={evt.id}
+                  event={evt}
+                  variant="mini"
+                  showTime={false}
+                  onClick={onEventClick}
+                />
+              )
+            )}
+          {dayEvents.length > 3 && (
+            <div
+              style={{
+                fontSize: '10px',
+                color: TOKENS.ink4,
+                paddingLeft: '4px',
+              }}
+            >
+              {`+${dayEvents.length - 3} más`}
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -183,7 +176,7 @@ export function MonthGrid({
   onNavigateToDate,
   focusDate,
 }: MonthGridProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile('sm');
   const tz = useTenantTimezone();
   const todayKey = toDateKey(new Date(), tz);
   const days = useMemo(() => getMonthGridDays(year, month), [year, month]);
@@ -232,7 +225,7 @@ export function MonthGrid({
     if (focusLost || gridRef.current?.contains(active)) focusDay(focusDate);
   }, [focusDate, dayKeysSignature]);
 
-  const handleDayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, day: Date, key: string) => {
+  const handleDayKeyDown = (e: KeyboardEvent<HTMLDivElement>, day: Date, key: string) => {
     // Solo la celda: las teclas dentro de un evento son del evento.
     if (e.target !== e.currentTarget) return;
     if (isActivationKey(e.key)) {
@@ -266,106 +259,105 @@ export function MonthGrid({
 
     const isWeekend = day.getDay() === 0 || day.getDay() === 6;
 
-    return React.createElement(
-      'div',
-      {
-        key: i,
-        ref: (el: HTMLDivElement | null) => {
+    return (
+      <div
+        key={i}
+        ref={(el: HTMLDivElement | null) => {
           if (el) cellRefs.current.set(dateStr, el);
           else cellRefs.current.delete(dateStr);
-        },
-        role: 'gridcell',
-        tabIndex: dateStr === tabStopKey ? 0 : -1,
-        'aria-label': dayLabel(day, dayEvents.length),
-        'aria-current': isToday ? 'date' : undefined,
-        'data-date': dateStr,
-        className: [
+        }}
+        role="gridcell"
+        tabIndex={dateStr === tabStopKey ? 0 : -1}
+        aria-label={dayLabel(day, dayEvents.length)}
+        aria-current={isToday ? 'date' : undefined}
+        data-date={dateStr}
+        className={[
           DAY_CELL_CLASS,
           getDayCellBgClass(isCurrentMonth, isWeekend, isToday),
           onDayClick ? DAY_CELL_ACTION_CLASS : '',
         ]
           .filter(Boolean)
-          .join(' '),
-        style: {
+          .join(' ')}
+        style={{
           minHeight: '64px',
           borderBottom: `1px solid ${TOKENS.border}`,
           borderRight: `1px solid ${TOKENS.border}`,
           padding: '4px',
-        },
-        onClick: onDayClick
-          ? () => {
-              setActiveKey(dateStr);
-              onDayClick(dateStr);
-            }
-          : undefined,
-        onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => handleDayKeyDown(e, day, dateStr),
-      },
-
-      renderDayContent(day, isToday, isCurrentMonth, isMobile, dayEvents, renderEvent, onEventClick)
+        }}
+        onClick={
+          onDayClick
+            ? () => {
+                setActiveKey(dateStr);
+                onDayClick(dateStr);
+              }
+            : undefined
+        }
+        onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => handleDayKeyDown(e, day, dateStr)}
+      >
+        {renderDayContent(
+          day,
+          isToday,
+          isCurrentMonth,
+          isMobile,
+          dayEvents,
+          renderEvent,
+          onEventClick
+        )}
+      </div>
     );
   };
 
-  return React.createElement(
-    'div',
-    {
-      ref: gridRef,
-      role: 'grid',
-      'aria-label': `${getMonthName(month)} ${year}`,
-      className,
-      style: {
+  return (
+    <div
+      ref={gridRef}
+      role="grid"
+      aria-label={`${getMonthName(month)} ${year}`}
+      className={className}
+      style={{
         display: 'flex',
         flexDirection: 'column' as const,
-      },
-    },
-
-    // Header
-    React.createElement(
-      'div',
-      {
-        role: 'row',
-        style: {
+      }}
+    >
+      {/* Header */}
+      <div
+        role="row"
+        style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))`,
           borderBottom: `1px solid ${TOKENS.border}`,
-        },
-      },
-      weekDayHeaders.map((name) =>
-        React.createElement(
-          'div',
-          {
-            key: name,
-            role: 'columnheader',
-            style: {
+        }}
+      >
+        {weekDayHeaders.map((name) => (
+          <div
+            key={name}
+            role="columnheader"
+            style={{
               textAlign: 'center' as const,
               fontSize: '12px',
               color: TOKENS.ink4,
               padding: '8px 0',
               fontWeight: 500,
-            },
-          },
-          name
-        )
-      )
-    ),
-
-    // Grid
-    React.createElement(
-      'div',
-      {
-        role: 'rowgroup',
-        style: {
+            }}
+          >
+            {name}
+          </div>
+        ))}
+      </div>
+      {/* Grid */}
+      <div
+        role="rowgroup"
+        style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))`,
           flex: 1,
-        },
-      },
-      weeks.map((week, w) =>
-        React.createElement(
-          'div',
-          { key: w, role: 'row', style: { display: 'contents' } },
-          week.map((day, d) => renderDayCell(day, w * colCount + d))
-        )
-      )
-    )
+        }}
+      >
+        {weeks.map((week, w) => (
+          <div key={w} role="row" style={{ display: 'contents' }}>
+            {week.map((day, d) => renderDayCell(day, w * colCount + d))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
