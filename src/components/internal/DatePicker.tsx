@@ -1,17 +1,10 @@
-/**
- * DatePicker — Input con popover de calendario.
- * Delega la grilla y navegación al CalendarGrid interno.
- */
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import { useFormat } from '@coongro/plugin-sdk';
+import { Input, Popover, PopoverContent, PopoverTrigger } from '@coongro/ui-components';
+import { useState } from 'react';
 
 import type { DatePickerProps } from '../../types/components.js';
 
 import { CalendarGrid } from './CalendarGrid.js';
-import { HostPopover, HostPopoverTrigger } from './host-ui.js';
-
-const React = getHostReact();
-const UI = getHostUI();
-const { useState } = React;
 
 export function DatePicker({
   value,
@@ -22,36 +15,33 @@ export function DatePicker({
   className = '',
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
+  const f = useFormat();
 
-  return React.createElement(
-    HostPopover,
-    { open, onOpenChange: setOpen },
-    React.createElement(
-      HostPopoverTrigger,
-      { asChild: true },
-      React.createElement(UI.Input, {
-        value: value ? new Date(`${value}T00:00:00`).toLocaleDateString('es') : '',
-        readOnly: true,
-        placeholder,
-        className: `cursor-pointer ${className}`,
-        onClick: () => setOpen(true),
-        'data-cg-control': 'date',
-      })
-    ),
-    React.createElement(
-      UI.PopoverContent,
-      { className: 'w-auto p-3' },
-      React.createElement(CalendarGrid, {
-        selectedDate: value,
-        onDateSelect: onChange,
-        onDayClick: () => setOpen(false),
-        showMonthPicker: true,
-        showYearPicker: true,
-        showTodayButton: false,
-        minDate,
-        maxDate,
-        daySize: 'md',
-      })
-    )
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger>
+        <Input
+          value={value ? f.date(value) : ''}
+          readOnly={true}
+          placeholder={placeholder}
+          className={`cursor-pointer ${className}`}
+          onClick={() => setOpen(true)}
+          data-cg-control="date"
+        />
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-3">
+        <CalendarGrid
+          selectedDate={value}
+          onDateSelect={onChange}
+          onDayClick={() => setOpen(false)}
+          showMonthPicker={true}
+          showYearPicker={true}
+          showTodayButton={false}
+          minDate={minDate}
+          maxDate={maxDate}
+          daySize="md"
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

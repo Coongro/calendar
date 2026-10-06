@@ -1,5 +1,7 @@
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import { DataTable } from '@coongro/ui-components';
+import { CalendarIcon, MapPinIcon } from 'lucide-react';
 import type { ReactElement } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useEvents } from '../../hooks/useEvents.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
@@ -9,26 +11,23 @@ import type { CalendarEvent } from '../../types/event.js';
 import type { SortDirection } from '../../types/filters.js';
 import { formatEventDateTime } from '../../utils/date.js';
 import { formatStatus } from '../../utils/labels.js';
-import { CalendarIcon, PinIcon } from '../internal/icons.js';
-
-const React = getHostReact();
-const UI = getHostUI();
-const { useState, useCallback, useMemo } = React;
 
 const SORTABLE_KEYS = new Set(['title', 'start_at', 'status']);
 
 // Helpers de renderizado reutilizados en columnas desktop y cards movil
 function renderColorDot(color: string | undefined | null) {
   if (!color) return null;
-  return React.createElement('span', {
-    style: {
-      width: '7px',
-      height: '7px',
-      borderRadius: '50%',
-      flexShrink: 0,
-      backgroundColor: color,
-    },
-  });
+  return (
+    <span
+      style={{
+        width: '7px',
+        height: '7px',
+        borderRadius: '50%',
+        flexShrink: 0,
+        backgroundColor: color,
+      }}
+    />
+  );
 }
 
 function renderStatusBadge(
@@ -36,7 +35,7 @@ function renderStatusBadge(
   statusConfig?: Record<string, { label: string; color: string }>
 ) {
   const label = statusConfig?.[status]?.label ?? formatStatus(status);
-  return React.createElement('span', { style: statusBadgeStyle(status) }, label);
+  return <span style={statusBadgeStyle(status)}>{label}</span>;
 }
 
 export function EventList({
@@ -88,40 +87,36 @@ export function EventList({
         key: 'title',
         header: 'Titulo',
         sortable: true,
-        render: (evt: CalendarEvent) =>
-          React.createElement(
-            'div',
-            { style: { display: 'flex', alignItems: 'center', gap: '0.5rem' } },
-            renderColorDot(evt.color),
-            React.createElement(
-              'div',
-              {
-                style: {
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.125rem',
-                  minWidth: 0,
-                },
-              },
-              React.createElement('span', { style: { ...TRUNCATE } }, evt.title),
-              evt.location &&
-                React.createElement(
-                  'div',
-                  {
-                    style: {
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      fontSize: '0.75rem',
-                      color: TOKENS.ink4,
-                      fontWeight: 'normal',
-                    },
-                  },
-                  React.createElement(PinIcon, null),
-                  React.createElement('span', { style: { ...TRUNCATE } }, evt.location)
-                )
-            )
-          ),
+        render: (evt: CalendarEvent) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {renderColorDot(evt.color)}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.125rem',
+                minWidth: 0,
+              }}
+            >
+              <span style={{ ...TRUNCATE }}>{evt.title}</span>
+              {evt.location && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    fontSize: '0.75rem',
+                    color: TOKENS.ink4,
+                    fontWeight: 'normal',
+                  }}
+                >
+                  <MapPinIcon size={10} strokeWidth={2} style={{ flexShrink: 0 }} />
+                  <span style={{ ...TRUNCATE }}>{evt.location}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ),
       },
       {
         key: 'start_at',
@@ -137,7 +132,7 @@ export function EventList({
       },
     ];
     return [...base, ...extraColumns];
-  }, [customColumns, extraColumns, statusConfig]);
+  }, [customColumns, extraColumns, statusConfig, tz]);
 
   const dtActions = useMemo(() => {
     if (extraActions.length === 0) return undefined;
@@ -149,87 +144,79 @@ export function EventList({
   }, [extraActions]);
 
   const mobileRender = useCallback(
-    (evt: CalendarEvent) =>
-      React.createElement(
-        'div',
-        { style: { display: 'flex', flexDirection: 'column', gap: '0.25rem' } },
-        React.createElement(
-          'div',
-          { style: { display: 'flex', alignItems: 'center', gap: '0.5rem' } },
-          renderColorDot(evt.color),
-          React.createElement(
-            'span',
-            {
-              style: {
-                fontWeight: 500,
-                fontSize: '0.875rem',
-                ...TRUNCATE,
-              },
-            },
-            evt.title
-          )
-        ),
-        React.createElement(
-          'div',
-          { style: { fontSize: '0.75rem', color: TOKENS.ink4 } },
-          formatEventDateTime(evt.start_at, tz)
-        ),
-        evt.location &&
-          React.createElement(
-            'div',
-            {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                fontSize: '0.75rem',
-                color: TOKENS.ink4,
-              },
-            },
-            React.createElement(PinIcon, null),
-            React.createElement('span', { style: { ...TRUNCATE } }, evt.location)
-          ),
-        React.createElement(
-          'div',
-          { style: { marginTop: '0.25rem' } },
-          renderStatusBadge(evt.status, statusConfig)
-        )
-      ),
-    [statusConfig]
+    (evt: CalendarEvent) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {renderColorDot(evt.color)}
+          <span
+            style={{
+              fontWeight: 500,
+              fontSize: '0.875rem',
+              ...TRUNCATE,
+            }}
+          >
+            {evt.title}
+          </span>
+        </div>
+        <div style={{ fontSize: '0.75rem', color: TOKENS.ink4 }}>
+          {formatEventDateTime(evt.start_at, tz)}
+        </div>
+        {evt.location && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              fontSize: '0.75rem',
+              color: TOKENS.ink4,
+            }}
+          >
+            <MapPinIcon size={10} strokeWidth={2} style={{ flexShrink: 0 }} />
+            <span style={{ ...TRUNCATE }}>{evt.location}</span>
+          </div>
+        )}
+        <div style={{ marginTop: '0.25rem' }}>{renderStatusBadge(evt.status, statusConfig)}</div>
+      </div>
+    ),
+    [statusConfig, tz]
   );
 
-  return React.createElement(UI.DataTable, {
-    data,
-    rowKey: (evt: CalendarEvent) => evt.id,
-    loading,
-    error: error ?? undefined,
-    onRetry: () => void refetch(),
-    columns: dtColumns,
-    searchPlaceholder: 'Buscar eventos...',
-    searchValue,
-    onSearchChange: handleSearch,
-    sortKey: sortKey || null,
-    sortDirection: sortDir as 'asc' | 'desc' | null,
-    onSortChange: handleSort,
-    pagination: {
-      page: pagination.page,
-      pageSize: pagination.pageSize,
-      total: pagination.total,
-    },
-    onPageChange: goToPage,
-    actions: dtActions,
-    onRowClick,
-    emptyState: {
-      title: emptyStateAction ? 'No hay eventos aun' : emptyMessage,
-      description: emptyStateAction
-        ? 'Crea tu primer evento para empezar a organizar tu agenda.'
-        : undefined,
-      icon: emptyStateAction ? React.createElement(CalendarIcon, null) : undefined,
-      action: emptyStateAction,
-      filteredTitle: emptyMessage,
-      filteredDescription: 'Prueba con otros terminos o ajusta los filtros.',
-    },
-    mobileRender,
-    className,
-  });
+  return (
+    <DataTable
+      data={data}
+      rowKey={(evt: CalendarEvent) => evt.id}
+      loading={loading}
+      error={error ?? undefined}
+      onRetry={() => void refetch()}
+      columns={dtColumns}
+      searchPlaceholder="Buscar eventos..."
+      searchValue={searchValue}
+      onSearchChange={handleSearch}
+      sortKey={sortKey || null}
+      sortDirection={sortDir as 'asc' | 'desc' | null}
+      onSortChange={handleSort}
+      pagination={{
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total: pagination.total,
+      }}
+      onPageChange={goToPage}
+      actions={dtActions}
+      onRowClick={onRowClick}
+      emptyState={{
+        title: emptyStateAction ? 'No hay eventos aun' : emptyMessage,
+        description: emptyStateAction
+          ? 'Crea tu primer evento para empezar a organizar tu agenda.'
+          : undefined,
+        icon: emptyStateAction ? (
+          <CalendarIcon size={32} strokeWidth={1.5} style={{ color: 'var(--cg-text-muted)' }} />
+        ) : undefined,
+        action: emptyStateAction,
+        filteredTitle: emptyMessage,
+        filteredDescription: 'Prueba con otros terminos o ajusta los filtros.',
+      }}
+      mobileRender={mobileRender}
+      className={className}
+    />
+  );
 }

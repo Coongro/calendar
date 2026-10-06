@@ -9,7 +9,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "lib": [
       "ES2022",
       "DOM"
@@ -34,6 +34,9 @@
       ],
       "@coongro/datetime": [
         "../../packages/datetime/dist/index.d.ts"
+      ],
+      "@coongro/ui-components": [
+        "../../packages/ui-components/dist/index.d.ts"
       ]
     }
   },

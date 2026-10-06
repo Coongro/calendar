@@ -1,17 +1,11 @@
-/**
- * CalendarGrid — Componente interno reutilizable para grilla de calendario.
- * Usado por MiniCalendar y DatePicker. Incluye navegación por mes/año y botón "Hoy".
- */
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import { Button } from '@coongro/ui-components';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties, KeyboardEvent } from 'react';
 
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import { getMonthGridDays, getMonthName, toDateString, toDateKey } from '../../utils/date.js';
 import { getDayGridKeyTarget } from '../../utils/day-grid-keys.js';
-
-const React = getHostReact();
-const UI = getHostUI();
-const { useState, useMemo, useEffect, useRef } = React;
 
 const SHORT_MONTHS = [
   'Ene',
@@ -223,7 +217,7 @@ export function CalendarGrid({
     focusDay(key);
   }, [dayKeysSignature]);
 
-  const handleDayKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, day: Date) => {
+  const handleDayKeyDown = (e: KeyboardEvent<HTMLButtonElement>, day: Date) => {
     // Enter y Espacio los resuelve el <button> (clic nativo)
     const target = getDayGridKeyTarget(e.key, day);
     if (!target) return;
@@ -268,41 +262,33 @@ export function CalendarGrid({
   const canClickTitle =
     (viewLevel === 'days' && showMonthPicker) || (viewLevel === 'months' && showYearPicker);
 
-  return React.createElement(
-    'div',
-    { style: { display: 'flex', flexDirection: 'column' } as any },
-
-    // ── Header ──
-    React.createElement(
-      'div',
-      {
-        style: {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* ── Header ── */}
+      <div
+        style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           marginBottom: '8px',
-        },
-      },
-      React.createElement(
-        UI.Button,
-        {
-          type: 'button',
-          variant: 'ghost',
-          size: 'sm',
-          'aria-label': 'Mes anterior',
-          onClick: handlePrev,
-        },
-        '‹'
-      ),
-      React.createElement(
-        'button',
-        {
-          type: 'button',
-          'aria-label': 'Cambiar mes y año',
-          disabled: !canClickTitle,
-          onClick: canClickTitle ? handleTitleClick : undefined,
-          className: `rounded-sm ${COLOR_TRANSITION} ${FOCUS_RING}`,
-          style: {
+        }}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label="Mes anterior"
+          onClick={handlePrev}
+        >
+          ‹
+        </Button>
+        <button
+          type="button"
+          aria-label="Cambiar mes y año"
+          disabled={!canClickTitle}
+          onClick={canClickTitle ? handleTitleClick : undefined}
+          className={`rounded-sm ${COLOR_TRANSITION} ${FOCUS_RING}`}
+          style={{
             // Reset de estilos nativos de <button> para preservar la apariencia del <span> original
             border: 'none',
             background: 'transparent',
@@ -320,205 +306,186 @@ export function CalendarGrid({
                   textDecorationColor: TOKENS.ink4,
                 }
               : {}),
-          } as any,
-        },
-        renderTitle()
-      ),
-      React.createElement(
-        UI.Button,
-        {
-          type: 'button',
-          variant: 'ghost',
-          size: 'sm',
-          'aria-label': 'Mes siguiente',
-          onClick: handleNext,
-        },
-        '›'
-      )
-    ),
-
-    // ── Day grid ──
-    viewLevel === 'days' &&
-      React.createElement(
-        React.Fragment,
-        null,
-        // Day headers
-        React.createElement(
-          'div',
-          {
-            style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '4px' },
-          },
-          DAY_LETTERS.map((name) =>
-            React.createElement(
-              'div',
-              {
-                key: name,
-                style: {
+          }}
+        >
+          {renderTitle()}
+        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label="Mes siguiente"
+          onClick={handleNext}
+        >
+          ›
+        </Button>
+      </div>
+      {/* ── Day grid ── */}
+      {viewLevel === 'days' && (
+        <>
+          {/* Day headers */}
+          <div
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '4px' }}
+          >
+            {DAY_LETTERS.map((name) => (
+              <div
+                key={name}
+                style={{
                   textAlign: 'center',
                   fontSize: '10px',
                   color: TOKENS.ink4,
                   padding: '2px 0',
-                },
-              },
-              name
-            )
-          )
-        ),
-        // Days: el mes nuevo entra 8 px desde el lado hacia el que se avanzó; el
-        // contenedor recorta el desplazamiento para que no aparezca scroll horizontal.
-        React.createElement(
-          'div',
-          { style: { overflowX: 'clip' } as React.CSSProperties },
-          React.createElement(
-            'div',
-            {
-              key: `${viewYear}-${viewMonth}`,
-              role: 'group',
-              'aria-label': `${getMonthName(viewMonth)} ${viewYear}`,
-              className: monthSlideClass(slideDirection),
-              style: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' },
-            },
-            days.map((day, i) => {
-              const dateStr = toDateString(day);
-              const isCurrentMonth = day.getMonth() === viewMonth;
-              const isSelected = selectedKey !== null && dateStr === selectedKey;
-              const isToday = dateStr === todayKey;
-              const disabled = isDateDisabled(day);
-              const dotCount = eventDots[dateStr] ?? 0;
+                }}
+              >
+                {name}
+              </div>
+            ))}
+          </div>
+          {/* Days: el mes nuevo entra 8 px desde el lado hacia el que se avanzó; el */}
+          {/* contenedor recorta el desplazamiento para que no aparezca scroll horizontal. */}
+          <div style={{ overflowX: 'clip' } as CSSProperties}>
+            <div
+              key={`${viewYear}-${viewMonth}`}
+              role="group"
+              aria-label={`${getMonthName(viewMonth)} ${viewYear}`}
+              className={monthSlideClass(slideDirection)}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}
+            >
+              {days.map((day, i) => {
+                const dateStr = toDateString(day);
+                const isCurrentMonth = day.getMonth() === viewMonth;
+                const isSelected = selectedKey !== null && dateStr === selectedKey;
+                const isToday = dateStr === todayKey;
+                const disabled = isDateDisabled(day);
+                const dotCount = eventDots[dateStr] ?? 0;
 
-              // Etiqueta legible para lectores de pantalla / copilotos: "15 de junio de 2026"
-              const ariaLabel = `${day.getDate()} de ${getMonthName(day.getMonth()).toLowerCase()} de ${day.getFullYear()}`;
+                // Etiqueta legible para lectores de pantalla / copilotos: "15 de junio de 2026"
+                const ariaLabel = `${day.getDate()} de ${getMonthName(day.getMonth()).toLowerCase()} de ${day.getFullYear()}`;
 
-              return React.createElement(
-                'button',
-                {
-                  key: i,
-                  ref: (el: HTMLButtonElement | null) => {
-                    if (el) dayRefs.current.set(dateStr, el);
-                    else dayRefs.current.delete(dateStr);
-                  },
-                  type: 'button',
-                  disabled,
-                  tabIndex: dateStr === tabStopKey ? 0 : -1,
-                  'data-date': dateStr,
-                  'aria-label': ariaLabel,
-                  // aria-selected no es válido en un <button>: el día elegido se anuncia como presionado
-                  'aria-pressed': isSelected,
-                  'aria-current': isToday ? 'date' : undefined,
-                  'aria-disabled': disabled,
-                  className: dayButtonClass(isSelected, isToday, isCurrentMonth, disabled),
-                  style: {
-                    width: daySizePx,
-                    height: daySizePx,
-                    fontSize: dayFontSize,
-                  },
-                  onClick: () => {
-                    setActiveKey(dateStr);
-                    handleDaySelect(day);
-                  },
-                  onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) =>
-                    handleDayKeyDown(e, day),
-                },
-                day.getDate(),
-                dotCount > 0 &&
-                  React.createElement('span', {
-                    style: {
-                      position: 'absolute',
-                      bottom: '2px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '9999px',
-                      background: TOKENS.gold,
-                    },
-                  })
-              );
-            })
-          )
-        )
-      ),
-
-    // ── Month picker ──
-    viewLevel === 'months' &&
-      React.createElement(
-        'div',
-        {
-          style: {
+                return (
+                  <button
+                    key={i}
+                    ref={(el: HTMLButtonElement | null) => {
+                      if (el) dayRefs.current.set(dateStr, el);
+                      else dayRefs.current.delete(dateStr);
+                    }}
+                    type="button"
+                    disabled={disabled}
+                    tabIndex={dateStr === tabStopKey ? 0 : -1}
+                    data-date={dateStr}
+                    aria-label={ariaLabel}
+                    /* aria-selected no es válido en un <button>: el día elegido se anuncia como presionado */
+                    aria-pressed={isSelected}
+                    aria-current={isToday ? 'date' : undefined}
+                    aria-disabled={disabled}
+                    className={dayButtonClass(isSelected, isToday, isCurrentMonth, disabled)}
+                    style={{
+                      width: daySizePx,
+                      height: daySizePx,
+                      fontSize: dayFontSize,
+                    }}
+                    onClick={() => {
+                      setActiveKey(dateStr);
+                      handleDaySelect(day);
+                    }}
+                    onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => handleDayKeyDown(e, day)}
+                  >
+                    {day.getDate()}
+                    {dotCount > 0 && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          bottom: '2px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '4px',
+                          height: '4px',
+                          borderRadius: '9999px',
+                          background: TOKENS.gold,
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+      {/* ── Month picker ── */}
+      {viewLevel === 'months' && (
+        <div
+          style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '6px',
             padding: '4px 0',
-          },
-        },
-        SHORT_MONTHS.map((name, idx) => {
-          const isActive = idx === viewMonth;
-          return React.createElement(
-            'button',
-            {
-              key: idx,
-              type: 'button',
-              'data-month': idx,
-              'aria-pressed': isActive,
-              className: pickerButtonClass(isActive),
-              style: {
-                padding: '10px 0',
-                fontSize: '12px',
-                borderRadius: TOKENS.rSm,
-                borderWidth: '1px',
-                borderStyle: 'solid',
-              },
-              onClick: () => handleMonthSelect(idx),
-            },
-            name
-          );
-        })
-      ),
-
-    // ── Year picker ──
-    viewLevel === 'years' &&
-      React.createElement(
-        'div',
-        {
-          style: {
+          }}
+        >
+          {SHORT_MONTHS.map((name, idx) => {
+            const isActive = idx === viewMonth;
+            return (
+              <button
+                key={idx}
+                type="button"
+                data-month={idx}
+                aria-pressed={isActive}
+                className={pickerButtonClass(isActive)}
+                style={{
+                  padding: '10px 0',
+                  fontSize: '12px',
+                  borderRadius: TOKENS.rSm,
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                }}
+                onClick={() => handleMonthSelect(idx)}
+              >
+                {name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {/* ── Year picker ── */}
+      {viewLevel === 'years' && (
+        <div
+          style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '6px',
             padding: '4px 0',
-          },
-        },
-        Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((year) => {
-          const isActive = year === viewYear;
-          return React.createElement(
-            'button',
-            {
-              key: year,
-              type: 'button',
-              'data-year': year,
-              'aria-pressed': isActive,
-              className: pickerButtonClass(isActive),
-              style: {
-                padding: '10px 0',
-                fontSize: '12px',
-                borderRadius: TOKENS.rSm,
-                borderWidth: '1px',
-                borderStyle: 'solid',
-              },
-              onClick: () => handleYearSelect(year),
-            },
-            year
-          );
-        })
-      ),
-
-    // ── Botón Hoy ──
-    showTodayButton &&
-      React.createElement(
-        'button',
-        {
-          type: 'button',
-          className: `cursor-pointer bg-transparent text-cg-accent hover:bg-cg-bg-hover active:bg-cg-bg-active ${COLOR_TRANSITION} ${FOCUS_RING}`,
-          style: {
+          }}
+        >
+          {Array.from({ length: 12 }, (_, i) => yearRangeStart + i).map((year) => {
+            const isActive = year === viewYear;
+            return (
+              <button
+                key={year}
+                type="button"
+                data-year={year}
+                aria-pressed={isActive}
+                className={pickerButtonClass(isActive)}
+                style={{
+                  padding: '10px 0',
+                  fontSize: '12px',
+                  borderRadius: TOKENS.rSm,
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                }}
+                onClick={() => handleYearSelect(year)}
+              >
+                {year}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {/* ── Botón Hoy ── */}
+      {showTodayButton && (
+        <button
+          type="button"
+          className={`cursor-pointer bg-transparent text-cg-accent hover:bg-cg-bg-hover active:bg-cg-bg-active ${COLOR_TRANSITION} ${FOCUS_RING}`}
+          style={{
             width: '100%',
             fontSize: '12px',
             fontWeight: '700',
@@ -527,10 +494,12 @@ export function CalendarGrid({
             borderRadius: '0 0 7px 7px',
             border: 'none',
             borderTop: `1px solid ${TOKENS.border}`,
-          },
-          onClick: goToToday,
-        },
-        'Hoy'
-      )
+          }}
+          onClick={goToToday}
+        >
+          Hoy
+        </button>
+      )}
+    </div>
   );
 }

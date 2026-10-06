@@ -1,10 +1,7 @@
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import { Badge } from '@coongro/ui-components';
 import type { ReactElement } from 'react';
 
 import type { CalendarBadgeProps } from '../../types/components.js';
-
-const React = getHostReact();
-const UI = getHostUI();
 
 export function CalendarBadge({
   count,
@@ -12,13 +9,13 @@ export function CalendarBadge({
   color,
   className = '',
 }: CalendarBadgeProps): ReactElement | null {
-  return React.createElement(
-    UI.Badge,
-    {
-      variant: 'outline',
-      className,
-      style: color ? { borderColor: color, color } : undefined,
-    },
-    `${count} ${label}`
+  return (
+    <Badge
+      variant="outline"
+      className={className}
+      style={color ? { borderColor: color, color } : undefined}
+    >
+      {`${count} ${label}`}
+    </Badge>
   );
 }
