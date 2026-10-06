@@ -178,7 +178,7 @@ export function EventList({
         <div style={{ marginTop: '0.25rem' }}>{renderStatusBadge(evt.status, statusConfig)}</div>
       </div>
     ),
-    [statusConfig]
+    [statusConfig, tz]
   );
 
   return (
