@@ -1,18 +1,5 @@
-/**
- * DayColumnCore — El "interior" de una columna de dia en la grilla.
- *
- * Centraliza la logica compartida por Day, Week y ThreeDay views:
- *   - Filas horarias con onClick (slot vacio)
- *   - Linea "ahora" (cuando aplica)
- *   - Layout de eventos solapados (sweep-line + column packing) con chip "+N"
- *
- * El consumidor (DayColumn / WeekGrid / ThreeDayGrid) arma la grilla completa
- * (time gutter, day headers, border-right entre columnas, etc.) y monta UN
- * <DayColumnCore> por cada dia. Asi el algoritmo de solapamiento vive en un
- * unico lugar y las 3 vistas se benefician sin duplicacion.
- */
-import { getHostReact } from '@coongro/plugin-sdk';
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
 
 import { TOKENS } from '../../styles/tokens.js';
 import type { EventRenderContext } from '../../types/components.js';
@@ -28,9 +15,6 @@ import {
 } from '../../utils/grid-helpers.js';
 import { EventCard } from '../event/EventCard.js';
 import { EventOverflowChip } from '../event/EventOverflowChip.js';
-
-const React = getHostReact();
-const { useMemo } = React;
 
 const COMPACT_HEIGHT_PX = 46;
 const DEFAULT_MAX_COLUMNS = 4;
@@ -100,42 +84,101 @@ export function DayColumnCore({
     return slotBorder ?? `1px solid ${TOKENS.border}`;
   };
 
-  return React.createElement(
-    React.Fragment,
-    null,
+  return (
+    <>
+      {/* Filas horarias (fondo + onClick de slot vacio) */}
+      {timeSlots.map((slot, i) => {
+        const activateSlot = onSlotClick
+          ? () => {
+              const [h, m] = slot.split(':').map(Number);
+              onSlotClick(date, h + m / 60);
+            }
+          : undefined;
+        return (
+          <div
+            key={`slot-${slot}`}
+            style={{
+              height: `${slotHeight}px`,
+              borderBottom: resolveSlotBorder(i),
+              cursor: onSlotClick ? 'pointer' : 'default',
+            }}
+            onClick={activateSlot}
+            /* Solo hacemos operable por teclado el slot si efectivamente es */
+            /* clickeable; un slot sin handler queda inerte (no tabbable). */
+            {...(activateSlot
+              ? clickableProps(`Crear evento — ${date.substring(0, 10)} ${slot}`, activateSlot)
+              : {})}
+          />
+        );
+      })}
+      {/* Linea "ahora" */}
+      {isToday && nowInRange && renderNowLine(nowTop)}
+      {/* Eventos */}
+      {layout.slots
+        .map((slot) => {
+          const pos = computeEventPosition(
+            slot.event,
+            gridStartMin,
+            gridEndMin,
+            slotDuration,
+            slotHeight
+          );
+          if (!pos) return null;
 
-    // Filas horarias (fondo + onClick de slot vacio)
-    ...timeSlots.map((slot, i) => {
-      const activateSlot = onSlotClick
-        ? () => {
-            const [h, m] = slot.split(':').map(Number);
-            onSlotClick(date, h + m / 60);
-          }
-        : undefined;
-      return React.createElement('div', {
-        key: `slot-${slot}`,
-        style: {
-          height: `${slotHeight}px`,
-          borderBottom: resolveSlotBorder(i),
-          cursor: onSlotClick ? 'pointer' : 'default',
-        },
-        onClick: activateSlot,
-        // Solo hacemos operable por teclado el slot si efectivamente es
-        // clickeable; un slot sin handler queda inerte (no tabbable).
-        ...(activateSlot
-          ? clickableProps(`Crear evento — ${date.substring(0, 10)} ${slot}`, activateSlot)
-          : {}),
-      });
-    }),
+          const renderedHeight = Math.max(slotHeight / 2, pos.height);
+          const isNarrow = slot.columnCount > 1;
+          const isLowCompact = renderedHeight < COMPACT_HEIGHT_PX;
+          // En clusters de 3+ cols forzamos compact para que entre el titulo
+          const effectiveCompact = isLowCompact || slot.columnCount >= 3;
+          const variant: EventRenderContext['variant'] = effectiveCompact
+            ? 'compact'
+            : defaultVariant;
 
-    // Linea "ahora"
-    isToday && nowInRange && renderNowLine(nowTop),
+          const columnStyle = computeColumnStyle(slot.columnIndex, slot.columnCount, sidePadding);
 
-    // Eventos
-    ...layout.slots
-      .map((slot) => {
-        const pos = computeEventPosition(
-          slot.event,
+          // El click real lo maneja el EventCard / renderEvent interno; sumamos
+          // operabilidad por teclado en el wrapper (Enter/Espacio) sin tocar ese
+          // onClick. Solo si hay un handler de evento que disparar.
+          const eventA11y = onEventClick
+            ? clickableProps(`Evento: ${slot.event.title} — ${eventStartTime(slot.event)}`, () =>
+                onEventClick(slot.event)
+              )
+            : {};
+
+          return (
+            <div
+              key={slot.event.id}
+              style={{
+                position: 'absolute' as const,
+                zIndex: String(EVENT_Z),
+                top: `${Math.max(0, pos.topOffset)}px`,
+                height: `${renderedHeight}px`,
+                ...columnStyle,
+              }}
+              {...eventA11y}
+            >
+              {renderEvent ? (
+                renderEvent(slot.event, { variant, height: renderedHeight })
+              ) : (
+                <EventCard
+                  event={slot.event}
+                  variant={variant}
+                  showTime={true}
+                  showStatus={!effectiveCompact && !isNarrow}
+                  showLocation={!effectiveCompact && !isNarrow}
+                  onClick={onEventClick}
+                />
+              )}
+            </div>
+          );
+        })
+        .filter(Boolean)}
+      {/* Overflow chips ("+N") */}
+      {layout.overflows.map((ov) => {
+        const pos = overflowPosition(
+          ov.startMs,
+          ov.endMs,
+          date,
           gridStartMin,
           gridEndMin,
           slotDuration,
@@ -143,91 +186,32 @@ export function DayColumnCore({
         );
         if (!pos) return null;
 
-        const renderedHeight = Math.max(slotHeight / 2, pos.height);
-        const isNarrow = slot.columnCount > 1;
-        const isLowCompact = renderedHeight < COMPACT_HEIGHT_PX;
-        // En clusters de 3+ cols forzamos compact para que entre el titulo
-        const effectiveCompact = isLowCompact || slot.columnCount >= 3;
-        const variant: EventRenderContext['variant'] = effectiveCompact
-          ? 'compact'
-          : defaultVariant;
+        const columnStyle = computeColumnStyle(ov.columnIndex, ov.columnCount, sidePadding);
 
-        const columnStyle = computeColumnStyle(slot.columnIndex, slot.columnCount, sidePadding);
-
-        // El click real lo maneja el EventCard / renderEvent interno; sumamos
-        // operabilidad por teclado en el wrapper (Enter/Espacio) sin tocar ese
-        // onClick. Solo si hay un handler de evento que disparar.
-        const eventA11y = onEventClick
-          ? clickableProps(`Evento: ${slot.event.title} — ${eventStartTime(slot.event)}`, () =>
-              onEventClick(slot.event)
-            )
-          : {};
-
-        return React.createElement(
-          'div',
-          {
-            key: slot.event.id,
-            style: {
+        return (
+          <div
+            key={`ov-${ov.clusterId}`}
+            style={{
               position: 'absolute' as const,
-              zIndex: String(EVENT_Z),
+              zIndex: String(EVENT_Z + 1),
               top: `${Math.max(0, pos.topOffset)}px`,
-              height: `${renderedHeight}px`,
+              height: `${Math.max(slotHeight / 2, pos.height)}px`,
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              padding: '4px 2px',
               ...columnStyle,
-            },
-            ...eventA11y,
-          },
-          renderEvent
-            ? renderEvent(slot.event, { variant, height: renderedHeight })
-            : React.createElement(EventCard, {
-                event: slot.event,
-                variant,
-                showTime: true,
-                showStatus: !effectiveCompact && !isNarrow,
-                showLocation: !effectiveCompact && !isNarrow,
-                onClick: onEventClick,
-              })
+            }}
+          >
+            <EventOverflowChip
+              events={ov.events}
+              onEventClick={onEventClick}
+              onOverride={onClusterOverflowClick}
+            />
+          </div>
         );
-      })
-      .filter(Boolean),
-
-    // Overflow chips ("+N")
-    ...layout.overflows.map((ov) => {
-      const pos = overflowPosition(
-        ov.startMs,
-        ov.endMs,
-        date,
-        gridStartMin,
-        gridEndMin,
-        slotDuration,
-        slotHeight
-      );
-      if (!pos) return null;
-
-      const columnStyle = computeColumnStyle(ov.columnIndex, ov.columnCount, sidePadding);
-
-      return React.createElement(
-        'div',
-        {
-          key: `ov-${ov.clusterId}`,
-          style: {
-            position: 'absolute' as const,
-            zIndex: String(EVENT_Z + 1),
-            top: `${Math.max(0, pos.topOffset)}px`,
-            height: `${Math.max(slotHeight / 2, pos.height)}px`,
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            padding: '4px 2px',
-            ...columnStyle,
-          },
-        },
-        React.createElement(EventOverflowChip, {
-          events: ov.events,
-          onEventClick,
-          onOverride: onClusterOverflowClick,
-        })
-      );
-    })
+      })}
+    </>
   );
 }
 

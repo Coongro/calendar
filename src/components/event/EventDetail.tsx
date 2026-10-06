@@ -1,17 +1,15 @@
-import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
+import { useFormat, useIsMobile, useViewContributions } from '@coongro/plugin-sdk';
+import { Button, Card, DynamicIcon, EmptyState, Skeleton } from '@coongro/ui-components';
+import { CalendarIcon, MapPinIcon } from 'lucide-react';
 import type { ReactElement } from 'react';
+import { Fragment } from 'react';
 
 import { useEvent } from '../../hooks/useEvent.js';
-import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS, statusBadgeStyle } from '../../styles/tokens.js';
 import type { EventDetailProps } from '../../types/components.js';
 import { formatEventDateTime } from '../../utils/date.js';
 import { formatStatus } from '../../utils/labels.js';
-import { PinIcon, CalendarIcon } from '../internal/icons.js';
-
-const React = getHostReact();
-const UI = getHostUI();
 
 export function EventDetail({
   eventId,
@@ -22,8 +20,9 @@ export function EventDetail({
   onDelete,
   className = '',
 }: EventDetailProps): ReactElement | null {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile('sm');
   const tz = useTenantTimezone();
+  const f = useFormat();
   const { event, loading, error } = useEvent(eventId);
 
   const { sections: entityInfoSections } = useViewContributions(
@@ -33,223 +32,177 @@ export function EventDetail({
   const { sections: actionSlots } = useViewContributions('calendar.event-detail.actions');
 
   if (loading) {
-    return React.createElement(
-      'div',
-      {
-        className,
-        style: {
+    return (
+      <div
+        className={className}
+        style={{
           display: 'flex',
           flexDirection: 'column',
           gap: '1rem',
           padding: '1rem',
-        },
-      },
-      Array.from({ length: 5 }).map((_, i) =>
-        React.createElement(UI.Skeleton, { key: i, className: 'h-6 rounded' })
-      )
+        }}
+      >
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-6 rounded" />
+        ))}
+      </div>
     );
   }
 
   if (error || !event) {
-    return React.createElement(UI.EmptyState, {
-      title: error ?? 'Evento no encontrado',
-      icon: React.createElement(CalendarIcon, null),
-    });
+    return (
+      <EmptyState
+        title={error ?? 'Evento no encontrado'}
+        icon={
+          <CalendarIcon size={32} strokeWidth={1.5} style={{ color: 'var(--cg-text-muted)' }} />
+        }
+      />
+    );
   }
 
   const detail = (label: string, value: string | null | undefined) =>
-    value
-      ? React.createElement(
-          'div',
-          {
-            style: {
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.125rem',
-            },
-          },
-          React.createElement(
-            'span',
-            {
-              style: {
-                fontSize: '0.75rem',
-                color: TOKENS.ink4,
-              },
-            },
-            label
-          ),
-          React.createElement(
-            'span',
-            {
-              style: { fontSize: '0.875rem' },
-            },
-            value
-          )
-        )
-      : null;
+    value ? (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.125rem',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '0.75rem',
+            color: TOKENS.ink4,
+          }}
+        >
+          {label}
+        </span>
+        <span style={{ fontSize: '0.875rem' }}>{value}</span>
+      </div>
+    ) : null;
 
-  return React.createElement(
-    'div',
-    {
-      className,
-      style: {
+  return (
+    <div
+      className={className}
+      style={{
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
-      },
-    },
-
-    // Header
-    React.createElement(
-      'div',
-      {
-        style: {
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           alignItems: isMobile ? 'stretch' : 'flex-start',
           justifyContent: 'space-between',
           gap: isMobile ? '0.75rem' : undefined,
-        },
-      },
-      React.createElement(
-        'div',
-        null,
-        React.createElement(
-          'h2',
-          {
-            style: {
+        }}
+      >
+        <div>
+          <h2
+            style={{
               fontSize: '1.125rem',
               fontWeight: 600,
-            },
-          },
-          event.title
-        ),
-        React.createElement(
-          'span',
-          {
-            style: { ...statusBadgeStyle(event.status), marginTop: '6px' },
-          },
-          formatStatus(event.status)
-        )
-      ),
-      React.createElement(
-        'div',
-        {
-          style: {
+            }}
+          >
+            {event.title}
+          </h2>
+          <span style={{ ...statusBadgeStyle(event.status), marginTop: '6px' }}>
+            {formatStatus(event.status)}
+          </span>
+        </div>
+        <div
+          style={{
             display: 'flex',
             gap: '0.5rem',
-          },
-        },
-        onEdit &&
-          React.createElement(
-            UI.Button,
-            { variant: 'outline', size: 'sm', onClick: () => onEdit(event) },
-            React.createElement(UI.DynamicIcon, { icon: 'Pencil', size: 14 }),
-            'Editar'
-          ),
-        onDelete &&
-          React.createElement(
-            UI.Button,
-            { variant: 'destructive', size: 'sm', onClick: () => onDelete(event) },
-            React.createElement(UI.DynamicIcon, { icon: 'Trash2', size: 14 }),
-            'Eliminar'
-          ),
-        ...actionSlots.map((s, i) =>
-          React.createElement(React.Fragment, { key: `action-${String(i)}` }, s.render() as any)
-        ),
-        renderActions?.()
-      )
-    ),
-
-    // Detalles
-    React.createElement(
-      'div',
-      {
-        style: {
+          }}
+        >
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={() => onEdit(event)}>
+              <DynamicIcon icon="Pencil" size={14} />
+              Editar
+            </Button>
+          )}
+          {onDelete && (
+            <Button variant="destructive" size="sm" onClick={() => onDelete(event)}>
+              <DynamicIcon icon="Trash2" size={14} />
+              Eliminar
+            </Button>
+          )}
+          {actionSlots.map((s, i) => (
+            <Fragment key={`action-${String(i)}`}>{s.render()}</Fragment>
+          ))}
+          {renderActions?.()}
+        </div>
+      </div>
+      {/* Detalles */}
+      <div
+        style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
           gap: '0.75rem',
-        },
-      },
-      detail('Inicio', formatEventDateTime(event.start_at, tz)),
-      detail('Fin', formatEventDateTime(event.end_at, tz)),
-      event.all_day && detail('Tipo', 'Todo el día'),
-      event.location
-        ? React.createElement(
-            'div',
-            {
-              style: {
+        }}
+      >
+        {detail('Inicio', formatEventDateTime(event.start_at, tz))}
+        {detail('Fin', formatEventDateTime(event.end_at, tz))}
+        {event.all_day && detail('Tipo', 'Todo el día')}
+        {event.location ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.125rem',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.75rem',
+                color: TOKENS.ink4,
+              }}
+            >
+              Ubicación
+            </span>
+            <div
+              style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '0.125rem',
-              },
-            },
-            React.createElement(
-              'span',
-              {
-                style: {
-                  fontSize: '0.75rem',
-                  color: TOKENS.ink4,
-                },
-              },
-              'Ubicación'
-            ),
-            React.createElement(
-              'div',
-              {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  fontSize: '0.875rem',
-                },
-              },
-              React.createElement(PinIcon, { size: 12 }),
-              React.createElement('span', null, event.location)
-            )
-          )
-        : null
-    ),
-
-    detail('Descripción', event.description),
-    detail('Notas', event.notes),
-
-    // Entity info (contribution slot)
-    ...(entityInfoSections.length > 0
-      ? entityInfoSections.map((s, i) =>
-          React.createElement(React.Fragment, { key: `entity-${String(i)}` }, s.render() as any)
-        )
-      : renderEntityInfo
-        ? [renderEntityInfo()]
-        : []),
-
-    // Extra sections
-    ...(extraSections.length > 0
-      ? extraSections.map((s, i) =>
-          React.createElement(React.Fragment, { key: `section-${String(i)}` }, s.render() as any)
-        )
-      : renderSections
-        ? [renderSections()]
-        : []),
-
-    // Metadata
-    React.createElement(
-      UI.Card,
-      { className: 'p-4 w-fit' },
-      React.createElement(
-        'div',
-        { className: 'flex flex-col gap-1 text-xs text-cg-text-muted' },
-        React.createElement(
-          'span',
-          null,
-          `Creado: ${new Date(event.created_at).toLocaleDateString('es-AR')}`
-        ),
-        React.createElement(
-          'span',
-          null,
-          `Actualizado: ${new Date(event.updated_at).toLocaleDateString('es-AR')}`
-        )
-      )
-    )
+                alignItems: 'center',
+                gap: '0.25rem',
+                fontSize: '0.875rem',
+              }}
+            >
+              <MapPinIcon size={12} strokeWidth={2} style={{ flexShrink: 0 }} />
+              <span>{event.location}</span>
+            </div>
+          </div>
+        ) : null}
+      </div>
+      {detail('Descripción', event.description)}
+      {detail('Notas', event.notes)}
+      {/* Entity info (contribution slot) */}
+      {entityInfoSections.length > 0
+        ? entityInfoSections.map((s, i) => (
+            <Fragment key={`entity-${String(i)}`}>{s.render()}</Fragment>
+          ))
+        : renderEntityInfo
+          ? renderEntityInfo()
+          : null}
+      {/* Extra sections */}
+      {extraSections.length > 0
+        ? extraSections.map((s, i) => (
+            <Fragment key={`section-${String(i)}`}>{s.render()}</Fragment>
+          ))
+        : renderSections
+          ? renderSections()
+          : null}
+      {/* Metadata */}
+      <Card className="p-4 w-fit">
+        <div className="flex flex-col gap-1 text-xs text-cg-text-muted">
+          <span>{`Creado: ${f.date(event.created_at)}`}</span>
+          <span>{`Actualizado: ${f.date(event.updated_at)}`}</span>
+        </div>
+      </Card>
+    </div>
   );
 }

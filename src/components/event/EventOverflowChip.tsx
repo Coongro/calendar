@@ -1,16 +1,13 @@
-import { getHostReact, getHostUI } from '@coongro/plugin-sdk';
+import { useIsMobile } from '@coongro/plugin-sdk';
+import { Popover, PopoverContent, PopoverTrigger } from '@coongro/ui-components';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
 
-import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarEvent } from '../../types/event.js';
-import { HostPopover, HostPopoverTrigger } from '../internal/host-ui.js';
 
 import { EventCard } from './EventCard.js';
 import { MobileBottomSheet } from './MobileBottomSheet.js';
-
-const React = getHostReact();
-const { useState } = React;
-const UI = getHostUI();
 
 export interface EventOverflowChipProps {
   /** Eventos ocultos por overflow de cluster; se listan en el popover al abrir. */
@@ -38,7 +35,7 @@ export interface EventOverflowChipProps {
  */
 export function EventOverflowChip({ events, onEventClick, onOverride }: EventOverflowChipProps) {
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile('sm');
   const count = events.length;
   if (count === 0) return null;
 
@@ -55,13 +52,12 @@ export function EventOverflowChip({ events, onEventClick, onOverride }: EventOve
     onEventClick?.(evt);
   };
 
-  const chipButton = React.createElement(
-    'button',
-    {
-      type: 'button',
-      'aria-label': `${count} ${count === 1 ? 'evento más' : 'eventos más'} en este horario`,
-      onClick: handleChipClick,
-      style: {
+  const chipButton = (
+    <button
+      type="button"
+      aria-label={`${count} ${count === 1 ? 'evento más' : 'eventos más'} en este horario`}
+      onClick={handleChipClick}
+      style={{
         background: TOKENS.surface,
         border: `1px solid ${TOKENS.borderMd}`,
         borderRadius: TOKENS.rSm,
@@ -74,51 +70,46 @@ export function EventOverflowChip({ events, onEventClick, onOverride }: EventOve
         alignItems: 'center',
         gap: '4px',
         fontFamily: 'inherit',
-      },
-    },
-    ...renderDots(events),
-    `+${count}`
+      }}
+    >
+      {renderDots(events)}
+      {`+${count}`}
+    </button>
   );
 
   if (isMobile) {
     const { title, subtitle } = clusterHeaderLabels(events);
-    return React.createElement(
-      React.Fragment,
-      null,
-      chipButton,
-      React.createElement(MobileBottomSheet, {
-        open,
-        onOpenChange: setOpen,
-        title,
-        subtitle,
-        children: sortedItems(events).map((evt) =>
-          React.createElement(EventCard, {
-            key: evt.id,
-            event: evt,
-            variant: 'list' as const,
-            showTime: true,
-            showStatus: true,
-            showLocation: true,
-            onClick: handleItemClick,
-          })
-        ),
-      })
+    return (
+      <>
+        {chipButton}
+        <MobileBottomSheet
+          open={open}
+          onOpenChange={setOpen}
+          title={title}
+          subtitle={subtitle}
+          children={sortedItems(events).map((evt) => (
+            <EventCard
+              key={evt.id}
+              event={evt}
+              variant={'list' as const}
+              showTime={true}
+              showStatus={true}
+              showLocation={true}
+              onClick={handleItemClick}
+            />
+          ))}
+        />
+      </>
     );
   }
 
-  return React.createElement(
-    HostPopover,
-    { open, onOpenChange: setOpen },
-    React.createElement(HostPopoverTrigger, { asChild: true }, chipButton),
-    React.createElement(
-      UI.PopoverContent,
-      {
-        align: 'center',
-        side: 'bottom',
-        style: { width: '320px', padding: 0 },
-      },
-      React.createElement(ClusterOverflowList, { events, onEventClick: handleItemClick })
-    )
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger>{chipButton}</PopoverTrigger>
+      <PopoverContent align="center" side="bottom" style={{ width: '320px', padding: 0 }}>
+        <ClusterOverflowList events={events} onEventClick={handleItemClick} />
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -135,15 +126,11 @@ interface ClusterOverflowListProps {
 function ClusterOverflowList({ events, onEventClick }: ClusterOverflowListProps) {
   const sorted = sortedItems(events);
 
-  return React.createElement(
-    'div',
-    { style: { display: 'flex', flexDirection: 'column' as const } },
-
-    // Header
-    React.createElement(
-      'div',
-      {
-        style: {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+      {/* Header */}
+      <div
+        style={{
           padding: '10px 14px',
           borderBottom: `1px solid ${TOKENS.border}`,
           fontFamily: TOKENS.fontSerif,
@@ -151,36 +138,34 @@ function ClusterOverflowList({ events, onEventClick }: ClusterOverflowListProps)
           fontSize: '13px',
           color: TOKENS.ink,
           background: TOKENS.bg,
-        },
-      },
-      `+${sorted.length} turno${sorted.length === 1 ? '' : 's'} más en este horario`
-    ),
-
-    // Lista
-    React.createElement(
-      'div',
-      {
-        style: {
+        }}
+      >
+        {`+${sorted.length} turno${sorted.length === 1 ? '' : 's'} más en este horario`}
+      </div>
+      {/* Lista */}
+      <div
+        style={{
           display: 'flex',
           flexDirection: 'column' as const,
           gap: '6px',
           padding: '10px',
           maxHeight: '320px',
           overflowY: 'auto' as const,
-        },
-      },
-      ...sorted.map((evt) =>
-        React.createElement(EventCard, {
-          key: evt.id,
-          event: evt,
-          variant: 'list',
-          showTime: true,
-          showStatus: true,
-          showLocation: true,
-          onClick: onEventClick,
-        })
-      )
-    )
+        }}
+      >
+        {sorted.map((evt) => (
+          <EventCard
+            key={evt.id}
+            event={evt}
+            variant="list"
+            showTime={true}
+            showStatus={true}
+            showLocation={true}
+            onClick={onEventClick}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -222,7 +207,7 @@ function formatDayLabel(iso: string): string {
   });
 }
 
-function renderDots(events: CalendarEvent[]): React.ReactNode[] {
+function renderDots(events: CalendarEvent[]): ReactNode[] {
   const seen = new Set<string>();
   const uniqueColors: string[] = [];
   for (const e of events) {
@@ -233,16 +218,16 @@ function renderDots(events: CalendarEvent[]): React.ReactNode[] {
       if (uniqueColors.length >= 3) break;
     }
   }
-  return uniqueColors.map((c, i) =>
-    React.createElement('span', {
-      key: `dot-${i}`,
-      style: {
+  return uniqueColors.map((c, i) => (
+    <span
+      key={`dot-${i}`}
+      style={{
         width: '4px',
         height: '4px',
         borderRadius: '50%',
         background: c,
         flexShrink: 0,
-      },
-    })
-  );
+      }}
+    />
+  ));
 }

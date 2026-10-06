@@ -1,10 +1,12 @@
 import { localToUTC } from '@coongro/datetime';
-import { getHostReact, getHostUI, useViewContributions } from '@coongro/plugin-sdk';
+import { useViewContributions, useIsMobile } from '@coongro/plugin-sdk';
+import { Button } from '@coongro/ui-components';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 
 import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
 import { useDateNavigation } from '../../hooks/useDateNavigation.js';
 import { useEvents } from '../../hooks/useEvents.js';
-import { useIsMobile } from '../../hooks/useIsMobile.js';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarViewProps, CalendarViewMode } from '../../types/components.js';
@@ -22,9 +24,6 @@ import { MiniCalendar } from './MiniCalendar.js';
 import { MonthGrid } from './MonthGrid.js';
 import { ThreeDayGrid } from './ThreeDayGrid.js';
 import { WeekGrid } from './WeekGrid.js';
-
-const React = getHostReact();
-const UI = getHostUI();
 
 // Estados de los controles del toolbar (DS v2.3): hover, presionado y foco por clase, con
 // los tokens de movimiento. El layout sigue en línea; fondo y color van acá para que el
@@ -75,7 +74,7 @@ export function CalendarView({
   className = '',
 }: CalendarViewProps) {
   const { settings } = useCalendarSettings();
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile('sm');
   const tz = useTenantTimezone();
   const nav = useDateNavigation(defaultView ?? settings.defaultView, initialDate);
 
@@ -86,7 +85,6 @@ export function CalendarView({
     pageSize: 500,
   });
 
-  const { useMemo, useState } = React;
   const events = useMemo(() => {
     const internal = skipInternalEvents ? [] : internalEvents;
     const external = externalEvents ?? [];
@@ -103,7 +101,6 @@ export function CalendarView({
   const loading = (skipInternalEvents ? false : internalLoading) || (externalLoading ?? false);
 
   // Notificar al parent cuando cambia el rango visible
-  const { useEffect, useRef } = React;
   const prevRange = useRef<string>('');
   useEffect(() => {
     if (!onDateRangeChange) return;
@@ -151,90 +148,84 @@ export function CalendarView({
 
   // Toolbar
   function renderMobileToolbar() {
-    return React.createElement(
-      'div',
-      {
-        style: {
+    return (
+      <div
+        style={{
           display: 'flex',
           flexDirection: 'column' as const,
           gap: '12px',
           marginBottom: '16px',
-        },
-      },
-      // Title + extra actions row (solo si hay titulo o extraToolbarActions)
-      (title || extraToolbarActions) &&
-        React.createElement(
-          'div',
-          {
-            style: {
+        }}
+      >
+        {/* Title + extra actions row (solo si hay titulo o extraToolbarActions) */}
+        {(title || extraToolbarActions) && (
+          <div
+            style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-            },
-          },
-          title
-            ? React.createElement(
-                'h1',
-                {
-                  style: {
-                    fontFamily: TOKENS.fontSerif,
-                    fontWeight: 900,
-                    fontSize: '20px',
-                    margin: 0,
-                  },
-                },
-                title
-              )
-            : React.createElement('div'),
-          extraToolbarActions
-        ),
-      // Nav row
-      React.createElement(
-        'div',
-        {
-          style: {
+            }}
+          >
+            {title ? (
+              <h1
+                style={{
+                  fontFamily: TOKENS.fontSerif,
+                  fontWeight: 900,
+                  fontSize: '20px',
+                  margin: 0,
+                }}
+              >
+                {title}
+              </h1>
+            ) : (
+              <div />
+            )}
+            {extraToolbarActions}
+          </div>
+        )}
+        {/* Nav row */}
+        <div
+          style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-          },
-        },
-        React.createElement(UI.Button, { variant: 'ghost', size: 'sm', onClick: nav.goPrev }, '‹'),
-        React.createElement(
-          'h2',
-          {
-            style: {
+          }}
+        >
+          <Button variant="ghost" size="sm" onClick={nav.goPrev}>
+            ‹
+          </Button>
+          <h2
+            style={{
               fontSize: '16px',
               fontWeight: 600,
               margin: 0,
-            },
-          },
-          nav.title
-        ),
-        React.createElement(UI.Button, { variant: 'ghost', size: 'sm', onClick: nav.goNext }, '›')
-      ),
-      // View switcher row
-      React.createElement(
-        'div',
-        {
-          style: {
+            }}
+          >
+            {nav.title}
+          </h2>
+          <Button variant="ghost" size="sm" onClick={nav.goNext}>
+            ›
+          </Button>
+        </div>
+        {/* View switcher row */}
+        <div
+          style={{
             display: 'flex',
             background: TOKENS.bg,
             borderRadius: '6px',
             padding: '2px',
-          },
-        },
-        // Mobile: day, three-day, week, month (sin agenda)
-        (['day', 'three-day', 'week', 'month'] as CalendarViewMode[])
-          .filter((v) => enabledViews.includes(v) || v === 'three-day')
-          .map((v) =>
-            React.createElement(
-              'button',
-              {
-                key: v,
-                type: 'button',
-                'aria-pressed': effectiveView === v,
-                className: mobileViewButtonClass(effectiveView === v),
-                style: {
+          }}
+        >
+          {/* Mobile: day, three-day, week, month (sin agenda) */}
+          {(['day', 'three-day', 'week', 'month'] as CalendarViewMode[])
+            .filter((v) => enabledViews.includes(v) || v === 'three-day')
+            .map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={effectiveView === v}
+                className={mobileViewButtonClass(effectiveView === v)}
+                style={{
                   flex: 1,
                   padding: '8px 0',
                   fontSize: '12px',
@@ -242,57 +233,51 @@ export function CalendarView({
                   borderRadius: '4px',
                   border: effectiveView === v ? `1px solid ${TOKENS.border}` : 'none',
                   cursor: 'pointer',
-                },
-                onClick: () => nav.setView(v),
-              },
-              VIEW_LABELS[v]
-            )
-          )
-      )
+                }}
+                onClick={() => nav.setView(v)}
+              >
+                {VIEW_LABELS[v]}
+              </button>
+            ))}
+        </div>
+      </div>
     );
   }
 
   function renderDesktopToolbar() {
-    return React.createElement(
-      'div',
-      {
-        style: {
+    return (
+      <div
+        style={{
           padding: '0 0 14px 0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexShrink: 0,
-        },
-      },
-
-      // Izquierda: titulo + nav + fecha + hoy
-      React.createElement(
-        'div',
-        {
-          style: {
+        }}
+      >
+        {/* Izquierda: titulo + nav + fecha + hoy */}
+        <div
+          style={{
             display: 'flex',
             alignItems: 'center',
             gap: '16px',
-          },
-        },
-        title &&
-          React.createElement(
-            'h1',
-            {
-              style: {
+          }}
+        >
+          {title && (
+            <h1
+              style={{
                 fontFamily: TOKENS.fontSerif,
                 fontWeight: 900,
                 fontSize: '22px',
                 margin: 0,
-              },
-            },
-            title
-          ),
-        // Grupo nav: ‹ fecha › Hoy — card surface
-        React.createElement(
-          'div',
-          {
-            style: {
+              }}
+            >
+              {title}
+            </h1>
+          )}
+          {/* Grupo nav: ‹ fecha › Hoy — card surface */}
+          <div
+            style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -300,15 +285,13 @@ export function CalendarView({
               background: TOKENS.surface,
               border: `1px solid ${TOKENS.border}`,
               borderRadius: TOKENS.rMd,
-            },
-          },
-          React.createElement(
-            'button',
-            {
-              type: 'button',
-              'aria-label': 'Anterior',
-              className: `${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-tertiary`,
-              style: {
+            }}
+          >
+            <button
+              type="button"
+              aria-label="Anterior"
+              className={`${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-tertiary`}
+              style={{
                 width: '28px',
                 height: '28px',
                 border: `1px solid ${TOKENS.border}`,
@@ -317,30 +300,26 @@ export function CalendarView({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-              },
-              onClick: nav.goPrev,
-            },
-            '‹'
-          ),
-          React.createElement(
-            'span',
-            {
-              style: {
+              }}
+              onClick={nav.goPrev}
+            >
+              ‹
+            </button>
+            <span
+              style={{
                 fontSize: '14px',
                 fontWeight: 500,
                 minWidth: '160px',
                 textAlign: 'center',
-              },
-            },
-            nav.title
-          ),
-          React.createElement(
-            'button',
-            {
-              type: 'button',
-              'aria-label': 'Siguiente',
-              className: `${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-tertiary`,
-              style: {
+              }}
+            >
+              {nav.title}
+            </span>
+            <button
+              type="button"
+              aria-label="Siguiente"
+              className={`${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-tertiary`}
+              style={{
                 width: '28px',
                 height: '28px',
                 border: `1px solid ${TOKENS.border}`,
@@ -349,22 +328,20 @@ export function CalendarView({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-              },
-              onClick: nav.goNext,
-            },
-            '›'
-          ),
-          // Separador visual
-          React.createElement('div', {
-            style: { width: '1px', height: '20px', background: TOKENS.border, margin: '0 2px' },
-          }),
-          // Boton Hoy
-          React.createElement(
-            'button',
-            {
-              type: 'button',
-              className: `${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-secondary`,
-              style: {
+              }}
+              onClick={nav.goNext}
+            >
+              ›
+            </button>
+            {/* Separador visual */}
+            <div
+              style={{ width: '1px', height: '20px', background: TOKENS.border, margin: '0 2px' }}
+            />
+            {/* Boton Hoy */}
+            <button
+              type="button"
+              className={`${TOOLBAR_BUTTON} ${TOOLBAR_IDLE} text-cg-text-secondary`}
+              style={{
                 padding: '4px 12px',
                 fontSize: '12px',
                 fontWeight: 500,
@@ -372,52 +349,43 @@ export function CalendarView({
                 borderRadius: TOKENS.rSm,
                 cursor: 'pointer',
                 fontFamily: TOKENS.fontBody,
-              },
-              onClick: nav.goToToday,
-            },
-            'Hoy'
-          )
-        )
-      ),
-
-      // Derecha: view switcher + contributions + extras
-      React.createElement(
-        'div',
-        {
-          style: {
+              }}
+              onClick={nav.goToToday}
+            >
+              Hoy
+            </button>
+          </div>
+        </div>
+        {/* Derecha: view switcher + contributions + extras */}
+        <div
+          style={{
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-          },
-        },
-
-        // Contributions en toolbar
-        ...toolbarSections.map((s, i) =>
-          React.createElement(React.Fragment, { key: `toolbar-${String(i)}` }, s.render() as any)
-        ),
-
-        // View switcher — card surface con botones inline
-        React.createElement(
-          'div',
-          {
-            style: {
+          }}
+        >
+          {/* Contributions en toolbar */}
+          {toolbarSections.map((s, i) => (
+            <Fragment key={`toolbar-${String(i)}`}>{s.render()}</Fragment>
+          ))}
+          {/* View switcher — card surface con botones inline */}
+          <div
+            style={{
               display: 'flex',
               padding: '4px',
               background: TOKENS.surface,
               border: `1px solid ${TOKENS.border}`,
               borderRadius: TOKENS.rMd,
               gap: '2px',
-            },
-          },
-          enabledViews.map((v) =>
-            React.createElement(
-              'button',
-              {
-                key: v,
-                type: 'button',
-                'aria-pressed': effectiveView === v,
-                className: desktopViewButtonClass(effectiveView === v),
-                style: {
+            }}
+          >
+            {enabledViews.map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={effectiveView === v}
+                className={desktopViewButtonClass(effectiveView === v)}
+                style={{
                   padding: '6px 14px',
                   fontSize: '12px',
                   fontWeight: 500,
@@ -425,16 +393,16 @@ export function CalendarView({
                   borderRadius: TOKENS.rSm,
                   cursor: 'pointer',
                   fontFamily: TOKENS.fontBody,
-                },
-                onClick: () => nav.setView(v),
-              },
-              VIEW_LABELS[v]
-            )
-          )
-        ),
-
-        extraToolbarActions
-      )
+                }}
+                onClick={() => nav.setView(v)}
+              >
+                {VIEW_LABELS[v]}
+              </button>
+            ))}
+          </div>
+          {extraToolbarActions}
+        </div>
+      </div>
     );
   }
 
@@ -452,92 +420,106 @@ export function CalendarView({
     if (loading) {
       switch (effectiveView) {
         case 'month':
-          return React.createElement(MonthGridSkeleton, null);
+          return <MonthGridSkeleton />;
         case 'three-day':
         case 'week':
-          return React.createElement(WeekGridSkeleton, null);
+          return <WeekGridSkeleton />;
         case 'day':
-          return React.createElement(DayColumnSkeleton, null);
+          return <DayColumnSkeleton />;
         case 'agenda':
-          return React.createElement(AgendaListSkeleton, null);
+          return <AgendaListSkeleton />;
         default:
-          return React.createElement(MonthGridSkeleton, null);
+          return <MonthGridSkeleton />;
       }
     }
 
     switch (effectiveView) {
       case 'month':
-        return React.createElement(MonthGrid, {
-          year: nav.currentDate.getFullYear(),
-          month: nav.currentDate.getMonth(),
-          events,
-          renderEvent,
-          onEventClick,
-          onDayClick: (date) => {
-            nav.goToDate(new Date(date));
-            nav.setView('day');
-          },
-          showWeekends: settings.showWeekends,
-          onNavigateToDate: (date) => {
-            setMonthFocusDate(date);
-            nav.goToDate(new Date(`${date}T00:00:00`));
-          },
-          focusDate: monthFocusDate,
-        });
+        return (
+          <MonthGrid
+            year={nav.currentDate.getFullYear()}
+            month={nav.currentDate.getMonth()}
+            events={events}
+            renderEvent={renderEvent}
+            onEventClick={onEventClick}
+            onDayClick={(date) => {
+              nav.goToDate(new Date(date));
+              nav.setView('day');
+            }}
+            showWeekends={settings.showWeekends}
+            onNavigateToDate={(date) => {
+              setMonthFocusDate(date);
+              nav.goToDate(new Date(`${date}T00:00:00`));
+            }}
+            focusDate={monthFocusDate}
+          />
+        );
       case 'three-day':
-        return React.createElement(ThreeDayGrid, {
-          startDate: nav.rangeStart.toISOString(),
-          events,
-          startHour: settings.startHour,
-          endHour: settings.endHour,
-          slotDuration: settings.slotDuration,
-          renderEvent,
-          onEventClick,
-          onSlotClick: onSlotClick
-            ? (date, hour) =>
-                onSlotClick(localToUTC(date, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz))
-            : undefined,
-        });
+        return (
+          <ThreeDayGrid
+            startDate={nav.rangeStart.toISOString()}
+            events={events}
+            startHour={settings.startHour}
+            endHour={settings.endHour}
+            slotDuration={settings.slotDuration}
+            renderEvent={renderEvent}
+            onEventClick={onEventClick}
+            onSlotClick={
+              onSlotClick
+                ? (date, hour) =>
+                    onSlotClick(
+                      localToUTC(date, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz)
+                    )
+                : undefined
+            }
+          />
+        );
       case 'week':
-        return React.createElement(WeekGrid, {
-          startDate: nav.rangeStart.toISOString(),
-          events,
-          startHour: settings.startHour,
-          endHour: settings.endHour,
-          slotDuration: settings.slotDuration,
-          renderEvent,
-          onEventClick,
-          onSlotClick: onSlotClick
-            ? (date, hour) =>
-                onSlotClick(localToUTC(date, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz))
-            : undefined,
-          showWeekends: settings.showWeekends,
-        });
+        return (
+          <WeekGrid
+            startDate={nav.rangeStart.toISOString()}
+            events={events}
+            startHour={settings.startHour}
+            endHour={settings.endHour}
+            slotDuration={settings.slotDuration}
+            renderEvent={renderEvent}
+            onEventClick={onEventClick}
+            onSlotClick={
+              onSlotClick
+                ? (date, hour) =>
+                    onSlotClick(
+                      localToUTC(date, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz)
+                    )
+                : undefined
+            }
+            showWeekends={settings.showWeekends}
+          />
+        );
       case 'day':
-        return React.createElement(DayColumn, {
-          date: toDateString(nav.rangeStart),
-          events,
-          startHour: settings.startHour,
-          endHour: settings.endHour,
-          slotDuration: settings.slotDuration,
-          slotHeight: daySlotHeight,
-          renderEvent,
-          onEventClick,
-          onSlotClick: onSlotClick
-            ? (hour) => {
-                const dateStr = nav.rangeStart.toISOString().substring(0, 10);
-                onSlotClick(
-                  localToUTC(dateStr, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz)
-                );
-              }
-            : undefined,
-        });
+        return (
+          <DayColumn
+            date={toDateString(nav.rangeStart)}
+            events={events}
+            startHour={settings.startHour}
+            endHour={settings.endHour}
+            slotDuration={settings.slotDuration}
+            slotHeight={daySlotHeight}
+            renderEvent={renderEvent}
+            onEventClick={onEventClick}
+            onSlotClick={
+              onSlotClick
+                ? (hour) => {
+                    const dateStr = nav.rangeStart.toISOString().substring(0, 10);
+                    onSlotClick(
+                      localToUTC(dateStr, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz)
+                    );
+                  }
+                : undefined
+            }
+          />
+        );
       case 'agenda':
-        return React.createElement(AgendaList, {
-          events,
-          renderEvent,
-          onEventClick,
-        });
+        return <AgendaList events={events} renderEvent={renderEvent} onEventClick={onEventClick} />;
       default:
         return null;
     }
@@ -551,64 +533,57 @@ export function CalendarView({
     let animation = '';
     if (direction === 1) animation = 'motion-safe:animate-cg-month-next';
     else if (direction === -1) animation = 'motion-safe:animate-cg-month-prev';
-    return React.createElement(
-      'div',
-      { style: { overflowX: 'clip' } as React.CSSProperties },
-      React.createElement('div', { key: `month-${monthIndex}`, className: animation }, content)
+    return (
+      <div style={{ overflowX: 'clip' } as CSSProperties}>
+        <div key={`month-${monthIndex}`} className={animation}>
+          {content}
+        </div>
+      </div>
     );
   }
 
-  return React.createElement(
-    'div',
-    {
-      className,
-      style: {
+  return (
+    <div
+      className={className}
+      style={{
         display: 'flex',
         flexDirection: 'column' as const,
         height: '100%',
-      },
-    },
-    toolbar,
-    React.createElement(
-      'div',
-      {
-        style: {
+      }}
+    >
+      {toolbar}
+      <div
+        style={{
           display: 'flex',
           gap: '16px',
           flex: 1,
           overflow: 'hidden',
-        },
-      },
-
-      // Sidebar opcional (oculto en mobile)
-      showCalendarSidebar &&
-        !isMobile &&
-        React.createElement(
-          'div',
-          {
-            style: {
+        }}
+      >
+        {/* Sidebar opcional (oculto en mobile) */}
+        {showCalendarSidebar && !isMobile && (
+          <div
+            style={{
               width: '240px',
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column' as const,
               gap: '16px',
               overflowY: 'auto' as const,
-            },
-          },
-          React.createElement(MiniCalendar, {
-            selectedDate: toDateString(nav.currentDate),
-            onDateSelect: (date) => nav.goToDate(new Date(`${date}T00:00:00`)),
-          }),
-          ...sidebarSections.map((s, i) =>
-            React.createElement(React.Fragment, { key: `sidebar-${String(i)}` }, s.render() as any)
-          )
-        ),
-
-      // Vista principal — card surface con r-xl
-      React.createElement(
-        'div',
-        {
-          style: {
+            }}
+          >
+            <MiniCalendar
+              selectedDate={toDateString(nav.currentDate)}
+              onDateSelect={(date) => nav.goToDate(new Date(`${date}T00:00:00`))}
+            />
+            {sidebarSections.map((s, i) => (
+              <Fragment key={`sidebar-${String(i)}`}>{s.render()}</Fragment>
+            ))}
+          </div>
+        )}
+        {/* Vista principal — card surface con r-xl */}
+        <div
+          style={{
             flex: 1,
             minWidth: 0,
             background: TOKENS.surface,
@@ -617,19 +592,20 @@ export function CalendarView({
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column' as const,
-          },
-        },
-        React.createElement(
-          'div',
-          {
-            style: {
+          }}
+        >
+          <div
+            style={{
               flex: 1,
               overflowY: 'auto' as const,
-            },
-          },
-          effectiveView === 'month' ? renderMonthTransition(renderActiveView()) : renderActiveView()
-        )
-      )
-    )
+            }}
+          >
+            {effectiveView === 'month'
+              ? renderMonthTransition(renderActiveView())
+              : renderActiveView()}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

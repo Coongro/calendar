@@ -1,9 +1,5 @@
-import { getHostReact } from '@coongro/plugin-sdk';
-
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarEvent } from '../../types/event.js';
-
-const React = getHostReact();
 
 export interface MobileWeekMiniCardProps {
   event: CalendarEvent;
@@ -19,10 +15,9 @@ export interface MobileWeekMiniCardProps {
  */
 export function MobileWeekMiniCard({ event, onClick }: MobileWeekMiniCardProps) {
   const isCancelled = event.status === 'cancelled';
-  return React.createElement(
-    'div',
-    {
-      style: {
+  return (
+    <div
+      style={{
         width: '100%',
         height: '100%',
         borderRadius: '3px',
@@ -31,13 +26,11 @@ export function MobileWeekMiniCard({ event, onClick }: MobileWeekMiniCardProps) 
         overflow: 'hidden',
         cursor: onClick ? 'pointer' : 'default',
         opacity: isCancelled ? '0.4' : '1',
-      },
-      onClick: onClick ? () => onClick(event) : undefined,
-    },
-    React.createElement(
-      'span',
-      {
-        style: {
+      }}
+      onClick={onClick ? () => onClick(event) : undefined}
+    >
+      <span
+        style={{
           fontSize: '7px',
           fontWeight: '600',
           color: TOKENS.ink2,
@@ -47,9 +40,10 @@ export function MobileWeekMiniCard({ event, onClick }: MobileWeekMiniCardProps) 
           display: 'block',
           lineHeight: '1.2',
           textDecoration: isCancelled ? 'line-through' : 'none',
-        },
-      },
-      event.title
-    )
+        }}
+      >
+        {event.title}
+      </span>
+    </div>
   );
 }

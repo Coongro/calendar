@@ -1,12 +1,12 @@
-import { detectBrowserTimezone, resolveTimezone } from '@coongro/datetime';
-import { useSettings } from '@coongro/plugin-sdk';
+import { resolveTimezone } from '@coongro/datetime';
+import { coreSettings, useSettings } from '@coongro/plugin-sdk';
 
 /**
- * Devuelve la timezone IANA del tenant.
- * Lee `core.timezone`. Si no existe, cae al del browser. Siempre válida.
+ * Devuelve la timezone IANA del negocio (`core.timezone`).
+ * Sin valor guardado (o mientras carga) usa la zona por defecto del Core, la misma
+ * que usa `useFormat()`: así las grillas y las fechas formateadas coinciden.
  */
 export function useTenantTimezone(): string {
-  const { values } = useSettings('core.');
-  const stored = values['core.timezone'] as string | undefined;
-  return resolveTimezone(stored ?? detectBrowserTimezone());
+  const { settings } = useSettings(coreSettings);
+  return resolveTimezone(settings.timezone);
 }

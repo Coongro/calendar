@@ -1,5 +1,5 @@
 import { addDays, getDayRange } from '@coongro/datetime';
-import { getHostReact } from '@coongro/plugin-sdk';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { CalendarViewMode } from '../types/components.js';
 import {
@@ -12,9 +12,6 @@ import {
 } from '../utils/date.js';
 
 import { useTenantTimezone } from './useTenantTimezone.js';
-
-const React = getHostReact();
-const { useState, useCallback, useMemo } = React;
 
 export interface UseDateNavigationResult {
   currentDate: Date;
