@@ -1,6 +1,7 @@
 import { dbNow, getDayRange, parseDateKey, toUTCTimestamp } from '@coongro/datetime';
 import type { ModuleDatabaseAPI } from '@coongro/plugin-sdk';
-import { eq, and, or, ilike, isNull, gte, lte, asc, desc, sql, inArray } from 'drizzle-orm';
+import { listPage, type Page, type PageInput } from '@coongro/plugin-sdk/actions';
+import { eq, and, isNull, gte, lte, asc, sql, inArray } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
 import { eventTable } from '../schema/event.js';
@@ -38,7 +39,8 @@ function toCalendarEvent(row: EventRow): CalendarEvent {
   };
 }
 
-export interface EventSearchParams {
+export interface EventSearchParams extends PageInput {
+  /** Texto a buscar en título, descripción y notas (lo mismo que `search`). */
   query?: string;
   status?: string;
   calendarId?: string;
@@ -50,11 +52,10 @@ export interface EventSearchParams {
   to?: string | Date;
   tags?: string[];
   includeDeleted?: boolean;
-  limit?: number;
-  offset?: number;
-  orderBy?: string;
-  orderDir?: 'asc' | 'desc';
 }
+
+/** Columnas por las que se ordenan las listas de eventos. */
+export const EVENT_SORTABLE = ['start_at', 'end_at', 'title', 'status', 'created_at'] as const;
 
 export interface CountResult {
   /** `null` cuando se agrupa por algo opcional (eventos sin calendario). */
@@ -64,13 +65,6 @@ export interface CountResult {
 
 export class EventRepository {
   constructor(private readonly db: ModuleDatabaseAPI) {}
-
-  async list(): Promise<CalendarEvent[]> {
-    const rows = await this.db.ormQuery((tx) =>
-      tx.select().from(eventTable).where(isNull(eventTable.deleted_at))
-    );
-    return rows.map(toCalendarEvent);
-  }
 
   async getById({ id }: { id: string }): Promise<CalendarEvent | undefined> {
     const rows = await this.db.ormQuery((tx) =>
@@ -131,99 +125,71 @@ export class EventRepository {
     return rows.map(toCalendarEvent);
   }
 
-  async search(params: EventSearchParams): Promise<CalendarEvent[]> {
-    const {
-      query,
-      status,
-      calendarId,
-      calendarIds,
-      eventTypeId,
-      entityId,
-      entityType,
-      from,
-      to,
-      tags: _tags,
-      includeDeleted,
-      limit,
-      offset,
-      orderBy = 'start_at',
-      orderDir = 'asc',
-    } = params;
+  /**
+   * Una página de eventos con los filtros de la búsqueda, del más próximo al más
+   * lejano salvo que se pida otro orden. La usan `list`, `search`, `listByEntity`
+   * y `listByCalendar`.
+   */
+  async searchPage(params: EventSearchParams): Promise<Page<CalendarEvent>> {
+    const conditions: SQL[] = [];
+    const { calendarId, calendarIds, eventTypeId, entityId, entityType, status } = params;
+    if (status) conditions.push(eq(eventTable.status, status));
+    if (calendarId) conditions.push(eq(eventTable.calendar_id, calendarId));
+    if (calendarIds && calendarIds.length > 0) {
+      conditions.push(inArray(eventTable.calendar_id, calendarIds));
+    }
+    if (eventTypeId) conditions.push(eq(eventTable.event_type_id, eventTypeId));
+    if (entityId) conditions.push(eq(eventTable.entity_id, entityId));
+    if (entityType) conditions.push(eq(eventTable.entity_type, entityType));
+    const fromDate = asDate(params.from);
+    const toDate = asDate(params.to);
+    if (fromDate) conditions.push(gte(eventTable.start_at, fromDate));
+    if (toDate) conditions.push(lte(eventTable.start_at, toDate));
+    if (params.tags && params.tags.length > 0) {
+      const tags = sql.join(
+        params.tags.map((tag) => sql`${tag}`),
+        sql`, `
+      );
+      conditions.push(sql`${eventTable.tags} ?| array[${tags}]`);
+    }
 
-    const rows = await this.db.ormQuery((tx) => {
-      const conditions: SQL[] = [];
-
-      if (!includeDeleted) {
-        conditions.push(isNull(eventTable.deleted_at));
+    const page = await listPage(
+      this.db,
+      eventTable,
+      { ...params, search: params.search ?? params.query },
+      {
+        search: ['title', 'description', 'notes'],
+        orderBy: [...EVENT_SORTABLE],
+        defaultOrder: { by: 'start_at', dir: 'asc' },
+        softDelete: params.includeDeleted ? false : 'deleted_at',
+        where: conditions.length > 0 ? and(...conditions) : undefined,
       }
-
-      if (query) {
-        const pattern = `%${query}%`;
-        const matches = or(
-          ilike(eventTable.title, pattern),
-          ilike(eventTable.description, pattern),
-          ilike(eventTable.notes, pattern)
-        );
-        if (matches) conditions.push(matches);
-      }
-
-      if (status) conditions.push(eq(eventTable.status, status));
-      if (calendarId) conditions.push(eq(eventTable.calendar_id, calendarId));
-      if (calendarIds && calendarIds.length > 0) {
-        conditions.push(inArray(eventTable.calendar_id, calendarIds));
-      }
-      if (eventTypeId) conditions.push(eq(eventTable.event_type_id, eventTypeId));
-      if (entityId) conditions.push(eq(eventTable.entity_id, entityId));
-      if (entityType) conditions.push(eq(eventTable.entity_type, entityType));
-      const fromDate = asDate(from);
-      const toDate = asDate(to);
-      if (fromDate) conditions.push(gte(eventTable.start_at, fromDate));
-      if (toDate) conditions.push(lte(eventTable.start_at, toDate));
-
-      const sortCol =
-        orderBy === 'title'
-          ? eventTable.title
-          : orderBy === 'status'
-            ? eventTable.status
-            : orderBy === 'end_at'
-              ? eventTable.end_at
-              : eventTable.start_at;
-      const sortFn = orderDir === 'desc' ? desc : asc;
-
-      let q = tx
-        .select()
-        .from(eventTable)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(sortFn(sortCol));
-
-      if (limit) q = q.limit(limit) as typeof q;
-      if (offset) q = q.offset(offset) as typeof q;
-
-      return q;
-    });
-    return rows.map(toCalendarEvent);
+    );
+    return { items: page.items.map(toCalendarEvent), total: page.total };
   }
 
   async listByDateRange({
     from,
     to,
+    calendarIds,
   }: {
     from: string | Date;
     to: string | Date;
+    calendarIds?: string[];
   }): Promise<CalendarEvent[]> {
-    const fromDate = asDate(from);
-    const toDate = asDate(to);
+    const conditions: SQL[] = [
+      isNull(eventTable.deleted_at),
+      gte(eventTable.start_at, asDate(from)),
+      lte(eventTable.start_at, asDate(to)),
+    ];
+    if (calendarIds && calendarIds.length > 0) {
+      conditions.push(inArray(eventTable.calendar_id, calendarIds));
+    }
     const rows = await this.db.ormQuery((tx) =>
       tx
         .select()
         .from(eventTable)
-        .where(
-          and(
-            isNull(eventTable.deleted_at),
-            gte(eventTable.start_at, fromDate),
-            lte(eventTable.start_at, toDate)
-          )
-        )
+        .where(and(...conditions))
         .orderBy(asc(eventTable.start_at))
     );
     return rows.map(toCalendarEvent);
@@ -232,57 +198,6 @@ export class EventRepository {
   async listByDate({ date, tz }: { date: string; tz: string }): Promise<CalendarEvent[]> {
     const { startUTC, endUTC } = getDayRange(parseDateKey(date), tz);
     return this.listByDateRange({ from: startUTC, to: endUTC });
-  }
-
-  async listByEntity({
-    entityId,
-    entityType,
-  }: {
-    entityId: string;
-    entityType: string;
-  }): Promise<CalendarEvent[]> {
-    const rows = await this.db.ormQuery((tx) =>
-      tx
-        .select()
-        .from(eventTable)
-        .where(
-          and(
-            isNull(eventTable.deleted_at),
-            eq(eventTable.entity_id, entityId),
-            eq(eventTable.entity_type, entityType)
-          )
-        )
-        .orderBy(asc(eventTable.start_at))
-    );
-    return rows.map(toCalendarEvent);
-  }
-
-  async listByCalendar({
-    calendarId,
-    from,
-    to,
-  }: {
-    calendarId: string;
-    from?: string;
-    to?: string;
-  }): Promise<CalendarEvent[]> {
-    const rows = await this.db.ormQuery((tx) => {
-      const conditions: SQL[] = [
-        isNull(eventTable.deleted_at),
-        eq(eventTable.calendar_id, calendarId),
-      ];
-      const fromDate = asDate(from);
-      const toDate = asDate(to);
-      if (fromDate) conditions.push(gte(eventTable.start_at, fromDate));
-      if (toDate) conditions.push(lte(eventTable.start_at, toDate));
-
-      return tx
-        .select()
-        .from(eventTable)
-        .where(and(...conditions))
-        .orderBy(asc(eventTable.start_at));
-    });
-    return rows.map(toCalendarEvent);
   }
 
   async listUpcoming({
