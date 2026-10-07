@@ -1,11 +1,5 @@
-import {
-  formatLocalTime,
-  localToUTC,
-  nowUTC,
-  toDateKey,
-  type UTCTimestamp,
-} from '@coongro/datetime';
-import { useViewContributions, useIsMobile } from '@coongro/plugin-sdk';
+import { localToUTC, nowUTC, toDateKey, type UTCTimestamp } from '@coongro/datetime';
+import { fmt, useViewContributions, useIsMobile } from '@coongro/plugin-sdk';
 import {
   Button,
   FormSection,
@@ -202,8 +196,9 @@ export function EventForm({
   const startAt = formData.start_at as UTCTimestamp | undefined;
   const endAt = formData.end_at as UTCTimestamp | undefined;
   const startDate = startAt ? toDateKey(startAt, tz) : '';
-  const startTime = startAt ? formatLocalTime(startAt, tz) : '';
-  const endTime = endAt ? formatLocalTime(endAt, tz) : '';
+  // `HH:mm` en 24 h (nunca `24:00`), lo que espera el input de hora; sin fecha válida, vacío.
+  const startTime = startAt ? fmt.in(tz).time(startAt, { fallback: '' }) : '';
+  const endTime = endAt ? fmt.in(tz).time(endAt, { fallback: '' }) : '';
 
   // ── Contenido de cada FormSection (campos originales, sin Card propio) ──
 
