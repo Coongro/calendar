@@ -25,9 +25,11 @@ export function useEventMutations(): UseEventMutationsResult {
     async (data: EventCreateData): Promise<CalendarEvent | null> => {
       setCreating(true);
       try {
-        const result = await actions.execute<CalendarEvent[]>('calendar.events.create', { data });
+        const result = await actions.execute<CalendarEvent | null>('calendar.events.create', {
+          data,
+        });
         toast.success('Evento creado', data.title);
-        return result[0] ?? null;
+        return result;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo crear el evento');
         return null;
@@ -42,12 +44,12 @@ export function useEventMutations(): UseEventMutationsResult {
     async (id: string, data: EventUpdateData): Promise<CalendarEvent | null> => {
       setUpdating(true);
       try {
-        const result = await actions.execute<CalendarEvent[]>('calendar.events.update', {
+        const result = await actions.execute<CalendarEvent | null>('calendar.events.update', {
           id,
           data,
         });
         toast.success('Evento actualizado', '');
-        return result[0] ?? null;
+        return result;
       } catch (err) {
         toast.error(
           'Error',
@@ -113,13 +115,13 @@ export function useEventMutations(): UseEventMutationsResult {
     async (id: string, startAt: string, endAt: string): Promise<CalendarEvent | null> => {
       setUpdating(true);
       try {
-        const result = await actions.execute<CalendarEvent[]>('calendar.events.moveEvent', {
+        const result = await actions.execute<CalendarEvent | null>('calendar.events.moveEvent', {
           id,
           startAt,
           endAt,
         });
         toast.success('Evento movido', '');
-        return result[0] ?? null;
+        return result;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo mover el evento');
         return null;

@@ -7,15 +7,9 @@ import { useMemo } from 'react';
 import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS, statusBadgeStyle } from '../../styles/tokens.js';
 import type { AgendaListProps } from '../../types/components.js';
-import type { CalendarEvent } from '../../types/event.js';
-import {
-  formatEventTime,
-  toDateString,
-  getDayName,
-  getMonthName,
-  toDateKey,
-} from '../../utils/date.js';
+import { formatEventTime, getDayName, getMonthName } from '../../utils/date.js';
 import { formatStatus } from '../../utils/labels.js';
+import { dateFromKey, dayKeyOf, groupByDay } from '../../utils/zoned-day.js';
 
 // Cada evento abre su detalle: botón real (Tab, Enter y Espacio) con hover, presionado y foco.
 // El fondo y el borde van por clase para que el hover pueda pisarlos.
@@ -32,18 +26,9 @@ export function AgendaList({
 }: AgendaListProps): ReactElement | null {
   const isMobile = useIsMobile('sm');
   const tz = useTenantTimezone();
-  const grouped = useMemo(() => {
-    const map: Record<string, CalendarEvent[]> = {};
-    const sortedEvents = [...events].sort(
-      (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
-    );
-    for (const evt of sortedEvents) {
-      const key = toDateString(new Date(evt.start_at));
-      if (!map[key]) map[key] = [];
-      map[key].push(evt);
-    }
-    return Object.entries(map);
-  }, [events]);
+  // Los días son los del negocio: un evento a las 22:15 en Bogotá va en ese día aunque el
+  // navegador esté en una zona donde ya es el siguiente.
+  const grouped = useMemo(() => groupByDay(events, tz), [events, tz]);
 
   if (grouped.length === 0) {
     return (
@@ -57,7 +42,7 @@ export function AgendaList({
     );
   }
 
-  const todayKey = toDateKey(new Date(), tz);
+  const todayKey = dayKeyOf(new Date(), tz);
   // Con acción, cada fila es un <button> (adentro no hay otros controles)
   const row = onEventClick
     ? { tag: 'button' as const, type: 'button' as const, className: EVENT_ROW_BUTTON }
@@ -74,7 +59,8 @@ export function AgendaList({
       }}
     >
       {grouped.map(([dateStr, dayEvents]) => {
-        const date = new Date(`${dateStr}T00:00:00`);
+        // Portador local de la fecha civil del grupo: de él solo se leen día, mes y año.
+        const date = dateFromKey(dateStr);
         const isToday = dateStr === todayKey;
         const dayName = getDayName(date).substring(0, 3).toUpperCase();
         const dayNum = date.getDate();

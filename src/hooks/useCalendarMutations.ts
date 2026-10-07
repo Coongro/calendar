@@ -24,11 +24,11 @@ export function useCalendarMutations(): UseCalendarMutationsResult {
     async (data: CalendarCreateData): Promise<CalendarGroup | null> => {
       setCreating(true);
       try {
-        const result = await actions.execute<CalendarGroup[]>('calendar.calendars.create', {
+        const result = await actions.execute<CalendarGroup | null>('calendar.calendars.create', {
           data,
         });
         toast.success('Calendario creado', data.name);
-        return result[0] ?? null;
+        return result;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo crear');
         return null;
@@ -43,12 +43,12 @@ export function useCalendarMutations(): UseCalendarMutationsResult {
     async (id: string, data: CalendarUpdateData): Promise<CalendarGroup | null> => {
       setUpdating(true);
       try {
-        const result = await actions.execute<CalendarGroup[]>('calendar.calendars.update', {
+        const result = await actions.execute<CalendarGroup | null>('calendar.calendars.update', {
           id,
           data,
         });
         toast.success('Calendario actualizado', '');
-        return result[0] ?? null;
+        return result;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo actualizar');
         return null;
@@ -93,11 +93,9 @@ export function useCalendarMutations(): UseCalendarMutationsResult {
   const toggleVisibility = useCallback(
     async (id: string): Promise<CalendarGroup | null> => {
       try {
-        const result = await actions.execute<CalendarGroup[]>(
-          'calendar.calendars.toggleVisibility',
-          { id }
-        );
-        return result[0] ?? null;
+        return await actions.execute<CalendarGroup | null>('calendar.calendars.toggleVisibility', {
+          id,
+        });
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo cambiar visibilidad');
         return null;

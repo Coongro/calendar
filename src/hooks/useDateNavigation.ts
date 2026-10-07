@@ -1,5 +1,5 @@
 import { addDays, getDayRange } from '@coongro/datetime';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { CalendarViewMode } from '../types/components.js';
 import {
@@ -10,6 +10,7 @@ import {
   toDateString,
   getMonthName,
 } from '../utils/date.js';
+import { dayOnZoneChange, todayIn } from '../utils/zoned-day.js';
 
 import { useTenantTimezone } from './useTenantTimezone.js';
 
@@ -33,14 +34,26 @@ export function useDateNavigation(
   const tz = useTenantTimezone();
   // Solo se usa en el primer render (lazy initializer); cambios posteriores de
   // initialDate no re-posicionan el calendario — para eso está goToDate.
-  const [currentDate, setCurrentDate] = useState(() => initialDate ?? new Date());
+  // «Hoy» es el del negocio: cerca de la medianoche el del navegador puede ser otro día.
+  const [currentDate, setCurrentDate] = useState(() => initialDate ?? todayIn(tz));
   const [view, setView] = useState<CalendarViewMode>(initialView);
+  // El primer render usa la zona por defecto (los ajustes todavía no llegaron): cuando
+  // llega la del negocio, «hoy» se recalcula, salvo que se haya pedido un día o el
+  // usuario ya haya navegado.
+  const pinned = useRef(initialDate !== undefined);
+  useEffect(() => {
+    setCurrentDate((current) => dayOnZoneChange(current, tz, { pinned: pinned.current }));
+  }, [tz]);
 
-  const goToToday = useCallback(() => setCurrentDate(new Date()), []);
-  const goToDate = useCallback((date: Date) => setCurrentDate(date), []);
+  const goToToday = useCallback(() => setCurrentDate(todayIn(tz)), [tz]);
+  const goToDate = useCallback((date: Date) => {
+    pinned.current = true;
+    setCurrentDate(date);
+  }, []);
 
   const navigate = useCallback(
     (direction: 1 | -1) => {
+      pinned.current = true;
       setCurrentDate((prev) => {
         const d = new Date(prev);
         switch (view) {

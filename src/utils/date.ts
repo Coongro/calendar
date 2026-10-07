@@ -2,20 +2,21 @@
  * Helpers de fecha/hora para el calendario.
  * Wrappers sobre `@coongro/datetime` que aceptan tanto branded como string crudo
  * (cast confiado en este boundary). `tz` siempre requerido.
+ *
+ * El formato para mostrar sale de `fmt` del SDK (es-AR, el mismo de `useFormat()`):
+ * `06/10/2026`, `14:30` (24 h, nunca `24:00`) y `06/10/2026 14:30`.
  */
 
 import {
   addMinutes as addMinutesCore,
   asUTCTimestamp,
   diffMinutes as diffMinutesCore,
-  formatLocalDate,
-  formatLocalDateTime,
-  formatLocalTime,
   isSameDay as isSameDayCore,
   toDateKey,
   type DateKey,
   type UTCTimestamp,
 } from '@coongro/datetime';
+import { fmt } from '@coongro/plugin-sdk';
 
 const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MONTHS = [
@@ -42,15 +43,15 @@ function asTs(value: DateLike): UTCTimestamp | Date {
 }
 
 export function formatEventDate(value: DateLike, tz: string): string {
-  return formatLocalDate(asTs(value), tz);
+  return fmt.in(tz).date(value);
 }
 
 export function formatEventTime(value: DateLike, tz: string): string {
-  return formatLocalTime(asTs(value), tz);
+  return fmt.in(tz).time(value);
 }
 
 export function formatEventDateTime(value: DateLike, tz: string): string {
-  return formatLocalDateTime(asTs(value), tz);
+  return fmt.in(tz).dateTime(value);
 }
 
 export function getDayName(date: Date): string {

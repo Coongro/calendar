@@ -23,9 +23,9 @@ export function useEventTypeMutations(): UseEventTypeMutationsResult {
     async (data: EventTypeCreateData): Promise<EventType | null> => {
       setCreating(true);
       try {
-        const result = await actions.execute<EventType[]>('calendar.types.create', { data });
+        const result = await actions.execute<EventType | null>('calendar.types.create', { data });
         toast.success('Tipo de evento creado', data.name);
-        return result[0] ?? null;
+        return result;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo crear');
         return null;
@@ -40,9 +40,12 @@ export function useEventTypeMutations(): UseEventTypeMutationsResult {
     async (id: string, data: EventTypeUpdateData): Promise<EventType | null> => {
       setUpdating(true);
       try {
-        const result = await actions.execute<EventType[]>('calendar.types.update', { id, data });
+        const result = await actions.execute<EventType | null>('calendar.types.update', {
+          id,
+          data,
+        });
         toast.success('Tipo actualizado', '');
-        return result[0] ?? null;
+        return result;
       } catch (err) {
         toast.error('Error', err instanceof Error ? err.message : 'No se pudo actualizar');
         return null;
