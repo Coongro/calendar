@@ -1,5 +1,24 @@
 # @coongro/calendar
 
+## 0.14.0
+
+### Minor Changes
+
+- Forma canónica de las acciones, sin `legacy` (requiere Core ≥ 0.70):
+  - `calendar.events.list`, `calendar.events.search`, `calendar.events.listByEntity` y `calendar.events.listByCalendar`: de array a página (`pageInput` → `{ items, total }`, 50 por defecto), con `search` y `orderBy` (`start_at`, `end_at`, `title`, `status`, `created_at`). `search` ahora filtra también por `tags`.
+  - `calendar.events.listByEntity` exige `entityId` y `entityType`, y `calendar.events.listByCalendar` un `calendarId` válido.
+  - `create`, `update`, `softDelete`, `restore` (de calendarios, tipos y eventos), `calendar.calendars.toggleVisibility` y `calendar.events.moveEvent`: devuelven el registro (o `null`), nunca `[registro]`.
+  - `calendar.events.listByDateRange` aplica `calendarIds`; `listByDateRange`, `moveEvent` y `countByDate` rechazan claves desconocidas.
+  - `useEventsByEntity` devuelve también `total`.
+
+- Las fechas y horas del calendario se formatean con `fmt` del SDK (el mismo formato es-AR de `useFormat()`) en vez de `formatLocalDate/Time/DateTime` de `@coongro/datetime`. Cambia el texto visible de las fechas: `6/10/2026` pasa a `06/10/2026`, y fecha y hora juntas pasan a `06/10/2026 14:30` (24 h, sin coma; antes dependía del ICU del navegador, y podía salir `6/10/2026, 2:30 p. m.`). La hora sola (`14:30`) no cambia. Una fecha inválida muestra `—` en vez de `Invalid DateTime`. `formatEventDate/Time/DateTime` mantienen su firma.
+
+### Patch Changes
+
+- El calendario agrupa y ubica los eventos por día y hora en la zona del negocio (`core.timezone`), no en la del navegador. Con el negocio en Bogotá y el navegador en Buenos Aires, un evento a las 22:15 del jueves 15 aparecía en la agenda bajo el viernes 16; ahora queda en el 15. Lo mismo en las grillas de día, tres días, semana y mes (columna del día, posición por hora, línea de «ahora»), en «Hoy» de la navegación y del mini calendario, en «Ahora» del selector de fecha y hora, y en el encabezado del «+N». También se corrige que, en navegadores al oeste de UTC, un clic en un día del mes abría el día anterior y la semana podía arrancar en la anterior.
+- Pide Core 0.72.0 o posterior (`engines.coongro` y `@coongro/plugin-sdk`). Además, el calendario abre en el «hoy» del negocio aunque los ajustes lleguen después del primer render: antes, sin `initialDate`, arrancaba en el día del navegador.
+- Pide Core 0.72.0 o posterior (`engines.coongro` y `@coongro/plugin-sdk`): las listas sin argumentos y la forma canónica de las acciones (Core #853/#858) son de esa versión.
+
 ## 0.13.0
 
 ### Minor Changes
