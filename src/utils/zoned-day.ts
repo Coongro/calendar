@@ -57,6 +57,22 @@ export function todayIn(tz: string, now: Date = new Date()): Date {
 }
 
 /**
+ * El día que muestra el calendario cuando cambia la zona del negocio (al cargar los
+ * ajustes llega la de verdad y la primera era la de por defecto). Si se abrió en un
+ * día pedido (`initialDate`) o el usuario ya navegó, se queda donde está; si no, va al
+ * «hoy» de esa zona.
+ */
+export function dayOnZoneChange(
+  current: Date,
+  tz: string,
+  { pinned, now = new Date() }: { pinned: boolean; now?: Date }
+): Date {
+  if (pinned) return current;
+  const today = todayIn(tz, now);
+  return today.getTime() === current.getTime() ? current : today;
+}
+
+/**
  * Agrupa los eventos por el día en que empiezan en la zona `tz`, en orden cronológico
  * (los días y los eventos de cada día).
  */

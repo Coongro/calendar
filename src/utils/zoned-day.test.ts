@@ -4,6 +4,7 @@ import {
   civilDateOf,
   dateFromKey,
   dayKeyOf,
+  dayOnZoneChange,
   groupByDay,
   minutesOfDay,
   timeOfDay,
@@ -133,5 +134,30 @@ describe('groupByDay', () => {
 
   it('sin eventos no hay grupos', () => {
     expect(groupByDay([], BOGOTA)).toEqual([]);
+  });
+});
+
+describe('la zona del negocio llega después del primer render', () => {
+  useBrowserZone(BUENOS_AIRES);
+
+  // 6/10 23:30 en Buenos Aires = 7/10 11:30 en Tokio: el «hoy» del negocio ya es el 7.
+  const now = new Date('2026-10-07T02:30:00.000Z');
+  const TOKYO = 'Asia/Tokyo';
+
+  it('sin día pedido ni navegación: pasa al «hoy» de la zona que llegó', () => {
+    const first = todayIn(BUENOS_AIRES, now);
+    expect(first.getDate()).toBe(6);
+    const next = dayOnZoneChange(first, TOKYO, { pinned: false, now });
+    expect(next.getDate()).toBe(7);
+  });
+
+  it('con un día pedido o después de navegar: se queda donde está', () => {
+    const chosen = dateFromKey('2026-10-15');
+    expect(dayOnZoneChange(chosen, TOKYO, { pinned: true, now })).toBe(chosen);
+  });
+
+  it('si el «hoy» no cambia, devuelve el mismo Date (no re-renderiza)', () => {
+    const today = todayIn(TOKYO, now);
+    expect(dayOnZoneChange(today, TOKYO, { pinned: false, now })).toBe(today);
   });
 });
