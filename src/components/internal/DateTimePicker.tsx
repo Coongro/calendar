@@ -3,8 +3,10 @@ import { Button, Input, Popover, PopoverContent, PopoverTrigger } from '@coongro
 import { useCallback, useState } from 'react';
 
 import { useCalendarSettings } from '../../hooks/useCalendarSettings.js';
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import type { DateTimePickerProps } from '../../types/components.js';
-import { toDateString, getMonthName } from '../../utils/date.js';
+import { getMonthName } from '../../utils/date.js';
+import { dayKeyOf, timeOfDay } from '../../utils/zoned-day.js';
 
 import { CalendarGrid } from './CalendarGrid.js';
 import { TimeSlotList } from './TimeSlotList.js';
@@ -33,6 +35,7 @@ export function DateTimePicker({
   className = '',
 }: DateTimePickerProps) {
   const { settings } = useCalendarSettings();
+  const tz = useTenantTimezone();
   const minuteStep = minuteStepProp ?? settings.minuteStep;
   const use24Hour = use24HourProp ?? settings.use24Hour;
   const [open, setOpen] = useState(false);
@@ -67,22 +70,17 @@ export function DateTimePicker({
 
   const handleTimeSelect = useCallback(
     (time: string) => {
-      buildDatetime(dateStr || toDateString(new Date()), time);
+      buildDatetime(dateStr || dayKeyOf(new Date(), tz), time);
     },
-    [buildDatetime, dateStr]
+    [buildDatetime, dateStr, tz]
   );
 
   const handleNow = useCallback(() => {
+    // Fecha y hora de pared del negocio: el valor se interpreta en esa zona.
     const now = new Date();
-    const date = toDateString(now);
-    const time = now.toLocaleTimeString('es', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-    onChange?.(`${date}T${time}`);
+    onChange?.(`${dayKeyOf(now, tz)}T${timeOfDay(now, tz)}`);
     setView('calendar');
-  }, [onChange]);
+  }, [onChange, tz]);
 
   const handleConfirm = useCallback(() => {
     setOpen(false);

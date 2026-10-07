@@ -181,7 +181,7 @@ export function MonthGrid({
   const todayKey = toDateKey(new Date(), tz);
   const days = useMemo(() => getMonthGridDays(year, month), [year, month]);
 
-  const eventsByDate = useMemo(() => groupEventsByDay(events), [events]);
+  const eventsByDate = useMemo(() => groupEventsByDay(events, tz), [events, tz]);
 
   // Filtrar columnas según showWeekends
   const weekDayIndices = showWeekends ? [1, 2, 3, 4, 5, 6, 0] : [1, 2, 3, 4, 5];

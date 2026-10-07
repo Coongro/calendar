@@ -260,9 +260,13 @@ export interface TimePickerProps {
 }
 
 export interface DateTimePickerProps {
-  /** Datetime string local (ej: 2026-04-03T09:30) */
+  /**
+   * Fecha y hora de pared del negocio (`YYYY-MM-DDTHH:MM`, ej. 2026-04-03T09:30): la
+   * hora en la zona del negocio, no en la del navegador ni en UTC. Para guardarla,
+   * convertirla con la zona del negocio (`localToUTC(value, tz)`, como EventForm).
+   */
   value?: string;
-  /** Callback con datetime string local (YYYY-MM-DDTHH:MM) */
+  /** Callback con la fecha y hora de pared del negocio (`YYYY-MM-DDTHH:MM`), igual que `value`. */
   onChange?: (datetime: string) => void;
   placeholder?: string;
   minDate?: string;

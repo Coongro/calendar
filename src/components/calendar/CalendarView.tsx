@@ -11,6 +11,7 @@ import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { CalendarViewProps, CalendarViewMode } from '../../types/components.js';
 import { toDateString } from '../../utils/date.js';
+import { dateFromKey } from '../../utils/zoned-day.js';
 
 import { AgendaList } from './AgendaList.js';
 import {
@@ -443,7 +444,9 @@ export function CalendarView({
             renderEvent={renderEvent}
             onEventClick={onEventClick}
             onDayClick={(date) => {
-              nav.goToDate(new Date(date));
+              // `date` es una clave YYYY-MM-DD: `new Date(date)` es medianoche UTC y al oeste
+              // de Greenwich abría el día anterior.
+              nav.goToDate(dateFromKey(date));
               nav.setView('day');
             }}
             showWeekends={settings.showWeekends}
@@ -498,7 +501,7 @@ export function CalendarView({
       case 'day':
         return (
           <DayColumn
-            date={toDateString(nav.rangeStart)}
+            date={toDateString(nav.currentDate)}
             events={events}
             startHour={settings.startHour}
             endHour={settings.endHour}
@@ -509,7 +512,8 @@ export function CalendarView({
             onSlotClick={
               onSlotClick
                 ? (hour) => {
-                    const dateStr = nav.rangeStart.toISOString().substring(0, 10);
+                    // El día visible (fecha civil), no la fecha UTC del inicio del rango.
+                    const dateStr = toDateString(nav.currentDate);
                     onSlotClick(
                       localToUTC(dateStr, `${String(Math.floor(hour)).padStart(2, '0')}:00`, tz)
                     );

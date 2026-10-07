@@ -13,6 +13,7 @@ import {
   dayNameColor,
   dayNumberStyles,
 } from '../../utils/grid-helpers.js';
+import { civilDateOf } from '../../utils/zoned-day.js';
 
 import { DayColumnCore } from './DayColumnCore.js';
 
@@ -35,20 +36,21 @@ export function ThreeDayGrid({
 
   // 3 dias consecutivos desde startDate
   const days = useMemo(() => {
-    const base = new Date(startDate);
+    // startDate llega como clave o como instante: el día es el del negocio (ver WeekGrid).
+    const base = civilDateOf(startDate, tz);
     return [0, 1, 2].map((offset) => {
       const d = new Date(base);
       d.setDate(d.getDate() + offset);
       return d;
     });
-  }, [startDate]);
+  }, [startDate, tz]);
 
   const timeSlots = useMemo(
     () => generateTimeSlots(startHour, endHour, slotDuration),
     [startHour, endHour, slotDuration]
   );
 
-  const eventsByDay = useMemo(() => groupEventsByDay(events), [events]);
+  const eventsByDay = useMemo(() => groupEventsByDay(events, tz), [events, tz]);
 
   const slotsPerHour = Math.round(60 / slotDuration);
   const now = new Date();
@@ -58,7 +60,8 @@ export function ThreeDayGrid({
     startHour,
     endHour,
     slotDuration,
-    slotHeight
+    slotHeight,
+    tz
   );
 
   return (

@@ -26,6 +26,7 @@ import {
   dayNameColor,
   dayNumberStyles,
 } from '../../utils/grid-helpers.js';
+import { civilDateOf } from '../../utils/zoned-day.js';
 import { MobileWeekMiniCard } from '../event/MobileWeekMiniCard.js';
 
 import { DayColumnCore } from './DayColumnCore.js';
@@ -49,17 +50,18 @@ export function WeekGrid({
   const gutterWidth = isMobile ? GUTTER_WIDTH_MOBILE : GUTTER_WIDTH_DESKTOP;
 
   const weekDays = useMemo(() => {
-    const d = new Date(startDate);
-    const all = getWeekDays(d);
+    // startDate llega como clave o como instante (el inicio del rango, en UTC): el día es el
+    // del negocio. `new Date(startDate)` lo leía en la zona del navegador.
+    const all = getWeekDays(civilDateOf(startDate, tz));
     return showWeekends ? all : all.filter((day) => day.getDay() !== 0 && day.getDay() !== 6);
-  }, [startDate, showWeekends]);
+  }, [startDate, showWeekends, tz]);
 
   const timeSlots = useMemo(
     () => generateTimeSlots(startHour, endHour, slotDuration),
     [startHour, endHour, slotDuration]
   );
 
-  const eventsByDay = useMemo(() => groupEventsByDay(events), [events]);
+  const eventsByDay = useMemo(() => groupEventsByDay(events, tz), [events, tz]);
 
   const slotsPerHour = Math.round(60 / slotDuration);
   const now = new Date();
@@ -69,7 +71,8 @@ export function WeekGrid({
     startHour,
     endHour,
     slotDuration,
-    slotHeight
+    slotHeight,
+    tz
   );
 
   // Formato de hora para el gutter

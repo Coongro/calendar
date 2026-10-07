@@ -1,9 +1,10 @@
 import { useIsMobile } from '@coongro/plugin-sdk';
 import { useMemo } from 'react';
 
+import { useTenantTimezone } from '../../hooks/useTenantTimezone.js';
 import { TOKENS } from '../../styles/tokens.js';
 import type { DayColumnProps } from '../../types/components.js';
-import { generateTimeSlots, toDateString } from '../../utils/date.js';
+import { generateTimeSlots } from '../../utils/date.js';
 import {
   SLOT_HEIGHT_DESKTOP,
   SLOT_HEIGHT_MOBILE,
@@ -11,6 +12,7 @@ import {
   GUTTER_WIDTH_MOBILE,
 } from '../../utils/grid-constants.js';
 import { computeNowPosition } from '../../utils/grid-helpers.js';
+import { dayKeyOf } from '../../utils/zoned-day.js';
 
 import { DayColumnCore } from './DayColumnCore.js';
 
@@ -32,6 +34,7 @@ export function DayColumn({
   className = '',
 }: DayColumnProps) {
   const isMobile = useIsMobile('sm');
+  const tz = useTenantTimezone();
   const slotHeight = slotHeightProp ?? (isMobile ? SLOT_HEIGHT_MOBILE : SLOT_HEIGHT_DESKTOP);
   const gutterWidth = isMobile ? GUTTER_WIDTH_MOBILE : GUTTER_WIDTH_DESKTOP;
   const maxColumns = maxColumnsProp ?? (isMobile ? MAX_COLUMNS_MOBILE : MAX_COLUMNS_DESKTOP);
@@ -43,12 +46,13 @@ export function DayColumn({
 
   const slotsPerHour = Math.round(60 / slotDuration);
 
-  const isToday = toDateString(new Date()) === (date ?? '').substring(0, 10);
+  const isToday = dayKeyOf(new Date(), tz) === (date ?? '').substring(0, 10);
   const { gridStartMin, gridEndMin, nowInRange, nowTop } = computeNowPosition(
     startHour,
     endHour,
     slotDuration,
-    slotHeight
+    slotHeight,
+    tz
   );
 
   // Adapter: propaga el hour sin la fecha (firma historica de DayColumnProps).
