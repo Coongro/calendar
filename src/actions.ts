@@ -6,16 +6,17 @@
  * `updated_at` ni `deleted_at` (antes `update` aceptaba cualquier columna).
  * Las fechas llegan como texto por JSON y el repositorio las convierte.
  *
- * Los listados siguen devolviendo arrays. `create`, `update`, `softDelete`,
- * `restore` y `toggleVisibility` devuelven el registro a quien pide la forma
- * nueva y `[registro]` a los demás.
+ * Forma de las respuestas: un registro es un objeto (o `null`). Las listas de
+ * eventos que crecen con el uso son páginas (`pageInput` → `{ items, total }`);
+ * las de configuración (calendarios, tipos) y las acotadas por un rango de
+ * fechas o un `limit` (lo que dibuja la grilla), arrays.
  */
 
-import { createInsertSchema, mutation, query, z } from '@coongro/plugin-sdk/actions';
+import { createInsertSchema, mutation, pageInput, query, z } from '@coongro/plugin-sdk/actions';
 
 import { CalendarRepository } from './repositories/calendar.repository.js';
 import { EventTypeRepository } from './repositories/event-type.repository.js';
-import { EventRepository } from './repositories/event.repository.js';
+import { EVENT_SORTABLE, EventRepository } from './repositories/event.repository.js';
 import { calendarTable } from './schema/calendar.js';
 import { eventTypeTable } from './schema/event-type.js';
 import { eventTable } from './schema/event.js';
@@ -57,31 +58,26 @@ export const calendarActions = {
     async ({ context }) => (await context.repo(CalendarRepository).getDefault()) ?? null
   ),
   create: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ data: CalendarData.strict() }).strict())
     .handler(async ({ input, context }) =>
       first(await context.repo(CalendarRepository).create(input))
     ),
   update: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ id: Id, data: CalendarData.partial().strict() }).strict())
     .handler(async ({ input, context }) =>
       first(await context.repo(CalendarRepository).update(input))
     ),
   toggleVisibility: mutation
-    .meta({ legacy: 'first' })
     .input(ById)
     .handler(async ({ input, context }) =>
       first(await context.repo(CalendarRepository).toggleVisibility(input))
     ),
   softDelete: destructive
-    .meta({ legacy: 'first' })
     .input(ById)
     .handler(async ({ input, context }) =>
       first(await context.repo(CalendarRepository).softDelete(input))
     ),
   restore: mutation
-    .meta({ legacy: 'first' })
     .input(ById)
     .handler(async ({ input, context }) =>
       first(await context.repo(CalendarRepository).restore(input))
@@ -110,25 +106,21 @@ export const eventTypeActions = {
     )
     .handler(({ input, context }) => context.repo(EventTypeRepository).search(input)),
   create: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ data: EventTypeData.strict() }).strict())
     .handler(async ({ input, context }) =>
       first(await context.repo(EventTypeRepository).create(input))
     ),
   update: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ id: Id, data: EventTypeData.partial().strict() }).strict())
     .handler(async ({ input, context }) =>
       first(await context.repo(EventTypeRepository).update(input))
     ),
   softDelete: destructive
-    .meta({ legacy: 'first' })
     .input(ById)
     .handler(async ({ input, context }) =>
       first(await context.repo(EventTypeRepository).softDelete(input))
     ),
   restore: mutation
-    .meta({ legacy: 'first' })
     .input(ById)
     .handler(async ({ input, context }) =>
       first(await context.repo(EventTypeRepository).restore(input))
@@ -169,34 +161,34 @@ const EventData = eventInsert.pick(EVENT).extend({
 
 const Range = { from: When, to: When };
 const OptionalRange = { from: z.string().optional(), to: z.string().optional() };
+const EventPage = { orderBy: [...EVENT_SORTABLE] } as const;
 
 export const eventActions = {
-  list: query.handler(({ context }) => context.repo(EventRepository).list()),
+  list: query
+    .meta({ page: true })
+    .input(pageInput({}, EventPage))
+    .handler(({ input, context }) => context.repo(EventRepository).searchPage(input)),
   getById: query
     .input(ById)
     .handler(
       async ({ input, context }) => (await context.repo(EventRepository).getById(input)) ?? null
     ),
   create: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ data: EventData.extend({ id: Id.optional() }).strict() }).strict())
     .handler(async ({ input, context }) =>
       first(await context.repo(EventRepository).create(input as never))
     ),
   update: mutation
-    .meta({ legacy: 'first' })
     .input(z.object({ id: Id, data: EventData.partial().strict() }).strict())
     .handler(async ({ input, context }) =>
       first(await context.repo(EventRepository).update(input as never))
     ),
   softDelete: destructive
-    .meta({ legacy: 'first' })
     .input(ById)
     .handler(async ({ input, context }) =>
       first(await context.repo(EventRepository).softDelete(input))
     ),
   restore: mutation
-    .meta({ legacy: 'first' })
     .input(ById)
     .handler(async ({ input, context }) =>
       first(await context.repo(EventRepository).restore(input))
@@ -205,9 +197,10 @@ export const eventActions = {
     .input(ById)
     .handler(({ input, context }) => context.repo(EventRepository).delete(input)),
   search: query
+    .meta({ page: true })
     .input(
-      z
-        .object({
+      pageInput(
+        {
           query: z.string().optional(),
           status: z.string().optional(),
           calendarId: z.string().optional(),
@@ -219,26 +212,25 @@ export const eventActions = {
           to: When.optional(),
           tags: z.array(z.string()).optional(),
           includeDeleted: z.boolean().optional(),
-          limit: z.number().int().positive().optional(),
-          offset: z.number().int().nonnegative().optional(),
-          orderBy: z.string().optional(),
-          orderDir: z.enum(['asc', 'desc']).optional(),
-        })
-        .strict()
+        },
+        EventPage
+      )
     )
-    .handler(({ input, context }) => context.repo(EventRepository).search(input)),
+    .handler(({ input, context }) => context.repo(EventRepository).searchPage(input)),
   listByDateRange: query
-    .input(z.object({ ...Range, calendarIds: z.array(z.string()).optional() }).passthrough())
-    .handler(({ input, context }) => context.repo(EventRepository).listByDateRange(input as never)),
+    .input(z.object({ ...Range, calendarIds: z.array(z.string()).optional() }).strict())
+    .handler(({ input, context }) => context.repo(EventRepository).listByDateRange(input)),
   listByDate: query
     .input(z.object({ date: z.string(), tz: z.string() }).strict())
     .handler(({ input, context }) => context.repo(EventRepository).listByDate(input)),
   listByEntity: query
-    .input(z.object({ entityId: z.string(), entityType: z.string() }).passthrough())
-    .handler(({ input, context }) => context.repo(EventRepository).listByEntity(input as never)),
+    .meta({ page: true })
+    .input(pageInput({ entityId: z.string().min(1), entityType: z.string().min(1) }, EventPage))
+    .handler(({ input, context }) => context.repo(EventRepository).searchPage(input)),
   listByCalendar: query
-    .input(z.object({ calendarId: z.string(), ...OptionalRange }).strict())
-    .handler(({ input, context }) => context.repo(EventRepository).listByCalendar(input)),
+    .meta({ page: true })
+    .input(pageInput({ calendarId: Id, ...OptionalRange }, EventPage))
+    .handler(({ input, context }) => context.repo(EventRepository).searchPage(input)),
   listUpcoming: query
     .input(
       z
@@ -251,17 +243,16 @@ export const eventActions = {
     )
     .handler(({ input, context }) => context.repo(EventRepository).listUpcoming(input ?? {})),
   moveEvent: mutation
-    .meta({ legacy: 'first' })
-    .input(z.object({ id: Id, startAt: When, endAt: When }).passthrough())
+    .input(z.object({ id: Id, startAt: When, endAt: When }).strict())
     .handler(async ({ input, context }) =>
-      first(await context.repo(EventRepository).moveEvent(input as never))
+      first(await context.repo(EventRepository).moveEvent(input))
     ),
   countByStatus: query
     .input(z.object(OptionalRange).strict().optional())
     .handler(({ input, context }) => context.repo(EventRepository).countByStatus(input)),
   countByDate: query
-    .input(z.object(Range).passthrough())
-    .handler(({ input, context }) => context.repo(EventRepository).countByDate(input as never)),
+    .input(z.object(Range).strict())
+    .handler(({ input, context }) => context.repo(EventRepository).countByDate(input)),
   countByCalendar: query
     .input(z.object(OptionalRange).strict().optional())
     .handler(({ input, context }) => context.repo(EventRepository).countByCalendar(input)),

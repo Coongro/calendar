@@ -3,8 +3,9 @@ import type { ReactElement } from 'react';
 import { TOKENS } from '../styles/tokens.js';
 import type { CalendarEvent } from '../types/event.js';
 
-import { diffMinutes, toDateString } from './date.js';
+import { diffMinutes } from './date.js';
 import { NOW_LINE_Z } from './grid-constants.js';
+import { groupByDay, minutesOfDay } from './zoned-day.js';
 
 // ── Now position ──
 
@@ -17,17 +18,17 @@ export interface NowPosition {
   nowTop: number;
 }
 
-/** Calcula la posicion vertical de la linea "ahora" en una grilla horaria. */
+/** Calcula la posicion vertical de la linea "ahora" en una grilla horaria (hora del negocio). */
 export function computeNowPosition(
   startHour: number,
   endHour: number,
   slotDuration: number,
-  slotHeight: number
+  slotHeight: number,
+  tz: string
 ): NowPosition {
-  const now = new Date();
-  const nowHour = now.getHours();
-  const nowMinute = now.getMinutes();
-  const nowMinutes = nowHour * 60 + nowMinute;
+  const nowMinutes = minutesOfDay(new Date(), tz);
+  const nowHour = Math.floor(nowMinutes / 60);
+  const nowMinute = nowMinutes % 60;
   const gridStartMin = startHour * 60;
   const gridEndMin = endHour * 60;
   const nowInRange = nowMinutes >= gridStartMin && nowMinutes < gridEndMin;
@@ -74,10 +75,10 @@ export function computeEventPosition(
   gridStartMin: number,
   gridEndMin: number,
   slotDuration: number,
-  slotHeight: number
+  slotHeight: number,
+  tz: string
 ): EventPosition | null {
-  const evtStart = new Date(evt.start_at);
-  const evtStartMin = evtStart.getHours() * 60 + evtStart.getMinutes();
+  const evtStartMin = minutesOfDay(evt.start_at, tz);
   if (evtStartMin < gridStartMin || evtStartMin >= gridEndMin) return null;
   const duration = diffMinutes(evt.start_at, evt.end_at);
   return computeVerticalPosition(
@@ -92,15 +93,12 @@ export function computeEventPosition(
 
 // ── Events by day ──
 
-/** Agrupa eventos por fecha (yyyy-mm-dd). */
-export function groupEventsByDay(events: CalendarEvent[]): Record<string, CalendarEvent[]> {
-  const map: Record<string, CalendarEvent[]> = {};
-  for (const evt of events) {
-    const key = toDateString(new Date(evt.start_at));
-    if (!map[key]) map[key] = [];
-    map[key].push(evt);
-  }
-  return map;
+/** Agrupa eventos por el día (yyyy-mm-dd) en que empiezan en la zona del negocio. */
+export function groupEventsByDay(
+  events: CalendarEvent[],
+  tz: string
+): Record<string, CalendarEvent[]> {
+  return Object.fromEntries(groupByDay(events, tz));
 }
 
 // ── Day header style helpers ──

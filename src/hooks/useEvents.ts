@@ -1,4 +1,5 @@
 import { actions } from '@coongro/plugin-sdk';
+import type { Page } from '@coongro/plugin-sdk/actions';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CalendarEvent } from '../types/event.js';
@@ -63,18 +64,14 @@ export function useEvents(options: UseEventsOptions = {}): UseEventsResult {
     setLoading(true);
     setError(null);
     try {
-      const result = await actions.execute<CalendarEvent[]>('calendar.events.search', {
+      const result = await actions.execute<Page<CalendarEvent>>('calendar.events.search', {
         ...filters,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       });
       if (!mountedRef.current) return;
-      setData(result);
-      if (result.length < pageSize) {
-        setTotal((page - 1) * pageSize + result.length);
-      } else {
-        setTotal(Math.max(total, page * pageSize + 1));
-      }
+      setData(result.items);
+      setTotal(result.total);
     } catch (err) {
       if (!mountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Error al cargar eventos');
